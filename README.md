@@ -1,36 +1,244 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
 
-## Getting Started
+# 🛡️ XEROVA
 
-First, run the development server:
+### Threat Intelligence & Cybersecurity Investigation Platform
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+*Investigate. Analyze. Respond.*
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb)
+![Auth.js](https://img.shields.io/badge/Auth.js-v5-000000?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+
+[🌐 Live Demo](https://xerova-lab.vercel.app)
+•
+[📖 Documentation](#installation)
+•
+[🐞 Report Bug](../../issues)
+•
+[💡 Request Feature](../../issues)
+
+</div>
+
+---
+
+# 📖 Overview
+
+XEROVA is a modern cybersecurity intelligence platform designed to help security researchers, students, analysts, and developers investigate digital threats from a single interface.
+
+Instead of manually visiting multiple threat intelligence providers, XEROVA aggregates data from multiple sources into one streamlined investigation workflow.
+
+It provides real-time threat analysis for IP addresses, domains, URLs, file hashes, and CVEs while maintaining a clean dashboard for investigation history and reporting.
+
+---
+
+# ✨ Features
+
+## 🔍 Threat Intelligence
+
+- IP Reputation Lookup
+- Domain Intelligence
+- URL Analysis
+- File Hash Analysis
+- CVE Intelligence
+- Unified Threat Scoring
+- IOC Investigation
+
+---
+
+## 📊 Dashboard
+
+- Live Threat Statistics
+- Investigation History
+- Severity Distribution
+- Threat Trends
+- Recent CVEs
+- Search Analytics
+
+---
+
+## 📄 Reports
+
+- Create Investigation Reports
+- Edit Reports
+- Delete Reports
+- Export as JSON
+- Export as Markdown
+
+---
+
+## 🤖 Assistant
+
+- Extracts Indicators of Compromise (IOCs)
+- Detects
+
+  - IPs
+  - Domains
+  - URLs
+  - File Hashes
+
+- One-click Threat Lookup
+
+---
+
+## 🔐 Security
+
+- Google OAuth Authentication
+- Credentials Authentication
+- Protected Routes
+- Server-side API Keys
+- Input Validation
+- SSRF Protection
+- Rate Limiting Ready
+
+---
+
+# 🌐 Integrated Threat Intelligence
+
+| Service | Purpose |
+|---------|---------|
+| VirusTotal | Malware & Reputation Intelligence |
+| AbuseIPDB | IP Abuse Reports |
+| Shodan | Internet-wide Host Intelligence |
+| NVD | CVE Database |
+
+---
+
+# 🛠 Tech Stack
+
+### Frontend
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Recharts
+
+### Backend
+
+- Next.js Route Handlers
+- Auth.js v5
+- MongoDB Atlas
+- Mongoose
+
+### Security APIs
+
+- VirusTotal API
+- AbuseIPDB API
+- Shodan API
+- NVD API
+
+---
+
+# 📂 Project Structure
+
+```text
+src
+├── app
+├── components
+├── lib
+├── models
+├── hooks
+├── types
+├── providers
+├── styles
+└── middleware
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# 🚀 Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+git clone https://github.com/mhdsahil1/XEROVA.git
 
-## Learn More
+cd XEROVA
 
-To learn more about Next.js, take a look at the following resources:
+npm install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+cp .env.example .env.local
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+npm run dev
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# ⚙️ Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+AUTH_SECRET=
+
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+
+MONGODB_URI=
+
+VIRUSTOTAL_API_KEY=
+
+ABUSEIPDB_API_KEY=
+
+SHODAN_API_KEY=
+
+OPENAI_API_KEY=
+```
+
+---
+
+# 📸 Screenshots
+
+> 
+
+
+---
+
+# 🗺 Roadmap
+
+- [x] Authentication
+- [x] Dashboard
+- [x] Threat Intelligence
+- [x] Reports
+- [x] IOC Extraction
+- [x] Theme Support
+- [ ] AI Investigation Assistant
+- [ ] PDF Report Export
+- [ ] Team Workspaces
+- [ ] Organization Accounts
+- [ ] SIEM Integrations
+
+---
+
+# 🤝 Contributing
+
+Contributions, feature suggestions, and issue reports are always welcome.
+
+If you'd like to improve XEROVA, feel free to fork the repository and open a Pull Request.
+
+---
+
+# 👨‍💻 Author
+
+**Muhammed Sahil**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?logo=linkedin&logoColor=white)](https://linkedin.com/in/mhdsahil09)
+[![Portfolio](https://img.shields.io/badge/Portfolio-000000?logo=vercel&logoColor=white)](https://v0-sahil-dev.vercel.app/)
+[![Email](https://img.shields.io/badge/Email-D14836?logo=gmail&logoColor=white)](mailto:muhammedsahil182@gmail.com)
+
+---
+
+## ⭐ Support
+
+If you found this project useful, consider giving it a ⭐ on GitHub.
+
+It helps others discover the project and motivates future development.
+
+---
+
+<div align="center">
+
+Built with ❤️, curiosity, and far more debugging than originally planned.
+
+</div>

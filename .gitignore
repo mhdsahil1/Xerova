@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.freebuff
+test-db.mjs
+
+
+.agents/
+.claude/
+# .gemini/
+
+.gemini/

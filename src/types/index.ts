@@ -1,0 +1,242 @@
+// ============================================
+// XEROVA Type Definitions
+// ============================================
+
+// --- User ---
+export interface IUser {
+  _id: string;
+  name: string;
+  email: string;
+  password?: string;
+  image?: string;
+  provider: "credentials" | "google";
+  role: "analyst" | "admin";
+  apiKeys?: {
+    virusTotal?: string;
+    shodan?: string;
+    abuseIPDB?: string;
+  };
+  preferences?: {
+    theme: "dark" | "light" | "system";
+    notifications: boolean;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// --- Threat Intelligence ---
+export type ThreatType = "ip" | "domain" | "hash" | "url" | "cve";
+
+export type SeverityLevel = "critical" | "high" | "medium" | "low" | "info";
+
+export interface ThreatSearchResult {
+  query: string;
+  type: ThreatType;
+  riskScore: number;
+  severity: SeverityLevel;
+  summary: string;
+  details: Record<string, unknown>;
+  tags: string[];
+  references: string[];
+  timestamp: Date;
+}
+
+export interface IPResult {
+  ip: string;
+  country: string;
+  countryCode: string;
+  city: string;
+  isp: string;
+  org: string;
+  asn: string;
+  hostname?: string;
+  reputation: number;
+  isVPN: boolean;
+  isTor: boolean;
+  isProxy: boolean;
+  isBot: boolean;
+  abuseReports: number;
+  lastReportedAt?: string;
+  whois: Record<string, string>;
+  ports?: number[];
+  threats: ThreatReference[];
+}
+
+export interface DomainResult {
+  domain: string;
+  registrar: string;
+  registeredDate: string;
+  expiryDate: string;
+  nameservers: string[];
+  status: string[];
+  country: string;
+  reputation: number;
+  dnsRecords: DNSRecord[];
+  sslCert?: SSLCertInfo;
+  threats: ThreatReference[];
+}
+
+export interface DNSRecord {
+  type: string;
+  name: string;
+  value: string;
+  ttl: number;
+}
+
+export interface SSLCertInfo {
+  issuer: string;
+  validFrom: string;
+  validTo: string;
+  subject: string;
+  serialNumber: string;
+  fingerprint: string;
+}
+
+export interface HashResult {
+  hash: string;
+  hashType: "md5" | "sha1" | "sha256";
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  detections: Detection[];
+  detectionRate: string;
+  firstSeen?: string;
+  lastSeen?: string;
+  tags: string[];
+}
+
+export interface Detection {
+  engine: string;
+  detected: boolean;
+  result?: string;
+  version?: string;
+}
+
+export interface CVEResult {
+  id: string;
+  description: string;
+  cvssScore: number;
+  cvssVector: string;
+  severity: SeverityLevel;
+  publishedDate: string;
+  modifiedDate: string;
+  affectedProducts: AffectedProduct[];
+  references: CVEReference[];
+  cwe: string[];
+  exploitAvailable: boolean;
+  patchAvailable: boolean;
+}
+
+export interface AffectedProduct {
+  vendor: string;
+  product: string;
+  versions: string[];
+}
+
+export interface CVEReference {
+  url: string;
+  source: string;
+  tags: string[];
+}
+
+export interface ThreatReference {
+  source: string;
+  description: string;
+  date: string;
+  severity: SeverityLevel;
+}
+
+// --- AI Assistant ---
+export interface Conversation {
+  _id: string;
+  userId: string;
+  title: string;
+  messages: ChatMessage[];
+  relatedThreats: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: Date;
+}
+
+// --- Reports ---
+export interface Report {
+  _id: string;
+  userId: string;
+  title: string;
+  type: "investigation" | "threat_analysis" | "incident";
+  summary: string;
+  findings: Finding[];
+  iocs: IOC[];
+  riskScore: number;
+  relatedSearches: string[];
+  relatedConversations: string[];
+  status: "draft" | "finalized";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Finding {
+  title: string;
+  description: string;
+  severity: SeverityLevel;
+  evidence: string;
+}
+
+export interface IOC {
+  type: "ip" | "domain" | "hash" | "url" | "email" | "cve";
+  value: string;
+  context: string;
+}
+
+// --- Dashboard ---
+export interface DashboardStats {
+  totalInvestigations: number;
+  threatScore: number;
+  criticalThreats: number;
+  reportsGenerated: number;
+  recentSearches: ThreatSearchResult[];
+  riskDistribution: RiskDistributionItem[];
+  trendData: TrendDataPoint[];
+}
+
+export interface RiskDistributionItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface TrendDataPoint {
+  date: string;
+  investigations: number;
+  threats: number;
+}
+
+// --- Settings ---
+export interface UserSettings {
+  userId: string;
+  theme: "dark" | "light" | "system";
+  apiKeys: {
+    virusTotal?: string;
+    shodan?: string;
+    abuseIPDB?: string;
+  };
+  notifications: {
+    email: boolean;
+    browser: boolean;
+    digest: boolean;
+  };
+}
+
+// --- Navigation ---
+export interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string | number;
+}
