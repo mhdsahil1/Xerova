@@ -1,11 +1,10 @@
-// ============================================
-// XEROVA — Single Report API (GET, PUT, DELETE)
-// ============================================
-
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Report from "@/models/Report";
+import { reportSchema } from "@/lib/validations";
+
+export const dynamic = "force-dynamic";
 
 // GET — Single report
 export async function GET(
@@ -53,11 +52,20 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
+
+    const validated = reportSchema.partial().safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: validated.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
     const report = await Report.findOneAndUpdate(
       { _id: id, userId: session.user.id },
-      { $set: body },
+      { $set: validated.data },
       { new: true }
     );
 

@@ -1,26 +1,49 @@
-// ============================================
-// XEROVA — Reports API (List + Create)
-// ============================================
-
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Report from "@/models/Report";
 import { reportSchema } from "@/lib/validations";
 
-// GET — List user's reports
-export async function GET() {
+export const dynamic = "force-dynamic";
+
+// GET — List user's reports with optional search and filters
+export async function GET(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") || "";
+    const type = searchParams.get("type") || "all";
+    const status = searchParams.get("status") || "all";
+
     await connectDB();
 
-    const reports = await Report.find({ userId: session.user.id })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filter: any = { userId: session.user.id };
+
+    if (search.trim()) {
+      filter.$or = [
+        { title: { $regex: search.trim(), $options: "i" } },
+        { summary: { $regex: search.trim(), $options: "i" } },
+        { "iocs.value": { $regex: search.trim(), $options: "i" } },
+        { "findings.title": { $regex: search.trim(), $options: "i" } },
+      ];
+    }
+
+    if (type !== "all" && ["investigation", "threat_analysis", "incident"].includes(type)) {
+      filter.type = type;
+    }
+
+    if (status !== "all" && ["draft", "finalized"].includes(status)) {
+      filter.status = status;
+    }
+
+    const reports = await Report.find(filter)
       .sort({ createdAt: -1 })
-      .limit(50)
+      .limit(100)
       .lean();
 
     return NextResponse.json({ reports });

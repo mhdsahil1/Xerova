@@ -51,7 +51,7 @@ export const reportSchema = z.object({
     .min(1, "Report title is required")
     .max(300, "Title is too long"),
   type: z.enum(["investigation", "threat_analysis", "incident"]),
-  summary: z.string().optional(),
+  summary: z.string().optional().default(""),
   findings: z
     .array(
       z.object({
@@ -73,7 +73,19 @@ export const reportSchema = z.object({
     )
     .optional()
     .default([]),
+  threatEvidence: z
+    .array(
+      z.object({
+        source: z.string().min(1),
+        description: z.string().min(1),
+        severity: z.enum(["critical", "high", "medium", "low", "info"]),
+        date: z.string().optional().default(""),
+      })
+    )
+    .optional()
+    .default([]),
   riskScore: z.number().min(0).max(100).optional().default(0),
+  status: z.enum(["draft", "finalized"]).optional().default("draft"),
 });
 
 export const settingsSchema = z.object({
