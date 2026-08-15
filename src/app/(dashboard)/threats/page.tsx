@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -50,6 +50,22 @@ function ApiErrorAlert({ error }: { error: string }) {
 }
 
 export default function ThreatsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          <ShieldAlert className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <p className="text-muted-foreground mt-4 text-sm">Loading threat intelligence...</p>
+      </div>
+    }>
+      <ThreatsPageInner />
+    </Suspense>
+  );
+}
+
+function ThreatsPageInner() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("lookup");
   const [query, setQuery] = useState("");
@@ -186,6 +202,7 @@ export default function ThreatsPage() {
     executeLookup(ioc.value, ioc.type);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleGenerateReportFromInv = (inv: any) => {
     setSelectedInvForReport(inv);
     setCreateReportOpen(true);

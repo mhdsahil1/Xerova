@@ -15,8 +15,6 @@ import {
   Edit,
   CheckCircle2,
   Clock,
-  Filter,
-  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
