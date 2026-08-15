@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { useChartTheme } from "@/hooks/use-chart-theme";
 
 export interface RiskDistributionChartProps {
   data: {
@@ -11,10 +12,11 @@ export interface RiskDistributionChartProps {
 }
 
 export function RiskDistributionChart({ data }: RiskDistributionChartProps) {
+  const chartTheme = useChartTheme();
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col sm:flex-row items-center gap-6">
       <div className="h-[200px] w-[200px] flex-shrink-0">
         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <PieChart>
@@ -34,17 +36,17 @@ export function RiskDistributionChart({ data }: RiskDistributionChartProps) {
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: "oklch(0.16 0.02 260)",
-                border: "1px solid oklch(0.26 0.025 260)",
+                backgroundColor: chartTheme.tooltipBg,
+                border: `1px solid ${chartTheme.tooltipBorder}`,
                 borderRadius: "8px",
                 fontSize: "12px",
-                color: "oklch(0.93 0.01 260)",
+                color: chartTheme.tooltipText,
               }}
             />
           </PieChart>
         </ResponsiveContainer>
       </div>
-      <div className="space-y-2 flex-1">
+      <div className="space-y-2 flex-1 w-full sm:w-auto">
         {data.map((item) => (
           <div key={item.name} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -57,7 +59,7 @@ export function RiskDistributionChart({ data }: RiskDistributionChartProps) {
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{item.value}</span>
               <span className="text-xs text-muted-foreground">
-                ({Math.round((item.value / total) * 100)}%)
+                ({total > 0 ? Math.round((item.value / total) * 100) : 0}%)
               </span>
             </div>
           </div>
@@ -66,3 +68,4 @@ export function RiskDistributionChart({ data }: RiskDistributionChartProps) {
     </div>
   );
 }
+

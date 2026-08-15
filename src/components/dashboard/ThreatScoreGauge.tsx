@@ -2,12 +2,14 @@
 
 import { motion } from "framer-motion";
 import { getRiskLabel, getRiskColor } from "@/lib/utils";
+import { useChartTheme } from "@/hooks/use-chart-theme";
 
 interface ThreatScoreGaugeProps {
   score: number;
 }
 
 export function ThreatScoreGauge({ score }: ThreatScoreGaugeProps) {
+  const chartTheme = useChartTheme();
   const radius = 80;
   const strokeWidth = 12;
   const normalizedRadius = radius - strokeWidth / 2;
@@ -17,22 +19,22 @@ export function ThreatScoreGauge({ score }: ThreatScoreGaugeProps) {
   const label = getRiskLabel(score);
   const colorClass = getRiskColor(score);
 
-  // Map to actual stroke color
+  // Map score to semantic severity token color
   const strokeColor =
     score >= 80
-      ? "#ef4444"
+      ? chartTheme.severityCritical
       : score >= 60
-        ? "#f97316"
+        ? chartTheme.severityHigh
         : score >= 40
-          ? "#eab308"
+          ? chartTheme.severityMedium
           : score >= 20
-            ? "#3b82f6"
-            : "#22c55e";
+            ? chartTheme.severityLow
+            : chartTheme.severityInfo;
 
   return (
     <div className="flex flex-col items-center py-4">
       <div className="relative">
-        <svg width={radius * 2} height={radius * 2} className="-rotate-90">
+        <svg width={radius * 2} height={radius * 2} className="-rotate-90" aria-hidden="true">
           {/* Background circle */}
           <circle
             stroke="currentColor"
@@ -90,3 +92,4 @@ export function ThreatScoreGauge({ score }: ThreatScoreGaugeProps) {
     </div>
   );
 }
+

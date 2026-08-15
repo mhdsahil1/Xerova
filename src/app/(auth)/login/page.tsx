@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Shield,
   Mail,
   Lock,
   Eye,
@@ -14,6 +13,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,10 +96,13 @@ export default function LoginPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex flex-col items-center mb-8"
           >
-            <img
+            <Image
               src="/XEROVA final.svg"
               alt="XEROVA Logo"
+              width={200}
+              height={56}
               className="h-14 w-auto object-contain mb-3 drop-shadow-lg"
+              priority
             />
           </motion.div>
 
@@ -158,6 +161,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />

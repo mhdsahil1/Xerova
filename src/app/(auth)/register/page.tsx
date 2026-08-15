@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Shield,
   Mail,
   Lock,
   Eye,
@@ -15,6 +14,7 @@ import {
   User,
   CheckCircle2,
 } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,10 +88,13 @@ export default function RegisterPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex flex-col items-center mb-8"
           >
-            <img
+            <Image
               src="/XEROVA final.svg"
               alt="XEROVA Logo"
+              width={200}
+              height={56}
               className="h-14 w-auto object-contain mb-3 drop-shadow-lg"
+              priority
             />
           </motion.div>
 
@@ -164,6 +167,7 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -180,7 +184,14 @@ export default function RegisterPage() {
                   animate={{ opacity: 1, height: "auto" }}
                   className="space-y-2"
                 >
-                  <div className="flex gap-1">
+                  <div
+                    className="flex gap-1"
+                    role="progressbar"
+                    aria-valuenow={passwordStrength.level * 25}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Password strength: ${passwordStrength.label || 'none'}`}
+                  >
                     {[1, 2, 3, 4].map((level) => (
                       <div
                         key={level}
@@ -195,10 +206,10 @@ export default function RegisterPage() {
                   <p
                     className={`text-xs ${
                       passwordStrength.level >= 3
-                        ? "text-green-400"
+                        ? "text-status-success"
                         : passwordStrength.level >= 2
-                          ? "text-yellow-400"
-                          : "text-red-400"
+                          ? "text-status-warning"
+                          : "text-status-error"
                     }`}
                   >
                     {passwordStrength.label}
@@ -227,7 +238,7 @@ export default function RegisterPage() {
                 />
                 {formData.confirmPassword &&
                   formData.password === formData.confirmPassword && (
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400" />
+                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-status-success" />
                   )}
               </div>
             </div>
@@ -273,10 +284,10 @@ function getPasswordStrength(password: string) {
   const labels = ["", "Weak", "Fair", "Good", "Strong"];
   const colors = [
     "",
-    "bg-red-500",
-    "bg-yellow-500",
-    "bg-blue-500",
-    "bg-green-500",
+    "bg-severity-critical",
+    "bg-severity-medium",
+    "bg-severity-low",
+    "bg-status-success",
   ];
 
   return { level, label: labels[level], color: colors[level] };

@@ -57,10 +57,9 @@ const quickActions = [
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [statsData, setStatsData] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [cvesData, setCvesData] = useState<any>(null);
+  const [statsData, setStatsData] = useState<any | null>(null);
+  const [cvesData, setCvesData] = useState<any[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -80,6 +79,7 @@ export default function DashboardPage() {
         }
       } catch (e) {
         console.error("Failed to load dashboard data", e);
+        setError("Failed to load dashboard data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -89,9 +89,23 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh]" role="status" aria-label="Loading dashboard">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
         <p className="text-sm text-muted-foreground mt-4">Loading dashboard data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-status-error/10 border border-status-error/20 text-status-error p-4 rounded-lg flex items-center gap-3 max-w-md">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <div>
+            <h4 className="font-semibold text-sm">Dashboard Error</h4>
+            <p className="text-sm mt-1">{error}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -153,15 +167,15 @@ export default function DashboardPage() {
                   <TrendingUp
                     className={`w-3 h-3 ${
                       stat.change.startsWith("+")
-                        ? "text-green-400"
-                        : "text-red-400"
+                        ? "text-status-success"
+                        : "text-status-error"
                     }`}
                   />
                   <span
                     className={`text-xs font-medium ${
                       stat.change.startsWith("+")
-                        ? "text-green-400"
-                        : "text-red-400"
+                        ? "text-status-success"
+                        : "text-status-error"
                     }`}
                   >
                     {stat.change}

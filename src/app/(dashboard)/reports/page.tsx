@@ -171,7 +171,7 @@ export default function ReportsPage() {
       {/* Error Alert */}
       <AnimatePresence>
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg flex items-start gap-3">
+          <div className="bg-status-error/10 border border-status-error/20 text-status-error p-4 rounded-lg flex items-start gap-3" role="alert">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
               <h4 className="font-semibold text-sm">Failed to Load Reports</h4>
@@ -183,15 +183,16 @@ export default function ReportsPage() {
 
       {/* Reports List */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
+        <div className="flex flex-col items-center justify-center py-16" role="status" aria-label="Loading reports">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground mt-4">Loading reports...</p>
         </div>
       ) : reports.length === 0 ? (
         <div className="text-center py-16 bg-card/30 border border-border/50 rounded-xl">
           <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-muted-foreground">No reports found</h3>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            You haven't generated any intelligence reports yet or none match your search filter.
+            You haven&apos;t generated any intelligence reports yet or none match your search filter.
           </p>
           <Button onClick={() => setCreateOpen(true)} className="mt-4" variant="outline">
             <PlusCircle className="w-4 h-4 mr-2" />

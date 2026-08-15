@@ -57,11 +57,19 @@
   --color-cyber-blue: oklch(0.62 0.18 260);
   --color-cyber-purple: oklch(0.58 0.2 290);
   --color-cyber-green: oklch(0.72 0.19 150);
-  --color-severity-critical: oklch(0.63 0.25 25);
-  --color-severity-high: oklch(0.7 0.18 50);
-  --color-severity-medium: oklch(0.8 0.15 85);
-  --color-severity-low: oklch(0.7 0.12 230);
-  --color-severity-info: oklch(0.72 0.15 160);
+
+  /* Severity tokens — used for threat data risk levels */
+  --color-severity-critical: var(--severity-critical);
+  --color-severity-high: var(--severity-high);
+  --color-severity-medium: var(--severity-medium);
+  --color-severity-low: var(--severity-low);
+  --color-severity-info: var(--severity-info);
+
+  /* Status tokens — used for UI feedback (success/warning/error/info) */
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
 }
 
 /* Light theme — kept minimal since XEROVA is dark-first */
@@ -98,6 +106,30 @@
   --sidebar-accent-foreground: oklch(0.28 0.05 260);
   --sidebar-border: oklch(0.91 0.005 260);
   --sidebar-ring: oklch(0.42 0.15 260);
+
+  /* Severity — light theme */
+  --severity-critical: oklch(0.55 0.25 25);
+  --severity-high: oklch(0.6 0.2 50);
+  --severity-medium: oklch(0.6 0.18 85);
+  --severity-low: oklch(0.55 0.14 230);
+  --severity-info: oklch(0.55 0.15 160);
+
+  /* Status — light theme */
+  --status-success: oklch(0.52 0.17 150);
+  --status-warning: oklch(0.65 0.18 85);
+  --status-error: oklch(0.55 0.25 25);
+  --status-info: oklch(0.55 0.15 240);
+
+  /* Chart theming — light */
+  --chart-tooltip-bg: oklch(1 0 0);
+  --chart-tooltip-border: oklch(0.91 0.005 260);
+  --chart-tooltip-text: oklch(0.145 0 0);
+  --chart-grid: oklch(0.91 0.005 260);
+  --chart-axis: oklch(0.5 0.02 260);
+
+  /* Scrollbar — light */
+  --scrollbar-thumb: oklch(0.78 0.005 260);
+  --scrollbar-thumb-hover: oklch(0.68 0.01 260);
 }
 
 /* Dark theme — the primary XEROVA experience */
@@ -133,6 +165,30 @@
   --sidebar-accent-foreground: oklch(0.78 0.15 194);
   --sidebar-border: oklch(0.26 0.025 260);
   --sidebar-ring: oklch(0.78 0.15 194);
+
+  /* Severity — dark theme */
+  --severity-critical: oklch(0.63 0.25 25);
+  --severity-high: oklch(0.7 0.18 50);
+  --severity-medium: oklch(0.8 0.15 85);
+  --severity-low: oklch(0.7 0.12 230);
+  --severity-info: oklch(0.72 0.15 160);
+
+  /* Status — dark theme */
+  --status-success: oklch(0.72 0.19 150);
+  --status-warning: oklch(0.8 0.15 85);
+  --status-error: oklch(0.63 0.25 25);
+  --status-info: oklch(0.7 0.12 230);
+
+  /* Chart theming — dark */
+  --chart-tooltip-bg: oklch(0.16 0.02 260);
+  --chart-tooltip-border: oklch(0.26 0.025 260);
+  --chart-tooltip-text: oklch(0.93 0.01 260);
+  --chart-grid: oklch(0.3 0.02 260);
+  --chart-axis: oklch(0.5 0.02 260);
+
+  /* Scrollbar — dark */
+  --scrollbar-thumb: oklch(0.3 0.02 260);
+  --scrollbar-thumb-hover: oklch(0.4 0.03 260);
 }
 
 @layer base {
@@ -152,11 +208,21 @@
    ============================================ */
 
 @layer utilities {
-  /* Glassmorphism card effect */
+  /* Glassmorphism card effect — theme-aware */
   .glass {
-    background: oklch(0.16 0.02 260 / 60%);
-    backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid oklch(1 0 0 / 8%);
+    background: var(--card) / 75%;
+    backdrop-filter: blur(24px) saturate(200%);
+    border: 1px solid oklch(1 0 0 / 10%);
+  }
+  .dark .glass {
+    background: oklch(0.16 0.02 260 / 85%);
+    border: 1px solid oklch(1 0 0 / 12%);
+    box-shadow: inset 0 1px 1px oklch(1 0 0 / 10%);
+  }
+  :root .glass {
+    background: oklch(1 0 0 / 85%);
+    border-color: oklch(0 0 0 / 10%);
+    box-shadow: 0 8px 32px oklch(0 0 0 / 5%);
   }
 
   .glass-light {
@@ -310,7 +376,7 @@
 }
 
 /* ============================================
-   Scrollbar Styling
+   Scrollbar Styling — Theme-Aware
    ============================================ */
 
 ::-webkit-scrollbar {
@@ -323,25 +389,46 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.3 0.02 260);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.4 0.03 260);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.3 0.02 260) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /* ============================================
-   Selection Styling
+   Selection Styling — Theme-Aware
    ============================================ */
 
 ::selection {
   background: oklch(0.78 0.15 194 / 30%);
-  color: oklch(0.95 0 0);
+  color: var(--foreground);
+}
+
+/* ============================================
+   Reduced Motion — Accessibility
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .pulse-ring,
+  .shimmer,
+  .animate-fade-up {
+    animation: none !important;
+  }
 }

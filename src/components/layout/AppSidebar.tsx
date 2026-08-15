@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
-  Shield,
   LayoutDashboard,
   Search,
   MessageSquare,
@@ -78,10 +78,13 @@ export function AppSidebar() {
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="p-4">
         <Link href="/dashboard" className="flex items-center gap-3 group">
-          <img
+          <Image
             src="/XEROVA final.svg"
             alt="XEROVA"
+            width={120}
+            height={36}
             className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
+            priority
           />
         </Link>
       </SidebarHeader>
@@ -125,7 +128,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-4">
         <SidebarSeparator className="mb-4" />
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left">
+          <DropdownMenuTrigger className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left" aria-label="User menu">
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={session?.user?.image || ""}

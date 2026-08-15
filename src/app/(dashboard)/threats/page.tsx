@@ -39,7 +39,7 @@ import type { ExtractedIOC } from "@/lib/ioc-extractor";
 // --- API Error Handling ---
 function ApiErrorAlert({ error }: { error: string }) {
   return (
-    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg flex items-start gap-3">
+    <div className="bg-status-error/10 border border-status-error/20 text-status-error p-4 rounded-lg flex items-start gap-3" role="alert">
       <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
       <div>
         <h4 className="font-semibold text-sm">Lookup Failed</h4>
@@ -52,7 +52,7 @@ function ApiErrorAlert({ error }: { error: string }) {
 export default function ThreatsPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col items-center justify-center py-16">
+      <div className="flex flex-col items-center justify-center py-16" role="status" aria-label="Loading threat intelligence">
         <div className="relative">
           <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           <ShieldAlert className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
@@ -598,7 +598,6 @@ function ThreatsPageInner() {
                           <ChevronLeft className="w-3.5 h-3.5" />
                         </Button>
                         {Array.from({ length: Math.min(historyTotalPages, 5) }, (_, i) => {
-                          // Show pages around current
                           const start = Math.max(1, historyPage - 2);
                           const page = start + i;
                           if (page > historyTotalPages) return null;
@@ -851,7 +850,7 @@ function CVEResultView({ data }: { data: any }) {
               {data.patchAvailable && (
                 <Badge
                   variant="outline"
-                  className="text-[10px] text-green-400 border-green-400/30"
+                  className="text-[10px] text-status-success border-status-success/30"
                 >
                   Patch Available
                 </Badge>
@@ -970,7 +969,7 @@ function FlagItem({
           <span className="text-xs font-medium">Detected</span>
         </div>
       ) : (
-        <div className="flex items-center gap-1 text-green-400">
+        <div className="flex items-center gap-1 text-status-success">
           <CheckCircle2 className="w-4 h-4" />
           <span className="text-xs font-medium">Clean</span>
         </div>

@@ -35,9 +35,10 @@ export function DashboardTopbar() {
 
       <div className="ml-auto flex items-center gap-2">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
+        <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications">
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-cyber-cyan rounded-full" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-cyber-cyan rounded-full" aria-hidden="true" />
+          <span className="sr-only">New notifications available</span>
         </Button>
 
         {/* Theme Toggle */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Bell, Shield, Key } from "lucide-react";
+import { Settings, User, Shield, Key } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ export default function SettingsPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -61,7 +62,7 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium">Role</label>
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-cyber-cyan" />
-                  <span className="text-sm capitalize">{(session?.user as any)?.role || "Analyst"}</span>
+                  <span className="text-sm capitalize">{(session?.user as Record<string, unknown>)?.role as string || "Analyst"}</span>
                 </div>
               </div>
             </CardContent>
@@ -92,7 +93,7 @@ export default function SettingsPage() {
                 <Input value="*************************" disabled type="password" className="bg-background/50" />
                 <p className="text-xs text-muted-foreground">Status: Configured globally in .env</p>
               </div>
-              <div className="bg-blue-500/10 border border-blue-500/20 text-blue-500 p-4 rounded-lg text-sm">
+              <div className="bg-status-info/10 border border-status-info/20 text-status-info p-4 rounded-lg text-sm">
                 XEROVA is currently running in managed mode. API keys are handled by the system administrator.
               </div>
             </CardContent>
