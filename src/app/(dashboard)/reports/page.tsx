@@ -3,19 +3,25 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Download, Loader2, FileJson, Trash2, PlusCircle, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getSeverityColor } from "@/lib/utils";
+
+interface Report {
+  _id: string;
+  title: string;
+  type: string;
+  riskScore: number;
+  summary?: string;
+  createdAt: string;
+  iocs?: Record<string, unknown>[];
+  findings?: Record<string, unknown>[];
+}
 
 export default function ReportsPage() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadReports();
-  }, []);
 
   async function loadReports() {
     try {
@@ -31,6 +37,11 @@ export default function ReportsPage() {
     }
   }
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadReports();
+  }, []);
+
   const exportReport = async (id: string, format: "md" | "json") => {
     try {
       window.open(`/api/reports/${id}/export?format=${format}`, "_blank");
@@ -45,7 +56,7 @@ export default function ReportsPage() {
       const res = await fetch(`/api/reports/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
       setReports((prev) => prev.filter((r) => r._id !== id));
-    } catch (e) {
+    } catch {
       alert("Failed to delete report");
     }
   };
@@ -74,7 +85,7 @@ export default function ReportsPage() {
 
       <AnimatePresence>
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg flex items-start gap-3">
+          <div className="bg-status-error/10 border border-status-error/20 text-status-error p-4 rounded-lg flex items-start gap-3" role="alert">
             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
             <div>
               <h4 className="font-semibold text-sm">Failed to Load</h4>
@@ -85,15 +96,16 @@ export default function ReportsPage() {
       </AnimatePresence>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
+        <div className="flex flex-col items-center justify-center py-16" role="status" aria-label="Loading reports">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground mt-4">Loading reports...</p>
         </div>
       ) : reports.length === 0 ? (
         <div className="text-center py-16 bg-card/30 border border-border/50 rounded-xl">
           <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-muted-foreground">No reports found</h3>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            You haven't generated any intelligence reports yet.
+            You haven&apos;t generated any intelligence reports yet.
           </p>
         </div>
       ) : (

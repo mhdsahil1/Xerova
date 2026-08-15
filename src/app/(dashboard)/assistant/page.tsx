@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, ShieldAlert, Wifi, Globe, Hash, Bot, User, Loader2 } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageSquare, Send, ShieldAlert, Wifi, Globe, Hash, Bot, User } from "lucide-react";
+import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useRouter } from "next/navigation";
 
 interface Message {
   id: string;
@@ -24,6 +25,7 @@ export default function AssistantPage() {
       content: "Hello! I am the XEROVA rule-based analyst assistant. Paste any text containing IP addresses, domains, or hashes, and I will extract them for you so you can quickly analyze them.",
     }
   ]);
+  const router = useRouter();
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
@@ -98,14 +100,14 @@ export default function AssistantPage() {
   };
 
   const runAnalysis = (ioc: { type: string; value: string }) => {
-    window.location.href = `/threats?q=${encodeURIComponent(ioc.value)}`;
+    router.push(`/threats?q=${encodeURIComponent(ioc.value)}`);
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 h-[calc(100vh-8rem)] flex flex-col"
+      className="space-y-6 h-[calc(100dvh-8rem)] flex flex-col"
     >
       <div>
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
@@ -119,7 +121,7 @@ export default function AssistantPage() {
 
       <Card className="flex-1 flex flex-col bg-card/50 border-border/50 overflow-hidden">
         <ScrollArea className="flex-1 p-4">
-          <div className="space-y-6">
+          <div className="space-y-6" role="log" aria-label="Conversation messages">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -162,9 +164,9 @@ export default function AssistantPage() {
                           className="h-7 text-xs bg-background hover:bg-accent hover:border-primary transition-all group"
                           onClick={() => runAnalysis(ioc)}
                         >
-                          {ioc.type === "ip" && <Wifi className="w-3 h-3 mr-1.5 text-blue-400 group-hover:text-primary transition-colors" />}
-                          {ioc.type === "domain" && <Globe className="w-3 h-3 mr-1.5 text-green-400 group-hover:text-primary transition-colors" />}
-                          {ioc.type === "hash" && <Hash className="w-3 h-3 mr-1.5 text-orange-400 group-hover:text-primary transition-colors" />}
+                          {ioc.type === "ip" && <Wifi className="w-3 h-3 mr-1.5 text-status-info group-hover:text-primary transition-colors" />}
+                          {ioc.type === "domain" && <Globe className="w-3 h-3 mr-1.5 text-status-success group-hover:text-primary transition-colors" />}
+                          {ioc.type === "hash" && <Hash className="w-3 h-3 mr-1.5 text-severity-high group-hover:text-primary transition-colors" />}
                           {ioc.value}
                           <ShieldAlert className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </Button>
@@ -182,11 +184,13 @@ export default function AssistantPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   className="flex gap-3 max-w-[80%]"
+                  aria-live="polite"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyber-cyan to-cyber-blue text-white flex items-center justify-center shrink-0">
                     <Bot className="w-4 h-4" />
                   </div>
                   <div className="p-4 rounded-lg bg-background/50 border border-border/50 flex items-center gap-1">
+                    <span className="sr-only">Assistant is typing</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -216,6 +220,7 @@ export default function AssistantPage() {
               type="submit"
               disabled={!input.trim() || isTyping}
               className="bg-gradient-to-r from-cyber-cyan to-cyber-blue hover:opacity-90 text-white shrink-0"
+              aria-label="Send message"
             >
               <Send className="w-4 h-4" />
             </Button>

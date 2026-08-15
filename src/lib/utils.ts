@@ -24,11 +24,11 @@ export function formatDateTime(date: Date | string): string {
 }
 
 export function getRiskColor(score: number): string {
-  if (score >= 80) return "text-red-500";
-  if (score >= 60) return "text-orange-500";
-  if (score >= 40) return "text-yellow-500";
-  if (score >= 20) return "text-blue-500";
-  return "text-green-500";
+  if (score >= 80) return "text-severity-critical";
+  if (score >= 60) return "text-severity-high";
+  if (score >= 40) return "text-severity-medium";
+  if (score >= 20) return "text-severity-low";
+  return "text-severity-info";
 }
 
 export function getRiskLabel(score: number): string {
@@ -40,12 +40,13 @@ export function getRiskLabel(score: number): string {
 }
 
 export function getRiskBgColor(score: number): string {
-  if (score >= 80) return "bg-red-500/10 border-red-500/20";
-  if (score >= 60) return "bg-orange-500/10 border-orange-500/20";
-  if (score >= 40) return "bg-yellow-500/10 border-yellow-500/20";
-  if (score >= 20) return "bg-blue-500/10 border-blue-500/20";
-  return "bg-green-500/10 border-green-500/20";
+  if (score >= 80) return "bg-severity-critical/10 border-severity-critical/20";
+  if (score >= 60) return "bg-severity-high/10 border-severity-high/20";
+  if (score >= 40) return "bg-severity-medium/10 border-severity-medium/20";
+  if (score >= 20) return "bg-severity-low/10 border-severity-low/20";
+  return "bg-severity-info/10 border-severity-info/20";
 }
+
 
 export function detectSearchType(
   query: string
@@ -72,15 +73,16 @@ export function generateId(): string {
 export function getSeverityColor(severity: string): string {
   switch (severity) {
     case "critical":
-      return "text-red-500 bg-red-500/10";
+      return "text-severity-critical bg-severity-critical/10";
     case "high":
-      return "text-orange-500 bg-orange-500/10";
+      return "text-severity-high bg-severity-high/10";
     case "medium":
-      return "text-yellow-500 bg-yellow-500/10";
+      return "text-severity-medium bg-severity-medium/10";
     case "low":
-      return "text-blue-400 bg-blue-400/10";
+      return "text-severity-low bg-severity-low/10";
     case "info":
     default:
-      return "text-emerald-400 bg-emerald-400/10";
+      return "text-severity-info bg-severity-info/10";
   }
 }
+

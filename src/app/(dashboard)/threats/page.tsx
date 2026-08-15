@@ -27,7 +27,7 @@ import { getRiskColor, getRiskLabel, getSeverityColor } from "@/lib/utils";
 // --- API Error Handling ---
 function ApiErrorAlert({ error }: { error: string }) {
   return (
-    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg flex items-start gap-3">
+    <div className="bg-status-error/10 border border-status-error/20 text-status-error p-4 rounded-lg flex items-start gap-3" role="alert">
       <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
       <div>
         <h4 className="font-semibold text-sm">Lookup Failed</h4>
@@ -130,7 +130,7 @@ export default function ThreatsPage() {
               onValueChange={setSearchType}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-6 bg-background/50">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-background/50">
                 <TabsTrigger value="auto" className="text-xs">
                   Auto
                 </TabsTrigger>
@@ -181,6 +181,8 @@ export default function ThreatsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="flex flex-col items-center justify-center py-16"
+            role="status"
+            aria-label="Analyzing threat data"
           >
             <div className="relative">
               <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
@@ -205,7 +207,7 @@ export default function ThreatsPage() {
             {resultData.error ? (
               <ApiErrorAlert error={resultData.error} />
             ) : resultData.status === "queued" ? (
-              <div className="bg-blue-500/10 border border-blue-500/20 text-blue-500 p-4 rounded-lg flex items-start gap-3">
+              <div className="bg-status-info/10 border border-status-info/20 text-status-info p-4 rounded-lg flex items-start gap-3">
                 <Clock className="w-5 h-5 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-semibold text-sm">Analysis Queued</h4>
@@ -237,14 +239,13 @@ export default function ThreatsPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-2 mt-4">
             {["8.8.8.8", "example.com", "CVE-2024-3094"].map((example) => (
-              <Badge
+              <button
                 key={example}
-                variant="outline"
-                className="cursor-pointer hover:bg-accent/50 transition-colors font-mono"
+                className="inline-flex items-center rounded-full border border-border/50 px-2.5 py-0.5 text-xs font-mono cursor-pointer hover:bg-accent/50 transition-colors"
                 onClick={() => setQuery(example)}
               >
                 {example}
-              </Badge>
+              </button>
             ))}
           </div>
         </div>
@@ -490,7 +491,7 @@ function CVEResultView({ data }: { data: any }) {
               {data.patchAvailable && (
                 <Badge
                   variant="outline"
-                  className="text-[10px] text-green-400 border-green-400/30"
+                  className="text-[10px] text-status-success border-status-success/30"
                 >
                   Patch Available
                 </Badge>
@@ -744,7 +745,7 @@ function FlagItem({
           <span className="text-xs font-medium">Detected</span>
         </div>
       ) : (
-        <div className="flex items-center gap-1 text-green-400">
+        <div className="flex items-center gap-1 text-status-success">
           <CheckCircle2 className="w-4 h-4" />
           <span className="text-xs font-medium">Clean</span>
         </div>

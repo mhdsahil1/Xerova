@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useChartTheme } from "@/hooks/use-chart-theme";
 
 export interface ThreatTrendsChartProps {
   data: {
@@ -19,6 +20,8 @@ export interface ThreatTrendsChartProps {
 }
 
 export function ThreatTrendsChart({ data }: ThreatTrendsChartProps) {
+  const chartTheme = useChartTheme();
+
   return (
     <div className="h-[260px] w-full">
       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -51,29 +54,29 @@ export function ThreatTrendsChart({ data }: ThreatTrendsChartProps) {
           </defs>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="oklch(0.3 0.02 260)"
+            stroke={chartTheme.gridColor}
             vertical={false}
           />
           <XAxis
             dataKey="date"
-            stroke="oklch(0.5 0.02 260)"
+            stroke={chartTheme.axisColor}
             fontSize={12}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            stroke="oklch(0.5 0.02 260)"
+            stroke={chartTheme.axisColor}
             fontSize={12}
             tickLine={false}
             axisLine={false}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "oklch(0.16 0.02 260)",
-              border: "1px solid oklch(0.26 0.025 260)",
+              backgroundColor: chartTheme.tooltipBg,
+              border: `1px solid ${chartTheme.tooltipBorder}`,
               borderRadius: "8px",
               fontSize: "12px",
-              color: "oklch(0.93 0.01 260)",
+              color: chartTheme.tooltipText,
             }}
           />
           <Area
@@ -97,3 +100,4 @@ export function ThreatTrendsChart({ data }: ThreatTrendsChartProps) {
     </div>
   );
 }
+
