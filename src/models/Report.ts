@@ -16,6 +16,12 @@ export interface IReportDocument extends Document {
     value: string;
     context: string;
   }[];
+  threatEvidence: {
+    source: string;
+    description: string;
+    severity: "critical" | "high" | "medium" | "low" | "info";
+    date?: string;
+  }[];
   riskScore: number;
   relatedSearches: mongoose.Types.ObjectId[];
   relatedConversations: mongoose.Types.ObjectId[];
@@ -51,6 +57,20 @@ const IOCSchema = new Schema(
   { _id: false }
 );
 
+const ThreatEvidenceSchema = new Schema(
+  {
+    source: { type: String, required: true },
+    description: { type: String, required: true },
+    severity: {
+      type: String,
+      enum: ["critical", "high", "medium", "low", "info"],
+      default: "info",
+    },
+    date: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const ReportSchema = new Schema<IReportDocument>(
   {
     userId: {
@@ -76,6 +96,10 @@ const ReportSchema = new Schema<IReportDocument>(
     },
     findings: [FindingSchema],
     iocs: [IOCSchema],
+    threatEvidence: {
+      type: [ThreatEvidenceSchema],
+      default: [],
+    },
     riskScore: {
       type: Number,
       min: 0,

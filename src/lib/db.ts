@@ -8,12 +8,6 @@ try {
   // Ignore if already in progress or restricted
 }
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error("MONGODB_URI is not defined in environment variables");
-}
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -30,6 +24,12 @@ if (!global.mongoose) {
 }
 
 export async function connectDB() {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (!MONGODB_URI) {
+    throw new Error("MONGODB_URI is not defined in environment variables");
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -40,7 +40,7 @@ export async function connectDB() {
     };
 
     cached.promise = mongoose
-      .connect(MONGODB_URI!, opts)
+      .connect(MONGODB_URI, opts)
       .then((mongooseInstance) => {
         console.log("✅ Connected to MongoDB");
         return mongooseInstance;
