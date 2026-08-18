@@ -5,396 +5,457 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertCircle, CheckCircle, AlertTriangle, Shield, TrendingUp } from "lucide-react";
-
-interface URLAnalysisResult {
-  url: string;
-  verdict: "SAFE" | "SUSPICIOUS" | "MALICIOUS";
-  riskScore: number;
-  threatLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  
-  structural: {
-    protocol: "http" | "https" | "unknown";
-    domain: string;
-    hostname: string;
-    port: number | null;
-    path: string;
-    query: string;
-    urlLength: number;
-    subdominCount: number;
-    isIPBased: boolean;
-    ipAddress: string | null;
-  };
-  
-  urlCharacteristics: {
-    usesHTTPS: boolean;
-    hasExcessiveLength: boolean;
-    hasMultipleSubdomains: boolean;
-    hasIPAddress: boolean;
-    hasSuspiciousPort: boolean;
-    hasURLEncoding: boolean;
-    hasObfuscatedCharacters: boolean;
-    hasExcessiveRedirects: boolean;
-    redirectionChain: string[];
-    issues: string[];
-  };
-  
-  domainCharacteristics: {
-    hasPunycode: boolean;
-    hasSuspiciousTLD: boolean;
-    hasExcessiveHyphens: boolean;
-    lookalikeDomains: string[];
-    brandImpersonationDetected: boolean;
-    suspiciousKeywords: string[];
-    domainAge: number | null;
-    issues: string[];
-  };
-  
-  threatIntelligence: {
-    virusTotal: {
-      reputation: number;
-      maliciousEngines: number;
-      suspiciousEngines: number;
-      harmlessEngines: number;
-      undetectedEngines: number;
-      lastAnalysisDate: string | null;
-      categories: Record<string, string>;
-    } | null;
-    abuseScore: number | null;
-    isKnownMalicious: boolean;
-    suspiciousReports: number;
-  };
-  
-  riskBreakdown: {
-    urlStructuralRisk: number;
-    domainCharacteristicRisk: number;
-    threatIntelligenceRisk: number;
-    totalRisk: number;
-  };
-  
-  findings: Array<{
-    category: string;
-    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-    description: string;
-  }>;
-}
+import {
+  AlertCircle,
+  CheckCircle,
+  AlertTriangle,
+  Shield,
+  TrendingUp,
+  Globe,
+  Layers,
+  ShieldAlert,
+  Server,
+  Lock,
+  Unlock,
+} from "lucide-react";
+import type { URLAnalysisResult } from "@/lib/url-analyzer";
 
 interface URLAnalysisComponentProps {
   analysis: URLAnalysisResult;
 }
 
 const severityColors: Record<string, string> = {
-  CRITICAL: "bg-red-100 border-red-300 text-red-800",
-  HIGH: "bg-orange-100 border-orange-300 text-orange-800",
-  MEDIUM: "bg-yellow-100 border-yellow-300 text-yellow-800",
-  LOW: "bg-blue-100 border-blue-300 text-blue-800",
+  CRITICAL: "bg-red-500/10 border-red-500/30 text-red-400",
+  HIGH: "bg-orange-500/10 border-orange-500/30 text-orange-400",
+  MEDIUM: "bg-yellow-500/10 border-yellow-500/30 text-yellow-400",
+  LOW: "bg-blue-500/10 border-blue-500/30 text-blue-400",
 };
 
 const severityBadgeColors: Record<string, string> = {
   CRITICAL: "bg-red-600 text-white",
   HIGH: "bg-orange-600 text-white",
-  MEDIUM: "bg-yellow-600 text-white",
+  MEDIUM: "bg-yellow-600 text-slate-950 font-bold",
   LOW: "bg-blue-600 text-white",
 };
 
 const VerdictIcon = ({ verdict }: { verdict: string }) => {
   switch (verdict) {
     case "SAFE":
-      return <CheckCircle className="w-8 h-8 text-green-600" />;
+      return <CheckCircle className="w-8 h-8 text-emerald-500 shrink-0" />;
     case "SUSPICIOUS":
-      return <AlertTriangle className="w-8 h-8 text-yellow-600" />;
+      return <AlertTriangle className="w-8 h-8 text-amber-500 shrink-0" />;
     case "MALICIOUS":
-      return <AlertCircle className="w-8 h-8 text-red-600" />;
+      return <AlertCircle className="w-8 h-8 text-rose-500 shrink-0" />;
     default:
-      return <Shield className="w-8 h-8 text-gray-600" />;
+      return <Shield className="w-8 h-8 text-slate-400 shrink-0" />;
   }
 };
 
 export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    riskFactors: true,
     structural: true,
     findings: true,
   });
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
   };
 
   const getRiskColor = (score: number) => {
-    if (score < 25) return "text-green-600";
-    if (score < 50) return "text-yellow-600";
-    if (score < 75) return "text-orange-600";
-    return "text-red-600";
+    if (score < 25) return "text-emerald-500";
+    if (score < 50) return "text-yellow-500";
+    if (score < 75) return "text-orange-500";
+    return "text-red-500";
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 space-y-6 bg-gradient-to-b from-slate-50 to-white rounded-lg border border-slate-200">
-      {/* Header */}
+    <div className="w-full max-w-5xl mx-auto p-6 space-y-6 bg-card border border-border rounded-xl shadow-lg">
+      {/* Header & Main Summary */}
       <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div className="flex items-start gap-4 min-w-0">
             <VerdictIcon verdict={analysis.verdict} />
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">URL Analysis</h1>
-              <p className="text-slate-600 break-all">{analysis.url}</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold text-foreground">URL Security Analysis</h1>
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase ${
+                  analysis.verdict === "SAFE" ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" :
+                  analysis.verdict === "SUSPICIOUS" ? "bg-amber-500/15 text-amber-400 border border-amber-500/30" :
+                  "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                }`}>
+                  {analysis.verdict}
+                </span>
+              </div>
+              <p className="text-sm font-mono text-muted-foreground break-all mt-1">
+                {analysis.url}
+              </p>
             </div>
           </div>
+
+          {/* Sources badges */}
+          {analysis.sources && analysis.sources.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-muted-foreground mr-1">Sources:</span>
+              {analysis.sources.map((src, i) => (
+                <span
+                  key={i}
+                  className="text-[11px] px-2 py-0.5 rounded-md bg-secondary/80 text-secondary-foreground border border-border/50 font-mono"
+                >
+                  {src}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Risk Score Summary */}
+        {/* Risk Score Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Main Verdict */}
-          <div className="bg-white border-2 border-slate-200 rounded-lg p-4">
-            <div className="text-sm font-semibold text-slate-600 mb-2">Verdict</div>
-            <div className={`text-2xl font-bold ${
-              analysis.verdict === "SAFE" ? "text-green-600" :
-              analysis.verdict === "SUSPICIOUS" ? "text-yellow-600" :
-              "text-red-600"
-            }`}>
-              {analysis.verdict}
+          {/* Main Verdict Card */}
+          <div className="bg-background/50 border border-border/70 rounded-xl p-4 flex flex-col justify-between">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Verdict & Threat Level
             </div>
-            <div className="text-xs text-slate-500 mt-1">{analysis.threatLevel} Threat Level</div>
+            <div className="my-2">
+              <div
+                className={`text-2xl font-extrabold ${
+                  analysis.verdict === "SAFE"
+                    ? "text-emerald-400"
+                    : analysis.verdict === "SUSPICIOUS"
+                      ? "text-amber-400"
+                      : "text-rose-400"
+                }`}
+              >
+                {analysis.verdict}
+              </div>
+              <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                {analysis.threatLevel} Threat Level
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              {analysis.verdict === "SAFE"
+                ? "No high-confidence indicators of malicious behavior"
+                : analysis.verdict === "SUSPICIOUS"
+                  ? "Elevated heuristic or external risk indicators found"
+                  : "Critical threat detected — domain/URL flagged as malicious"}
+            </div>
           </div>
 
-          {/* Risk Score */}
-          <div className="bg-white border-2 border-slate-200 rounded-lg p-4">
-            <div className="text-sm font-semibold text-slate-600 mb-2">Risk Score</div>
-            <div className={`text-3xl font-bold ${getRiskColor(analysis.riskScore)}`}>
-              {analysis.riskScore}/100
+          {/* Unified Risk Score */}
+          <div className="bg-background/50 border border-border/70 rounded-xl p-4 flex flex-col justify-between">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Unified Risk Score
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2 mt-3">
-              <div
-                className={`h-2 rounded-full transition-all ${
-                  analysis.riskScore < 25 ? "bg-green-600" :
-                  analysis.riskScore < 50 ? "bg-yellow-600" :
-                  analysis.riskScore < 75 ? "bg-orange-600" :
-                  "bg-red-600"
-                }`}
-                style={{ width: `${analysis.riskScore}%` }}
-              />
+            <div className="my-2">
+              <div className={`text-3xl font-black font-mono ${getRiskColor(analysis.riskScore)}`}>
+                {analysis.riskScore}
+                <span className="text-sm font-normal text-muted-foreground"> / 100</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2 mt-2.5 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    analysis.riskScore < 35
+                      ? "bg-emerald-500"
+                      : analysis.riskScore < 60
+                        ? "bg-amber-500"
+                        : analysis.riskScore < 75
+                          ? "bg-orange-500"
+                          : "bg-rose-600"
+                  }`}
+                  style={{ width: `${Math.max(4, analysis.riskScore)}%` }}
+                />
+              </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-mono">
+              Severity: {analysis.severity?.toUpperCase()}
             </div>
           </div>
 
           {/* Risk Breakdown */}
-          <div className="bg-white border-2 border-slate-200 rounded-lg p-4">
-            <div className="text-sm font-semibold text-slate-600 mb-2">Risk Breakdown</div>
-            <div className="space-y-1 text-sm">
+          <div className="bg-background/50 border border-border/70 rounded-xl p-4 flex flex-col justify-between">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Score Breakdown
+            </div>
+            <div className="space-y-1.5 text-xs font-mono my-2">
               <div className="flex justify-between">
-                <span>Structural:</span>
-                <span className="font-semibold">{analysis.riskBreakdown.urlStructuralRisk}/25</span>
+                <span className="text-muted-foreground">Local Heuristics:</span>
+                <span className="font-semibold text-foreground">
+                  {analysis.riskBreakdown?.localHeuristicRisk ?? 0}/100
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span>Domain:</span>
-                <span className="font-semibold">{analysis.riskBreakdown.domainCharacteristicRisk}/35</span>
+              <div className="flex justify-between pl-2 text-[11px] text-muted-foreground">
+                <span>• Structure & Entropy:</span>
+                <span>{analysis.riskBreakdown?.urlStructuralRisk ?? 0}/25</span>
               </div>
-              <div className="flex justify-between">
-                <span>Threat Intel:</span>
-                <span className="font-semibold">{analysis.riskBreakdown.threatIntelligenceRisk}/40</span>
+              <div className="flex justify-between pl-2 text-[11px] text-muted-foreground">
+                <span>• Domain & Brand:</span>
+                <span>{analysis.riskBreakdown?.domainCharacteristicRisk ?? 0}/40</span>
+              </div>
+              <div className="flex justify-between pl-2 text-[11px] text-muted-foreground">
+                <span>• Path & Query:</span>
+                <span>{analysis.riskBreakdown?.pathQueryRisk ?? 0}/35</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-border/40">
+                <span className="text-muted-foreground">Threat Intelligence:</span>
+                <span className="font-semibold text-foreground">
+                  {analysis.riskBreakdown?.threatIntelligenceRisk ?? 0}/100
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Structural Analysis */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      {/* Identified Risk Factors Section */}
+      {analysis.riskFactors && analysis.riskFactors.length > 0 && (
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+          <button
+            onClick={() => toggleSection("riskFactors")}
+            className="w-full px-5 py-3.5 flex items-center justify-between bg-muted/40 hover:bg-muted/70 transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-400" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                Identified Risk Factors ({analysis.riskFactors.length})
+              </h2>
+            </div>
+            <span
+              className={`text-xs text-muted-foreground transition-transform duration-200 ${
+                expandedSections.riskFactors ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
+          </button>
+
+          {expandedSections.riskFactors && (
+            <div className="p-4 space-y-2.5 border-t border-border/60">
+              {analysis.riskFactors.map((rf, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start justify-between p-3 rounded-lg bg-background/60 border border-border/50 gap-3"
+                >
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded shrink-0 mt-0.5 ${
+                        severityBadgeColors[rf.severity] || "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {rf.severity}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-foreground">{rf.reason}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        Source: {rf.source} {rf.category ? `• Category: ${rf.category}` : ""}
+                      </div>
+                    </div>
+                  </div>
+                  {rf.scoreContribution !== undefined && rf.scoreContribution > 0 && (
+                    <span className="text-xs font-mono font-bold text-amber-400 shrink-0">
+                      +{rf.scoreContribution} pts
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Structural & Domain Analysis */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <button
           onClick={() => toggleSection("structural")}
-          className="w-full px-6 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
+          className="w-full px-5 py-3.5 flex items-center justify-between bg-muted/40 hover:bg-muted/70 transition-colors"
         >
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-5 h-5 text-slate-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Structural Analysis</h2>
+          <div className="flex items-center gap-2.5">
+            <TrendingUp className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+              Structural & Heuristic Telemetry
+            </h2>
           </div>
-          <span className={`transition-transform ${expandedSections.structural ? "rotate-180" : ""}`}>
+          <span
+            className={`text-xs text-muted-foreground transition-transform duration-200 ${
+              expandedSections.structural ? "rotate-180" : ""
+            }`}
+          >
             ▼
           </span>
         </button>
 
         {expandedSections.structural && (
-          <div className="px-6 py-4 space-y-3 border-t border-slate-200">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-slate-600">Protocol</div>
-                <div className="font-semibold text-slate-900 uppercase">{analysis.structural.protocol}</div>
-                {analysis.structural.protocol === "http" && (
-                  <div className="text-xs text-orange-600 mt-1">⚠️ Unencrypted</div>
-                )}
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">Domain</div>
-                <div className="font-semibold text-slate-900">{analysis.structural.domain}</div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">Hostname</div>
-                <div className="font-semibold text-slate-900 break-all">{analysis.structural.hostname}</div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">Port</div>
-                <div className="font-semibold text-slate-900">
-                  {analysis.structural.port || "default"}
+          <div className="p-5 space-y-4 border-t border-border/60">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Protocol</div>
+                <div className="flex items-center gap-1.5 mt-1 font-semibold text-foreground">
+                  {analysis.structural.protocol === "https" ? (
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <Unlock className="w-3.5 h-3.5 text-amber-400" />
+                  )}
+                  <span className="uppercase">{analysis.structural.protocol}</span>
                 </div>
               </div>
-              <div>
-                <div className="text-sm text-slate-600">URL Length</div>
-                <div className="font-semibold text-slate-900">{analysis.structural.urlLength} chars</div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Registered Domain</div>
+                <div className="mt-1 font-semibold text-foreground truncate font-mono text-xs" title={analysis.structural.domain}>
+                  {analysis.structural.domain || "N/A"}
+                </div>
               </div>
-              <div>
-                <div className="text-sm text-slate-600">Subdomains</div>
-                <div className="font-semibold text-slate-900">{analysis.structural.subdominCount}</div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Hostname</div>
+                <div className="mt-1 font-semibold text-foreground truncate font-mono text-xs" title={analysis.structural.hostname}>
+                  {analysis.structural.hostname}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Port / Service</div>
+                <div className="mt-1 font-semibold text-foreground font-mono text-xs">
+                  {analysis.structural.port || (analysis.structural.protocol === "https" ? "443" : "80")}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">URL Length</div>
+                <div className="mt-1 font-semibold text-foreground font-mono text-xs">
+                  {analysis.structural.urlLength} characters
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Subdomains</div>
+                <div className="mt-1 font-semibold text-foreground font-mono text-xs">
+                  {analysis.structural.subdominCount} depth
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Shannon Entropy</div>
+                <div className="mt-1 font-semibold text-foreground font-mono text-xs">
+                  {analysis.structural.entropy}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                <div className="text-[11px] uppercase font-mono text-muted-foreground">Host Type</div>
+                <div className="mt-1 font-semibold text-foreground font-mono text-xs">
+                  {analysis.structural.isIPBased ? "Direct IP Host" : "Standard Domain"}
+                </div>
               </div>
             </div>
 
-            {analysis.structural.isIPBased && (
-              <div className="bg-orange-50 border border-orange-200 rounded p-3 mt-4">
-                <div className="text-sm font-semibold text-orange-800">
-                  ⚠️ IP-Based URL: {analysis.structural.ipAddress}
-                </div>
+            {analysis.domainCharacteristics.brandImpersonationDetected && (
+              <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>
+                  <strong>Target Brand Impersonation:</strong> Domain contains keyword matches for{" "}
+                  <strong>{analysis.domainCharacteristics.impersonatedBrand?.toUpperCase()}</strong> on non-official host.
+                </span>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* URL Characteristics */}
-      {analysis.urlCharacteristics.issues.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-          <button
-            onClick={() => toggleSection("urlChar")}
-            className="w-full px-6 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
-          >
-            <h2 className="text-lg font-semibold text-slate-900">URL Issues</h2>
-            <span className={`transition-transform ${expandedSections["urlChar"] ? "rotate-180" : ""}`}>
-              ▼
-            </span>
-          </button>
-
-          {expandedSections["urlChar"] !== false && (
-            <div className="px-6 py-4 space-y-2 border-t border-slate-200">
-              {analysis.urlCharacteristics.issues.map((issue, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-sm">
-                  <span className="text-orange-600 font-bold mt-1">⚠️</span>
-                  <span className="text-slate-700">{issue}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Domain Characteristics */}
-      {analysis.domainCharacteristics.issues.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-          <button
-            onClick={() => toggleSection("domainChar")}
-            className="w-full px-6 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
-          >
-            <h2 className="text-lg font-semibold text-slate-900">Domain Issues</h2>
-            <span className={`transition-transform ${expandedSections["domainChar"] ? "rotate-180" : ""}`}>
-              ▼
-            </span>
-          </button>
-
-          {expandedSections["domainChar"] !== false && (
-            <div className="px-6 py-4 space-y-2 border-t border-slate-200">
-              {analysis.domainCharacteristics.issues.map((issue, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-sm">
-                  <span className="text-orange-600 font-bold mt-1">⚠️</span>
-                  <span className="text-slate-700">{issue}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Threat Intelligence */}
+      {/* External Threat Intelligence Vendors */}
       {analysis.threatIntelligence.virusTotal && (
-        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-          <button
-            onClick={() => toggleSection("threatIntel")}
-            className="w-full px-6 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
-          >
-            <h2 className="text-lg font-semibold text-slate-900">VirusTotal Analysis</h2>
-            <span className={`transition-transform ${expandedSections["threatIntel"] ? "rotate-180" : ""}`}>
-              ▼
-            </span>
-          </button>
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3.5 bg-muted/40 border-b border-border/60 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                External Threat Intelligence Signals
+              </h2>
+            </div>
+            {analysis.threatIntelligence.virusTotal.lastAnalysisDate && (
+              <span className="text-[11px] text-muted-foreground font-mono">
+                Analyzed: {new Date(analysis.threatIntelligence.virusTotal.lastAnalysisDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
 
-          {expandedSections["threatIntel"] !== false && (
-            <div className="px-6 py-4 space-y-3 border-t border-slate-200">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-red-50 rounded p-3">
-                  <div className="text-sm text-slate-600">Malicious</div>
-                  <div className="text-2xl font-bold text-red-600">
-                    {analysis.threatIntelligence.virusTotal.maliciousEngines}
-                  </div>
-                </div>
-                <div className="bg-orange-50 rounded p-3">
-                  <div className="text-sm text-slate-600">Suspicious</div>
-                  <div className="text-2xl font-bold text-orange-600">
-                    {analysis.threatIntelligence.virusTotal.suspiciousEngines}
-                  </div>
-                </div>
-                <div className="bg-green-50 rounded p-3">
-                  <div className="text-sm text-slate-600">Harmless</div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {analysis.threatIntelligence.virusTotal.harmlessEngines}
-                  </div>
-                </div>
-                <div className="bg-slate-100 rounded p-3">
-                  <div className="text-sm text-slate-600">Undetected</div>
-                  <div className="text-2xl font-bold text-slate-600">
-                    {analysis.threatIntelligence.virusTotal.undetectedEngines}
-                  </div>
+          <div className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase font-mono">Malicious Engines</div>
+                <div className="text-2xl font-extrabold text-rose-400 font-mono mt-1">
+                  {analysis.threatIntelligence.virusTotal.maliciousEngines}
                 </div>
               </div>
-              {analysis.threatIntelligence.virusTotal.lastAnalysisDate && (
-                <div className="text-sm text-slate-600">
-                  Last Analysis: {new Date(analysis.threatIntelligence.virusTotal.lastAnalysisDate).toLocaleString()}
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase font-mono">Suspicious Engines</div>
+                <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
+                  {analysis.threatIntelligence.virusTotal.suspiciousEngines}
                 </div>
-              )}
+              </div>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase font-mono">Harmless Engines</div>
+                <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
+                  {analysis.threatIntelligence.virusTotal.harmlessEngines}
+                </div>
+              </div>
+              <div className="bg-muted/40 border border-border/40 rounded-lg p-3">
+                <div className="text-xs text-muted-foreground uppercase font-mono">Undetected Engines</div>
+                <div className="text-2xl font-extrabold text-muted-foreground font-mono mt-1">
+                  {analysis.threatIntelligence.virusTotal.undetectedEngines}
+                </div>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* Findings */}
+      {/* Findings Section */}
       {analysis.findings.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <button
             onClick={() => toggleSection("findings")}
-            className="w-full px-6 py-4 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
+            className="w-full px-5 py-3.5 flex items-center justify-between bg-muted/40 hover:bg-muted/70 transition-colors"
           >
-            <h2 className="text-lg font-semibold text-slate-900">
-              Findings ({analysis.findings.length})
-            </h2>
-            <span className={`transition-transform ${expandedSections.findings ? "rotate-180" : ""}`}>
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-cyan-400" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                Detailed Telemetry Findings ({analysis.findings.length})
+              </h2>
+            </div>
+            <span
+              className={`text-xs text-muted-foreground transition-transform duration-200 ${
+                expandedSections.findings ? "rotate-180" : ""
+              }`}
+            >
               ▼
             </span>
           </button>
 
           {expandedSections.findings && (
-            <div className="px-6 py-4 space-y-4 border-t border-slate-200">
+            <div className="p-4 space-y-3 border-t border-border/60">
               {analysis.findings.map((finding, idx) => (
                 <div
                   key={idx}
-                  className={`border-l-4 pl-4 py-3 rounded ${severityColors[finding.severity]}`}
+                  className={`border-l-4 pl-4 py-3 rounded-r-lg border ${
+                    severityColors[finding.severity] || "bg-muted/30 border-border text-foreground"
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2 py-1 rounded ${severityBadgeColors[finding.severity]}`}>
-                          {finding.severity}
-                        </span>
-                        <span className="font-semibold">{finding.category}</span>
-                      </div>
-                      <p className="mt-2 text-sm">{finding.description}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                        severityBadgeColors[finding.severity]
+                      }`}
+                    >
+                      {finding.severity}
+                    </span>
+                    <span className="font-semibold text-xs text-foreground uppercase tracking-wider">
+                      {finding.category}
+                    </span>
                   </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{finding.description}</p>
                 </div>
               ))}
             </div>
@@ -402,28 +463,35 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
         </div>
       )}
 
-      {/* Recommendation */}
-      <div className={`rounded-lg p-6 border-2 ${
-        analysis.verdict === "SAFE" ? "bg-green-50 border-green-200" :
-        analysis.verdict === "SUSPICIOUS" ? "bg-yellow-50 border-yellow-200" :
-        "bg-red-50 border-red-200"
-      }`}>
-        <h3 className="font-bold text-lg mb-2">
-          {analysis.verdict === "SAFE" ? "✅ Safe to Visit" :
-           analysis.verdict === "SUSPICIOUS" ? "⚠️ Use Caution" :
-           "🚨 Do Not Visit"}
-        </h3>
-        <p className={
-          analysis.verdict === "SAFE" ? "text-green-800" :
-          analysis.verdict === "SUSPICIOUS" ? "text-yellow-800" :
-          "text-red-800"
-        }>
-          {analysis.verdict === "SAFE" ? 
-            "This URL appears to be safe. You can visit it with normal security practices." :
-           analysis.verdict === "SUSPICIOUS" ?
-            "This URL has some suspicious characteristics. Verify the domain and avoid entering sensitive information until you're confident it's legitimate." :
-            "This URL is flagged as potentially malicious. Avoid visiting it and do not enter any personal or financial information."}
-        </p>
+      {/* Security Recommendation Footnote */}
+      <div
+        className={`rounded-xl p-5 border ${
+          analysis.verdict === "SAFE"
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+            : analysis.verdict === "SUSPICIOUS"
+              ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
+              : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <VerdictIcon verdict={analysis.verdict} />
+          <div>
+            <h3 className="font-bold text-sm text-foreground">
+              {analysis.verdict === "SAFE"
+                ? "Security Recommendation: Low Risk"
+                : analysis.verdict === "SUSPICIOUS"
+                  ? "Security Recommendation: Exercise Caution"
+                  : "Security Recommendation: High Threat Detected — Block URL"}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {analysis.verdict === "SAFE"
+                ? "This URL exhibits low risk and no active indicators of brand impersonation or credential theft. Standard browsing caution applies."
+                : analysis.verdict === "SUSPICIOUS"
+                  ? "Suspicious structural, credential, or query patterns detected. Avoid submitting passwords, tokens, or personal identifiers."
+                  : "High confidence of malicious intent, brand impersonation, or credential harvesting infrastructure. Block access across organizational endpoints."}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

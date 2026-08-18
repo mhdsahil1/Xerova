@@ -219,13 +219,27 @@ If you'd like to improve XEROVA, feel free to fork the repository and open a Pul
 
 ---
 
-# 👨‍💻 Author
+# 👥 Authors & Contributors
 
-**Muhammed Sahil**
+### 🚀 Project Creator & Lead
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?logo=linkedin&logoColor=white)](https://linkedin.com/in/mhdsahil09)
-[![Portfolio](https://img.shields.io/badge/Portfolio-000000?logo=vercel&logoColor=white)](https://v0-sahil-dev.vercel.app/)
-[![Email](https://img.shields.io/badge/Email-D14836?logo=gmail&logoColor=white)](mailto:muhammedsahil182@gmail.com)
+**Muhammed Sahil**  
+*Lead Developer & Architect*
+
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mhdsahil1)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/mhdsahil09)
+[![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://v0-sahil-dev.vercel.app/)
+[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:muhammedsahil182@gmail.com)
+
+---
+
+### 🌟 Contributors
+
+Special thanks to the following contributors for their valuable contributions and support to the XEROVA platform:
+
+- **Hamza Raseel** ([@hamzaraseel7](https://github.com/hamzaraseel7)) — *Malicious URL detection & heuristic pattern analysis*
+- **Abhinav** — *Threat intelligence features & URL pattern algorithms*
+- **Nikedh** — *Security testing, feature research & platform enhancements*
 
 ---
 

@@ -911,23 +911,162 @@ function HashResultView({ data }: { data: any }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function URLResultView({ data }: { data: any }) {
+  const riskFactors = data.riskFactors || [];
+  const findings = data.findings || [];
+  const structural = data.structural || {};
+  const sources = data.sources || [];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Main Overview Card */}
       <Card className="bg-card/50 border-border/50 overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-xl font-mono font-bold truncate max-w-[300px]">
-              {data.url}
+        <div className="flex flex-col md:flex-row">
+          <div className="flex-1 p-6">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <span className="text-lg font-mono font-bold truncate max-w-md text-foreground" title={data.url}>
+                {data.url}
+              </span>
+              <Badge
+                className={`capitalize border ${getSeverityColor(data.severity || "info")}`}
+                variant="outline"
+              >
+                {data.severity || "info"}
+              </Badge>
+              {data.verdict && (
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] font-bold uppercase ${
+                    data.verdict === "SAFE"
+                      ? "text-status-success border-status-success/30"
+                      : data.verdict === "SUSPICIOUS"
+                        ? "text-status-warning border-status-warning/30"
+                        : "text-destructive border-destructive/30"
+                  }`}
+                >
+                  {data.verdict}
+                </Badge>
+              )}
+            </div>
+
+            {sources.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[11px] text-muted-foreground">Sources:</span>
+                {sources.map((src: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="text-[10px] font-mono">
+                    {src}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-background/30 border-t md:border-t-0 md:border-l border-border/30">
+            <span className={`text-4xl font-bold font-mono ${getRiskColor(data.riskScore || 0)}`}>
+              {data.riskScore ?? 0}
             </span>
-            <Badge
-              className={`capitalize border ${getSeverityColor(data.severity || "info")}`}
-              variant="outline"
-            >
-              Risk: {data.riskScore}/100
-            </Badge>
+            <span className="text-xs text-muted-foreground mt-1 font-mono">
+              Risk Score / 100
+            </span>
           </div>
         </div>
       </Card>
+
+      {/* Identified Risk Factors */}
+      {riskFactors.length > 0 && (
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-primary" />
+              Identified Risk Factors ({riskFactors.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {riskFactors.map((rf: any, i: number) => (
+              <div
+                key={i}
+                className="flex items-start justify-between p-3 rounded-lg bg-background/40 border border-border/30 gap-3"
+              >
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <Badge
+                    className={`text-[10px] uppercase shrink-0 mt-0.5 border ${getSeverityColor(rf.severity?.toLowerCase() || "info")}`}
+                    variant="outline"
+                  >
+                    {rf.severity}
+                  </Badge>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground">{rf.reason}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      Source: {rf.source}
+                    </p>
+                  </div>
+                </div>
+                {rf.scoreContribution && (
+                  <span className="text-xs font-mono font-bold text-primary shrink-0">
+                    +{rf.scoreContribution} pts
+                  </span>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Structural Telemetry */}
+      {structural.domain && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-card/50 border-border/50 p-4">
+            <p className="text-[10px] text-muted-foreground uppercase font-mono">Domain</p>
+            <p className="text-xs font-mono font-semibold truncate mt-1">{structural.domain}</p>
+          </Card>
+          <Card className="bg-card/50 border-border/50 p-4">
+            <p className="text-[10px] text-muted-foreground uppercase font-mono">Protocol</p>
+            <p className="text-xs font-mono font-semibold uppercase mt-1">{structural.protocol}</p>
+          </Card>
+          <Card className="bg-card/50 border-border/50 p-4">
+            <p className="text-[10px] text-muted-foreground uppercase font-mono">Length / Entropy</p>
+            <p className="text-xs font-mono font-semibold mt-1">
+              {structural.urlLength}c / {structural.entropy ?? "N/A"}
+            </p>
+          </Card>
+          <Card className="bg-card/50 border-border/50 p-4">
+            <p className="text-[10px] text-muted-foreground uppercase font-mono">Host Type</p>
+            <p className="text-xs font-mono font-semibold mt-1">
+              {structural.isIPBased ? "Direct IP Host" : "Standard Domain"}
+            </p>
+          </Card>
+        </div>
+      )}
+
+      {/* Telemetry Findings */}
+      {findings.length > 0 && (
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <FileSearch className="w-4 h-4 text-primary" />
+              Detailed Telemetry Findings ({findings.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {findings.map((finding: any, i: number) => (
+              <div
+                key={i}
+                className="p-3 rounded-lg bg-background/40 border border-border/30 space-y-1"
+              >
+                <div className="flex items-center gap-2">
+                  <Badge
+                    className={`text-[10px] uppercase border ${getSeverityColor(finding.severity?.toLowerCase() || "info")}`}
+                    variant="outline"
+                  >
+                    {finding.severity}
+                  </Badge>
+                  <span className="text-xs font-semibold">{finding.category}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{finding.description}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

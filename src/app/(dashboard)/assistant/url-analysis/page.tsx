@@ -8,71 +8,7 @@ import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Search, Loader2 } from "lucide-react";
 import { URLAnalysisComponent } from "@/components/url-analysis/URLAnalysisComponent";
 
-interface URLAnalysisResult {
-  url: string;
-  verdict: "SAFE" | "SUSPICIOUS" | "MALICIOUS";
-  riskScore: number;
-  threatLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  structural: {
-    protocol: "http" | "https" | "unknown";
-    domain: string;
-    hostname: string;
-    port: number | null;
-    path: string;
-    query: string;
-    urlLength: number;
-    subdominCount: number;
-    isIPBased: boolean;
-    ipAddress: string | null;
-  };
-  urlCharacteristics: {
-    usesHTTPS: boolean;
-    hasExcessiveLength: boolean;
-    hasMultipleSubdomains: boolean;
-    hasIPAddress: boolean;
-    hasSuspiciousPort: boolean;
-    hasURLEncoding: boolean;
-    hasObfuscatedCharacters: boolean;
-    hasExcessiveRedirects: boolean;
-    redirectionChain: string[];
-    issues: string[];
-  };
-  domainCharacteristics: {
-    hasPunycode: boolean;
-    hasSuspiciousTLD: boolean;
-    hasExcessiveHyphens: boolean;
-    lookalikeDomains: string[];
-    brandImpersonationDetected: boolean;
-    suspiciousKeywords: string[];
-    domainAge: number | null;
-    issues: string[];
-  };
-  threatIntelligence: {
-    virusTotal: {
-      reputation: number;
-      maliciousEngines: number;
-      suspiciousEngines: number;
-      harmlessEngines: number;
-      undetectedEngines: number;
-      lastAnalysisDate: string | null;
-      categories: Record<string, string>;
-    } | null;
-    abuseScore: number | null;
-    isKnownMalicious: boolean;
-    suspiciousReports: number;
-  };
-  riskBreakdown: {
-    urlStructuralRisk: number;
-    domainCharacteristicRisk: number;
-    threatIntelligenceRisk: number;
-    totalRisk: number;
-  };
-  findings: Array<{
-    category: string;
-    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-    description: string;
-  }>;
-}
+import type { URLAnalysisResult } from "@/lib/url-analyzer";
 
 export default function URLAnalysisPage() {
   const [url, setUrl] = useState<string>("");

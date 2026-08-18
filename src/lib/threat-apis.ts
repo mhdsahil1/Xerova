@@ -992,3 +992,36 @@ export async function mergedDomainLookup(domain: string) {
     severity: scoreToSeverity(riskScore),
   };
 }
+
+// ============================================================
+// Merged URL Lookup (Two-Layer Local Heuristics + Multi-Vendor Intel)
+// ============================================================
+export async function mergedURLLookup(url: string) {
+  const { analyzeURL } = await import("./url-analysis-service");
+  const analysis = await analyzeURL(url);
+
+  return {
+    url: analysis.url,
+    riskScore: analysis.riskScore,
+    severity: analysis.severity,
+    verdict: analysis.verdict,
+    threatLevel: analysis.threatLevel,
+    sources: analysis.sources,
+    riskFactors: analysis.riskFactors,
+    riskBreakdown: analysis.riskBreakdown,
+    structural: analysis.structural,
+    urlCharacteristics: analysis.urlCharacteristics,
+    domainCharacteristics: analysis.domainCharacteristics,
+    threatIntelligence: analysis.threatIntelligence,
+    findings: analysis.findings,
+    lastAnalysisStats: analysis.threatIntelligence?.virusTotal
+      ? {
+          malicious: analysis.threatIntelligence.virusTotal.maliciousEngines,
+          suspicious: analysis.threatIntelligence.virusTotal.suspiciousEngines,
+          harmless: analysis.threatIntelligence.virusTotal.harmlessEngines,
+          undetected: analysis.threatIntelligence.virusTotal.undetectedEngines,
+        }
+      : null,
+  };
+}
+

@@ -13,13 +13,15 @@ import {
   AlertCircle,
   User,
   CheckCircle2,
+  ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerSchema, type RegisterInput } from "@/lib/validations";
-import CyberGrid from "@/components/shared/CyberGrid";
+import BlackHole from "@/components/originkit/ui/blackhole";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -70,103 +72,170 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
-      <CyberGrid />
-      <div className="absolute inset-0 bg-gradient-to-br from-cyber-purple/5 via-transparent to-cyber-cyan/5" />
+    <div className="dark relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-black text-foreground select-none px-4 py-8">
+      {/* 3D Black Hole Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <BlackHole
+          colors={[
+            "#a855f7",
+            "#6366f1",
+            "#3b82f6",
+            "#00f0ff",
+            "#38bdf8",
+            "#ffffff",
+          ]}
+          particleCount={1300}
+          particleSize={4}
+          orbitSpeed={3.4}
+          pullSpeed={0.5}
+          outerRadius={95}
+          tilt={22}
+          tiltSideway={140}
+          trail={46}
+          showCenter={true}
+          centre={{ voidRadius: 42, voidX: 50, voidY: 50 }}
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Cyber Gradient & Radial Vignette Overlays */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.06)_0%,rgba(2,6,23,0.3)_45%,rgba(0,0,0,0.85)_100%)] pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 pointer-events-none z-[1]" />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md mx-4"
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-[460px] mx-4 my-8"
       >
-        <div className="glass rounded-2xl p-8 shadow-2xl glow-purple">
-          {/* Logo */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex flex-col items-center mb-8"
-          >
-            <Image
-              src="/XEROVA final.svg"
-              alt="XEROVA Logo"
-              width={200}
-              height={56}
-              className="h-14 w-auto object-contain mb-3 drop-shadow-lg"
-              priority
-            />
-          </motion.div>
+        {/* Outer Glow */}
+        <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-r from-purple-500/25 via-blue-500/15 to-cyan-500/25 blur-2xl opacity-75 -z-10" />
 
-          {/* Error */}
+        {/* Main Card */}
+        <div className="relative rounded-2xl bg-[#080d1a]/85 backdrop-blur-2xl border border-purple-500/20 p-8 sm:p-9 shadow-[0_0_50px_-10px_rgba(168,85,247,0.2)] overflow-hidden">
+          {/* Top Hairline */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-400/80 to-transparent" />
+
+          {/* Corner Accents */}
+          <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-purple-400/60 rounded-tl" />
+          <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-purple-400/60 rounded-tr" />
+          <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-purple-400/30 rounded-bl" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-purple-400/30 rounded-br" />
+
+          {/* Header */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono font-medium bg-purple-950/70 text-purple-300 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)] mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-400"></span>
+              </span>
+              <span>ANALYST ONBOARDING PORTAL</span>
+            </div>
+
+            <div className="px-5 py-2.5 rounded-xl bg-white/95 backdrop-blur-md shadow-[0_0_25px_rgba(168,85,247,0.2)] border border-white/40 mb-3 flex items-center justify-center transition-transform hover:scale-[1.02]">
+              <Image
+                src="/XEROVA final.svg"
+                alt="XEROVA — Observe. Analyze. Defend."
+                width={180}
+                height={48}
+                className="h-10 w-auto object-contain drop-shadow-sm"
+                priority
+              />
+            </div>
+
+            <p className="text-xs text-slate-400 font-mono tracking-wide text-center">
+              Create your analyst credentials to deploy defense workflows
+            </p>
+          </div>
+
+          {/* Error Banner */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-sm text-destructive"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-5 p-3.5 rounded-xl bg-red-950/50 border border-red-500/30 flex items-start gap-2.5 text-xs text-red-300 shadow-inner"
             >
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              {error}
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">{error}</span>
             </motion.div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="name"
+                className="text-xs font-semibold uppercase tracking-wider text-slate-200 block"
+              >
+                Full Name
+              </Label>
+              <div className="relative group">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-400 transition-colors pointer-events-none" />
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Alex Mercer"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                  className="pl-10 h-11 bg-slate-950/80 border-slate-700/80 text-white placeholder:text-slate-500 rounded-xl focus-visible:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500/25 transition-all text-sm"
                   disabled={isLoading}
+                  required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="email"
+                className="text-xs font-semibold uppercase tracking-wider text-slate-200 block"
+              >
+                Work Email
+              </Label>
+              <div className="relative group">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-400 transition-colors pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="analyst@xerova.io"
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                  className="pl-10 h-11 bg-slate-950/80 border-slate-700/80 text-white placeholder:text-slate-500 rounded-xl focus-visible:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500/25 transition-all text-sm"
                   disabled={isLoading}
+                  required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="password"
+                className="text-xs font-semibold uppercase tracking-wider text-slate-200 block"
+              >
+                Password
+              </Label>
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-400 transition-colors pointer-events-none" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="••••••••••••"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="pl-10 pr-10 h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                  className="pl-10 pr-10 h-11 bg-slate-950/80 border-slate-700/80 text-white placeholder:text-slate-500 rounded-xl focus-visible:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500/25 transition-all text-sm font-mono tracking-wide"
                   disabled={isLoading}
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-400 transition-colors p-1 cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -182,15 +251,15 @@ export default function RegisterPage() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
-                  className="space-y-2"
+                  className="space-y-1.5 pt-1"
                 >
                   <div
-                    className="flex gap-1"
+                    className="flex gap-1.5"
                     role="progressbar"
                     aria-valuenow={passwordStrength.level * 25}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    aria-label={`Password strength: ${passwordStrength.label || 'none'}`}
+                    aria-label={`Password strength: ${passwordStrength.label || "none"}`}
                   >
                     {[1, 2, 3, 4].map((level) => (
                       <div
@@ -198,34 +267,34 @@ export default function RegisterPage() {
                         className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
                           level <= passwordStrength.level
                             ? passwordStrength.color
-                            : "bg-muted"
+                            : "bg-slate-800"
                         }`}
                       />
                     ))}
                   </div>
-                  <p
-                    className={`text-xs ${
-                      passwordStrength.level >= 3
-                        ? "text-status-success"
-                        : passwordStrength.level >= 2
-                          ? "text-status-warning"
-                          : "text-status-error"
-                    }`}
-                  >
-                    {passwordStrength.label}
-                  </p>
+                  <div className="flex justify-between items-center text-[11px] font-mono">
+                    <span className="text-slate-400">Security Score:</span>
+                    <span className={passwordStrength.textColor}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
                 </motion.div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-xs font-semibold uppercase tracking-wider text-slate-200 block"
+              >
+                Confirm Password
+              </Label>
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-purple-400 transition-colors pointer-events-none" />
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="••••••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) =>
                     setFormData({
@@ -233,41 +302,52 @@ export default function RegisterPage() {
                       confirmPassword: e.target.value,
                     })
                   }
-                  className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                  className="pl-10 pr-10 h-11 bg-slate-950/80 border-slate-700/80 text-white placeholder:text-slate-500 rounded-xl focus-visible:border-purple-400 focus-visible:ring-2 focus-visible:ring-purple-500/25 transition-all text-sm font-mono tracking-wide"
                   disabled={isLoading}
+                  required
                 />
                 {formData.confirmPassword &&
                   formData.password === formData.confirmPassword && (
-                    <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-status-success" />
+                    <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
                   )}
               </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-cyber-purple to-cyber-blue hover:opacity-90 text-white font-semibold transition-all duration-200 mt-2"
+              className="w-full h-11 mt-3 bg-gradient-to-r from-purple-500 via-indigo-600 to-cyan-500 hover:from-purple-400 hover:via-indigo-500 hover:to-cyan-400 text-white font-semibold text-sm rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(168,85,247,0.5)] active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-2"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating account...
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Provisioning Account...</span>
                 </>
               ) : (
-                "Create Account"
+                <>
+                  <span>Create Analyst Account</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
               )}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+          {/* Sign in link */}
+          <p className="mt-6 text-center text-xs text-slate-400">
+            Already have an analyst account?{" "}
             <Link
               href="/login"
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
+              className="text-purple-400 hover:text-purple-300 font-semibold transition-colors underline-offset-4 hover:underline"
             >
               Sign In
             </Link>
           </p>
+
+          {/* Bottom Security Footer */}
+          <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 font-mono tracking-tight">
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400/80" />
+            <span>Encrypted Registration Pipeline</span>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -281,14 +361,26 @@ function getPasswordStrength(password: string) {
   if (/[0-9]/.test(password)) level++;
   if (/[^A-Za-z0-9]/.test(password)) level++;
 
-  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+  const labels = ["", "Weak", "Moderate", "Good", "Strong"];
   const colors = [
     "",
-    "bg-severity-critical",
-    "bg-severity-medium",
-    "bg-severity-low",
-    "bg-status-success",
+    "bg-red-500",
+    "bg-amber-500",
+    "bg-blue-500",
+    "bg-emerald-500",
+  ];
+  const textColors = [
+    "",
+    "text-red-400",
+    "text-amber-400",
+    "text-blue-400",
+    "text-emerald-400",
   ];
 
-  return { level, label: labels[level], color: colors[level] };
+  return {
+    level,
+    label: labels[level],
+    color: colors[level],
+    textColor: textColors[level],
+  };
 }

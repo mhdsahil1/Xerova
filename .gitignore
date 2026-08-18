@@ -49,3 +49,9 @@ test-db.mjs
 # .gemini/
 
 .gemini/
+.originkit/
+
+URL_ANALYSIS_IMPLEMENTATION.md
+URL_ANALYSIS_MODULE.md
+URL_ANALYSIS_QUICK_REFERENCE.md
+URL_ANALYSIS_STATUS.txt

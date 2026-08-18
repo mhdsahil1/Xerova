@@ -10,7 +10,7 @@ import { sanitizeQuery, scoreToSeverity } from "@/lib/sanitize";
 import {
   mergedIPLookup,
   mergedDomainLookup,
-  vtLookupURL,
+  mergedURLLookup,
   vtLookupHash,
   nvdLookupCVE,
 } from "@/lib/threat-apis";
@@ -60,41 +60,9 @@ export async function POST(request: Request) {
       }
 
       case "url": {
-        const vtData = await vtLookupURL(query);
-        if (!vtData) {
-          results = {
-            url: query,
-            sources: [],
-            riskScore: 0,
-            severity: "info",
-            error: "Unable to analyze URL. VirusTotal may be unavailable.",
-          };
-        } else if ((vtData as Record<string, unknown>).status === "queued") {
-          results = {
-            url: query,
-            status: "queued",
-            message: "URL submitted for analysis. Please try again in a minute.",
-            sources: ["VirusTotal"],
-            riskScore: 0,
-            severity: "info",
-          };
-        } else {
-          const stats = (vtData as Record<string, unknown>)
-            .lastAnalysisStats as Record<string, number>;
-          const malicious = stats?.malicious ?? 0;
-          const total =
-            malicious + (stats?.undetected ?? 0) + (stats?.harmless ?? 0);
-          riskScore =
-            total > 0
-              ? Math.min(100, Math.round((malicious / total) * 100))
-              : 0;
-          results = {
-            ...(vtData as Record<string, unknown>),
-            riskScore,
-            severity: scoreToSeverity(riskScore),
-            sources: ["VirusTotal"],
-          };
-        }
+        const data = await mergedURLLookup(query);
+        results = data as unknown as Record<string, unknown>;
+        riskScore = data.riskScore;
         break;
       }
 
