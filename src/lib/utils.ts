@@ -24,27 +24,21 @@ export function formatDateTime(date: Date | string): string {
 }
 
 export function getRiskColor(score: number): string {
-  if (score >= 80) return "text-severity-critical";
-  if (score >= 60) return "text-severity-high";
-  if (score >= 40) return "text-severity-medium";
-  if (score >= 20) return "text-severity-low";
-  return "text-severity-info";
+  if (score >= 1) return "text-severity-critical";
+  return "text-status-success";
 }
 
 export function getRiskLabel(score: number): string {
-  if (score >= 80) return "Critical";
-  if (score >= 60) return "High";
-  if (score >= 40) return "Medium";
-  if (score >= 20) return "Low";
-  return "Info";
+  if (score >= 80) return "Critical Danger";
+  if (score >= 60) return "High Danger";
+  if (score >= 40) return "Medium Danger";
+  if (score >= 1) return "Danger";
+  return "Clean";
 }
 
 export function getRiskBgColor(score: number): string {
-  if (score >= 80) return "bg-severity-critical/10 border-severity-critical/20";
-  if (score >= 60) return "bg-severity-high/10 border-severity-high/20";
-  if (score >= 40) return "bg-severity-medium/10 border-severity-medium/20";
-  if (score >= 20) return "bg-severity-low/10 border-severity-low/20";
-  return "bg-severity-info/10 border-severity-info/20";
+  if (score >= 1) return "bg-severity-critical/10 border-severity-critical/20";
+  return "bg-status-success/10 border-status-success/20";
 }
 
 
@@ -71,7 +65,8 @@ export function generateId(): string {
 }
 
 export function getSeverityColor(severity: string): string {
-  switch (severity) {
+  switch (severity?.toLowerCase()) {
+    case "danger":
     case "critical":
       return "text-severity-critical bg-severity-critical/10";
     case "high":

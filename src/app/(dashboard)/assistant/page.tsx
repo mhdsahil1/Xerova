@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, ShieldAlert, Wifi, Globe, Hash, Bot, User } from "lucide-react";
+import { MessageSquare, Send, ShieldAlert, Wifi, Globe, Hash, Bot, User, Sparkles } from "lucide-react";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -17,90 +19,147 @@ interface Message {
   iocs?: { type: string; value: string }[];
 }
 
+// Simple IOC extraction for clickable badges (fallback + enhancement)
+function extractIOCs(text: string) {
+  const iocs: { type: string; value: string }[] = [];
+  const seen = new Set<string>();
+
+  const addIOC = (type: string, value: string) => {
+    const key = `${type}:${value}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      iocs.push({ type, value });
+    }
+  };
+
+  // Extract IPs (IPv4)
+  const ipv4Regex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g;
+  const ips = text.match(ipv4Regex) || [];
+  ips.forEach(ip => {
+    if (!ip.startsWith("127.") && !ip.startsWith("10.") && !ip.startsWith("192.168.")) {
+      addIOC("ip", ip);
+    }
+  });
+
+  // Extract Hashes (MD5, SHA1, SHA256)
+  const hashRegex = /\b[A-Fa-f0-9]{32}\b|\b[A-Fa-f0-9]{40}\b|\b[A-Fa-f0-9]{64}\b/g;
+  const hashes = text.match(hashRegex) || [];
+  hashes.forEach(hash => addIOC("hash", hash));
+
+  // Extract Domains (basic)
+  const domainRegex = /\b[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
+  const domains = text.match(domainRegex) || [];
+  domains.forEach(domain => {
+    if (!domain.match(/^[0-9.]+$/)) {
+      addIOC("domain", domain);
+    }
+  });
+
+  // Extract CVEs
+  const cveRegex = /\bCVE-\d{4}-\d{4,}\b/gi;
+  const cves = text.match(cveRegex) || [];
+  cves.forEach(cve => addIOC("cve", cve.toUpperCase()));
+
+  return iocs;
+}
+
 export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I am the XEROVA rule-based analyst assistant. Paste any text containing IP addresses, domains, or hashes, and I will extract them for you so you can quickly analyze them.",
+      content: "Hello! I'm **XEROVA AI**, your cybersecurity analyst assistant powered by Gemini. I can help you:\n\n- 🔍 **Analyze IOCs** — paste IPs, domains, hashes, or CVEs\n- 🛡️ **Explain threats** — understand attack patterns and TTPs\n- 📋 **Write playbooks** — incident response and remediation\n- 📊 **Summarize reports** — break down security advisories\n\nHow can I assist you today?",
     }
   ]);
   const router = useRouter();
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Simple Regex Extractors
-  const extractIOCs = (text: string) => {
-    const iocs: { type: string; value: string }[] = [];
-    
-    // Extract IPs (IPv4)
-    const ipv4Regex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g;
-    const ips = text.match(ipv4Regex) || [];
-    ips.forEach(ip => {
-      // Basic filter out local IPs
-      if (!ip.startsWith("127.") && !ip.startsWith("10.") && !ip.startsWith("192.168.")) {
-        if (!iocs.find(i => i.value === ip)) iocs.push({ type: "ip", value: ip });
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector("[data-radix-scroll-area-viewport]");
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
-    });
+    }
+  }, [messages, isTyping]);
 
-    // Extract Hashes (MD5, SHA1, SHA256)
-    const hashRegex = /\b[A-Fa-f0-9]{32}\b|\b[A-Fa-f0-9]{40}\b|\b[A-Fa-f0-9]{64}\b/g;
-    const hashes = text.match(hashRegex) || [];
-    hashes.forEach(hash => {
-      if (!iocs.find(i => i.value === hash)) iocs.push({ type: "hash", value: hash });
-    });
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
 
-    // Extract Domains (very basic)
-    const domainRegex = /\b[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
-    const domains = text.match(domainRegex) || [];
-    domains.forEach(domain => {
-      // Filter out IPs that got caught by domain regex
-      if (!domain.match(/^[0-9.]+$/) && !iocs.find(i => i.value === domain)) {
-        iocs.push({ type: "domain", value: domain });
-      }
-    });
-
-    return iocs;
-  };
-
-  const handleSend = () => {
-    if (!input.trim()) return;
-
+    const userContent = input.trim();
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input,
+      content: userContent,
+      iocs: extractIOCs(userContent),
     };
 
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setIsTyping(true);
 
-    // Simulate processing delay
-    setTimeout(() => {
-      const extracted = extractIOCs(userMsg.content);
-      
-      let responseContent = "";
-      if (extracted.length === 0) {
-        responseContent = "I couldn't detect any actionable IOCs (IPs, domains, or hashes) in your message.";
-      } else {
-        responseContent = `I found ${extracted.length} indicator(s) of compromise. Click on any of them below to run a full threat analysis.`;
+    try {
+      // Build messages array for the API (exclude the initial greeting)
+      const chatMessages = [...messages.filter(m => m.id !== "1"), userMsg].map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const res = await fetch("/api/assistant/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: chatMessages,
+          conversationId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to get response");
       }
+
+      // Extract IOCs from the AI response too
+      const responseIOCs = extractIOCs(data.response);
 
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: responseContent,
-        iocs: extracted,
+        content: data.response,
+        iocs: responseIOCs.length > 0 ? responseIOCs : undefined,
       };
 
       setMessages(prev => [...prev, assistantMsg]);
+
+      // Store conversation ID for follow-up messages
+      if (data.conversationId && !conversationId) {
+        setConversationId(data.conversationId);
+      }
+    } catch (err) {
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: err instanceof Error
+          ? `⚠️ ${err.message}`
+          : "⚠️ Something went wrong. Please try again.",
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
       setIsTyping(false);
-    }, 800);
+    }
   };
 
   const runAnalysis = (ioc: { type: string; value: string }) => {
-    router.push(`/threats?q=${encodeURIComponent(ioc.value)}`);
+    if (ioc.type === "cve") {
+      router.push(`/threats?query=${encodeURIComponent(ioc.value)}&type=cve`);
+    } else {
+      router.push(`/threats?q=${encodeURIComponent(ioc.value)}`);
+    }
   };
 
   return (
@@ -112,15 +171,19 @@ export default function AssistantPage() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
           <MessageSquare className="w-7 h-7 text-primary" />
-          AI Assistant <Badge variant="secondary" className="text-[10px] ml-2">Rule-Based Mode</Badge>
+          AI Assistant
+          <Badge variant="secondary" className="text-[10px] ml-2 gap-1">
+            <Sparkles className="w-3 h-3" />
+            Gemini-Powered
+          </Badge>
         </h1>
         <p className="text-muted-foreground mt-1">
-          Extract and analyze IOCs from raw logs, emails, or threat intel reports.
+          AI-powered cybersecurity analyst — analyze threats, explain findings, and get remediation guidance.
         </p>
       </div>
 
       <Card className="flex-1 flex flex-col bg-card/50 border-border/50 overflow-hidden">
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-6" role="log" aria-label="Conversation messages">
             {messages.map((msg) => (
               <div
@@ -144,18 +207,24 @@ export default function AssistantPage() {
                 </div>
                 <div className={`space-y-2 ${msg.role === "user" ? "text-right" : ""}`}>
                   <div
-                    className={`p-3 rounded-lg text-sm whitespace-pre-wrap ${
+                    className={`p-3 rounded-lg text-sm ${
                       msg.role === "user"
-                        ? "bg-primary/20 border border-primary/30 text-foreground"
-                        : "bg-background/50 border border-border/50"
+                        ? "bg-primary/20 border border-primary/30 text-foreground whitespace-pre-wrap"
+                        : "bg-background/50 border border-border/50 prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs"
                     }`}
                   >
-                    {msg.content}
+                    {msg.role === "assistant" ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                   
-                  {/* Extracted IOCs */}
+                  {/* Extracted IOCs as clickable badges */}
                   {msg.iocs && msg.iocs.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className={`flex flex-wrap gap-2 mt-2 ${msg.role === "user" ? "justify-end" : ""}`}>
                       {msg.iocs.map((ioc, idx) => (
                         <Button
                           key={idx}
@@ -167,7 +236,8 @@ export default function AssistantPage() {
                           {ioc.type === "ip" && <Wifi className="w-3 h-3 mr-1.5 text-status-info group-hover:text-primary transition-colors" />}
                           {ioc.type === "domain" && <Globe className="w-3 h-3 mr-1.5 text-status-success group-hover:text-primary transition-colors" />}
                           {ioc.type === "hash" && <Hash className="w-3 h-3 mr-1.5 text-severity-high group-hover:text-primary transition-colors" />}
-                          {ioc.value}
+                          {ioc.type === "cve" && <ShieldAlert className="w-3 h-3 mr-1.5 text-severity-critical group-hover:text-primary transition-colors" />}
+                          {ioc.value.length > 40 ? ioc.value.slice(0, 37) + "..." : ioc.value}
                           <ShieldAlert className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </Button>
                       ))}
@@ -190,7 +260,7 @@ export default function AssistantPage() {
                     <Bot className="w-4 h-4" />
                   </div>
                   <div className="p-4 rounded-lg bg-background/50 border border-border/50 flex items-center gap-1">
-                    <span className="sr-only">Assistant is typing</span>
+                    <span className="sr-only">XEROVA AI is thinking</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -212,7 +282,7 @@ export default function AssistantPage() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Paste logs, emails, or text containing IOCs..."
+              placeholder="Ask about threats, paste IOCs, or describe a security issue..."
               className="flex-1 bg-background/50 border-border/50 focus:border-primary"
               disabled={isTyping}
             />

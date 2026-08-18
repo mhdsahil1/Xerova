@@ -21,15 +21,9 @@ export function ThreatScoreGauge({ score }: ThreatScoreGaugeProps) {
 
   // Map score to semantic severity token color
   const strokeColor =
-    score >= 80
+    score >= 1
       ? chartTheme.severityCritical
-      : score >= 60
-        ? chartTheme.severityHigh
-        : score >= 40
-          ? chartTheme.severityMedium
-          : score >= 20
-            ? chartTheme.severityLow
-            : chartTheme.severityInfo;
+      : chartTheme.severityInfo;
 
   return (
     <div className="flex flex-col items-center py-4">
