@@ -35,6 +35,7 @@ import { getRiskColor, getRiskLabel, getSeverityColor } from "@/lib/utils";
 import { IOCExtractionPanel } from "@/components/shared/IOCExtractionPanel";
 import { CreateReportDialog } from "@/components/reports/CreateReportDialog";
 import type { ExtractedIOC } from "@/lib/ioc-extractor";
+import { KineticTextLoader } from "@/components/ui/kinetic-text-loader";
 
 // --- API Error Handling ---
 function ApiErrorAlert({ error }: { error: string }) {
@@ -52,12 +53,13 @@ function ApiErrorAlert({ error }: { error: string }) {
 export default function ThreatsPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col items-center justify-center py-16" role="status" aria-label="Loading threat intelligence">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          <ShieldAlert className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+      <div className="flex flex-col items-center justify-center py-20 min-h-[50vh]" role="status" aria-label="Loading threat intelligence">
+        <div className="scale-75 md:scale-90 mb-4 opacity-80">
+          <KineticTextLoader />
         </div>
-        <p className="text-muted-foreground mt-4 text-sm">Loading threat intelligence...</p>
+        <p className="text-muted-foreground text-sm font-mono tracking-wide mt-8 animate-pulse">
+          Loading threat intelligence...
+        </p>
       </div>
     }>
       <ThreatsPageInner />
@@ -217,12 +219,12 @@ function ThreatsPageInner() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-            <ShieldAlert className="w-7 h-7 text-primary" />
-            Threat Intelligence & IOC Investigation
+          <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2.5">
+            <ShieldAlert className="w-5 h-5 text-primary" />
+            Threat Intelligence
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Analyze IPs, domains, hashes, URLs, CVEs, extract IOCs from raw text, and manage search history.
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Investigate indicators across multiple intelligence sources.
           </p>
         </div>
         <Button
@@ -230,7 +232,7 @@ function ThreatsPageInner() {
             setSelectedInvForReport(null);
             setCreateReportOpen(true);
           }}
-          className="bg-gradient-to-r from-cyber-cyan to-cyber-blue text-white shrink-0 font-semibold"
+          className="bg-primary text-primary-foreground shrink-0 font-semibold"
         >
           <PlusCircle className="w-4 h-4 mr-2" />
           New Report
@@ -239,24 +241,24 @@ function ThreatsPageInner() {
 
       {/* Main Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-background/50 border border-border/50">
-          <TabsTrigger value="lookup" className="text-xs md:text-sm flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 bg-[#12141a] border border-white/[0.08] p-1 rounded-xl">
+          <TabsTrigger value="lookup" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black font-semibold">
             <Search className="w-4 h-4" />
             Threat Lookup
           </TabsTrigger>
-          <TabsTrigger value="extractor" className="text-xs md:text-sm flex items-center gap-2">
-            <FileSearch className="w-4 h-4 text-primary" />
+          <TabsTrigger value="extractor" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black font-semibold">
+            <FileSearch className="w-4 h-4" />
             IOC Extractor
           </TabsTrigger>
-          <TabsTrigger value="history" className="text-xs md:text-sm flex items-center gap-2">
-            <History className="w-4 h-4 text-cyan-400" />
+          <TabsTrigger value="history" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black font-semibold">
+            <History className="w-4 h-4" />
             Investigation History
           </TabsTrigger>
         </TabsList>
 
         {/* TAB 1: THREAT LOOKUP */}
         <TabsContent value="lookup" className="space-y-6 pt-4">
-          <Card className="bg-card/50 border-border/50">
+          <Card className="bg-card border-border">
             <CardContent className="pt-6">
               <form onSubmit={handleSearchSubmit} className="space-y-4">
                 <div className="flex gap-3">
@@ -266,18 +268,18 @@ function ThreatsPageInner() {
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="Enter IP, domain, hash, URL, or CVE ID..."
-                      className="pl-11 h-12 text-base bg-background/50 border-border/50 focus:border-primary font-mono"
+                      className="pl-11 h-12 text-base bg-card border-border/50 focus:border-primary/60 font-mono"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="h-12 px-8 bg-gradient-to-r from-cyber-cyan to-cyber-blue hover:opacity-90 text-white font-semibold"
+                    className="h-12 px-7 rounded-xl bg-white hover:bg-white/90 text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
                     disabled={isSearching || !query.trim()}
                   >
                     {isSearching ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin text-black" />
                     ) : (
-                      "Analyze"
+                      "Analyze Target"
                     )}
                   </Button>
                 </div>
@@ -288,7 +290,7 @@ function ThreatsPageInner() {
                   onValueChange={setSearchType}
                   className="w-full"
                 >
-                  <TabsList className="grid w-full grid-cols-6 bg-background/50">
+                  <TabsList className="grid w-full grid-cols-6 bg-card">
                     <TabsTrigger value="auto" className="text-xs">
                       Auto
                     </TabsTrigger>
@@ -338,13 +340,12 @@ function ThreatsPageInner() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center py-16"
+                className="flex flex-col items-center justify-center py-20"
               >
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                  <ShieldAlert className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="scale-75 md:scale-90 mb-4 opacity-80">
+                  <KineticTextLoader />
                 </div>
-                <p className="text-muted-foreground mt-4 text-sm">
+                <p className="text-muted-foreground text-sm font-mono tracking-wide mt-8 animate-pulse">
                   Analyzing threat data across global sources...
                 </p>
               </motion.div>
@@ -448,7 +449,7 @@ function ThreatsPageInner() {
 
         {/* TAB 3: INVESTIGATION HISTORY */}
         <TabsContent value="history" className="pt-4 space-y-4">
-          <Card className="bg-card/50 border-border/50">
+          <Card className="bg-card border-border">
             <CardHeader className="py-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -478,14 +479,14 @@ function ThreatsPageInner() {
                     value={historySearch}
                     onChange={(e) => setHistorySearch(e.target.value)}
                     placeholder="Search past queries..."
-                    className="pl-9 h-9 text-xs bg-background/50 border-border/50"
+                    className="pl-9 h-9 text-xs bg-card border-border/50"
                   />
                 </div>
 
                 <select
                   value={historyType}
                   onChange={(e) => setHistoryType(e.target.value)}
-                  className="h-9 px-3 text-xs rounded-md bg-background/50 border border-border/50 focus:border-primary uppercase"
+                  className="h-9 px-3 text-xs rounded-md bg-card border border-border focus:border-primary uppercase"
                 >
                   <option value="all">All Types</option>
                   <option value="ip">IP</option>
@@ -498,7 +499,7 @@ function ThreatsPageInner() {
                 <select
                   value={historySeverity}
                   onChange={(e) => setHistorySeverity(e.target.value)}
-                  className="h-9 px-3 text-xs rounded-md bg-background/50 border border-border/50 focus:border-primary capitalize"
+                  className="h-9 px-3 text-xs rounded-md bg-card border border-border focus:border-primary capitalize"
                 >
                   <option value="all">All Severities</option>
                   <option value="critical">Critical</option>
@@ -514,7 +515,7 @@ function ThreatsPageInner() {
                   <Loader2 className="w-6 h-6 text-primary animate-spin" />
                 </div>
               ) : historyItems.length === 0 ? (
-                <div className="py-12 text-center text-sm text-muted-foreground bg-background/30 rounded-lg border border-border/30">
+                <div className="py-12 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg border border-border">
                   No matching investigation history found.
                 </div>
               ) : (
@@ -522,7 +523,7 @@ function ThreatsPageInner() {
                   {historyItems.map((item) => (
                     <div
                       key={item._id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-background/40 border border-border/40 hover:border-primary/40 transition-all gap-3 group"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-card border border-border hover:border-primary/40 transition-all gap-3 group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <Badge
@@ -583,7 +584,7 @@ function ThreatsPageInner() {
 
                   {/* Pagination Controls */}
                   {historyTotalPages > 1 && (
-                    <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                    <div className="flex items-center justify-between pt-3 border-t border-border">
                       <span className="text-xs text-muted-foreground">
                         Showing page {historyPage} of {historyTotalPages} &middot; {historyTotal} total
                       </span>
@@ -666,7 +667,7 @@ function IPDomainResultView({
   return (
     <div className="space-y-4">
       {/* Summary Header */}
-      <Card className="bg-card/50 border-border/50 overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <div className="flex flex-col md:flex-row">
           <div className="flex-1 p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -724,7 +725,7 @@ function IPDomainResultView({
               )}
             </div>
           </div>
-          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-background/30 border-t md:border-t-0 md:border-l border-border/30">
+          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-muted/50 border-t md:border-t-0 md:border-l border-border">
             <span
               className={`text-5xl font-bold ${getRiskColor(data.riskScore || 0)}`}
             >
@@ -750,7 +751,7 @@ function IPDomainResultView({
       {/* Details Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Flags */}
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-base">Detection Flags</CardTitle>
           </CardHeader>
@@ -763,7 +764,7 @@ function IPDomainResultView({
         </Card>
 
         {/* Open Ports */}
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-base">Open Ports</CardTitle>
           </CardHeader>
@@ -782,10 +783,105 @@ function IPDomainResultView({
           </CardContent>
         </Card>
 
+        {/* alphaMountain.ai Telemetry */}
+        {data.alphaMountain && (
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <span className="text-cyan-400">αM</span> alphaMountain.ai AI Rating
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">AI Threat Score</span>
+                <span className="text-sm font-mono font-bold text-primary">
+                  {Number(data.alphaMountain.threatScore).toFixed(2)} / 5.0
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Calculated Risk</span>
+                <Badge variant="outline" className="text-xs font-mono">
+                  {data.alphaMountain.riskScore}% Risk
+                </Badge>
+              </div>
+              {data.alphaMountain.confidence && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Classification Confidence</span>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    {(Number(data.alphaMountain.confidence) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AlienVault OTX Validation & Whitelists */}
+        {data.otx?.validation && data.otx.validation.length > 0 && (
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                OTX Domain Validation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {data.otx.validation.map((v: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between text-xs p-2 rounded bg-card">
+                  <span className="font-medium text-foreground">{v.name || v.source}</span>
+                  <span className="text-muted-foreground text-[11px] truncate max-w-[200px]">{v.message}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AlienVault OTX Pulses */}
+        {data.otx?.pulses && data.otx.pulses.length > 0 && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-cyber-cyan" />
+                  AlienVault OTX Threat Pulses ({data.otx.pulseCount})
+                </span>
+                <Badge variant="secondary" className="text-[10px] font-mono">
+                  OTX Verified
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {data.otx.pulses.map((pulse: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-lg bg-card border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{pulse.name}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{pulse.description || `Author: ${pulse.author}`}</p>
+                    {pulse.tags && pulse.tags.length > 0 && (
+                      <div className="flex gap-1 flex-wrap pt-1">
+                        {pulse.tags.slice(0, 4).map((t: string, ti: number) => (
+                          <span key={ti} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-background/60 text-muted-foreground border border-border">
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono shrink-0">
+                    {pulse.created?.slice(0, 10)}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Threats */}
-        <Card className="bg-card/50 border-border/50 md:col-span-2">
+        <Card className="bg-card border-border md:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Threat History</CardTitle>
+            <CardTitle className="text-base">Threat History & Vendor Detections</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {data.threats?.length > 0 ? (
@@ -793,7 +889,7 @@ function IPDomainResultView({
               data.threats.map((threat: any, idx: number) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 rounded-lg bg-background/50"
+                  className="flex items-center justify-between p-3 rounded-lg bg-card"
                 >
                   <div className="flex items-center gap-3">
                     <Badge
@@ -829,7 +925,7 @@ function IPDomainResultView({
 function CVEResultView({ data }: { data: any }) {
   return (
     <div className="space-y-4">
-      <Card className="bg-card/50 border-border/50 overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <div className="flex flex-col md:flex-row">
           <div className="flex-1 p-6">
             <div className="flex items-center gap-3 mb-3">
@@ -860,7 +956,7 @@ function CVEResultView({ data }: { data: any }) {
               {data.description}
             </p>
           </div>
-          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-background/30 border-t md:border-t-0 md:border-l border-border/30">
+          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-muted/50 border-t md:border-t-0 md:border-l border-border">
             <span
               className={`text-5xl font-bold ${getRiskColor(data.cvssScore * 10)}`}
             >
@@ -880,7 +976,7 @@ function CVEResultView({ data }: { data: any }) {
 function HashResultView({ data }: { data: any }) {
   return (
     <div className="space-y-4">
-      <Card className="bg-card/50 border-border/50 overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-xl font-mono font-bold truncate max-w-[300px]">
@@ -892,6 +988,11 @@ function HashResultView({ data }: { data: any }) {
             >
               Risk: {data.riskScore}/100
             </Badge>
+            {data.otx?.adversary && (
+              <Badge variant="destructive" className="text-[10px] uppercase">
+                Adversary: {data.otx.adversary}
+              </Badge>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -899,10 +1000,35 @@ function HashResultView({ data }: { data: any }) {
               <p className="text-xs font-mono break-all">{data.sha256 || "N/A"}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Detection Rate</p>
-              <p className="text-sm font-semibold">{data.detectionRate}</p>
+              <p className="text-xs text-muted-foreground">Vendor Detection Rate</p>
+              <p className="text-sm font-semibold font-mono">{data.detectionRate}</p>
             </div>
+            {data.fileType && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">File Type</p>
+                <p className="text-xs font-mono">{data.fileType}</p>
+              </div>
+            )}
+            {data.otx?.pulseCount > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">AlienVault OTX Pulses</p>
+                <p className="text-xs font-mono font-semibold text-primary">{data.otx.pulseCount} threat pulse(s)</p>
+              </div>
+            )}
           </div>
+
+          {data.tags && data.tags.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-2">Threat Tags</p>
+              <div className="flex flex-wrap gap-1.5">
+                {data.tags.map((tag: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="text-[10px] font-mono">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
     </div>
@@ -919,7 +1045,7 @@ function URLResultView({ data }: { data: any }) {
   return (
     <div className="space-y-6">
       {/* Main Overview Card */}
-      <Card className="bg-card/50 border-border/50 overflow-hidden">
+      <Card className="bg-card border-border overflow-hidden">
         <div className="flex flex-col md:flex-row">
           <div className="flex-1 p-6">
             <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -960,7 +1086,7 @@ function URLResultView({ data }: { data: any }) {
             )}
           </div>
 
-          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-background/30 border-t md:border-t-0 md:border-l border-border/30">
+          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-muted/50 border-t md:border-t-0 md:border-l border-border">
             <span className={`text-4xl font-bold font-mono ${getRiskColor(data.riskScore || 0)}`}>
               {data.riskScore ?? 0}
             </span>
@@ -973,7 +1099,7 @@ function URLResultView({ data }: { data: any }) {
 
       {/* Identified Risk Factors */}
       {riskFactors.length > 0 && (
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-primary" />
@@ -984,7 +1110,7 @@ function URLResultView({ data }: { data: any }) {
             {riskFactors.map((rf: any, i: number) => (
               <div
                 key={i}
-                className="flex items-start justify-between p-3 rounded-lg bg-background/40 border border-border/30 gap-3"
+                className="flex items-start justify-between p-3 rounded-lg bg-card border border-border gap-3"
               >
                 <div className="flex items-start gap-2.5 min-w-0">
                   <Badge
@@ -1014,21 +1140,21 @@ function URLResultView({ data }: { data: any }) {
       {/* Structural Telemetry */}
       {structural.domain && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-card/50 border-border/50 p-4">
+          <Card className="bg-card border-border p-4">
             <p className="text-[10px] text-muted-foreground uppercase font-mono">Domain</p>
             <p className="text-xs font-mono font-semibold truncate mt-1">{structural.domain}</p>
           </Card>
-          <Card className="bg-card/50 border-border/50 p-4">
+          <Card className="bg-card border-border p-4">
             <p className="text-[10px] text-muted-foreground uppercase font-mono">Protocol</p>
             <p className="text-xs font-mono font-semibold uppercase mt-1">{structural.protocol}</p>
           </Card>
-          <Card className="bg-card/50 border-border/50 p-4">
+          <Card className="bg-card border-border p-4">
             <p className="text-[10px] text-muted-foreground uppercase font-mono">Length / Entropy</p>
             <p className="text-xs font-mono font-semibold mt-1">
               {structural.urlLength}c / {structural.entropy ?? "N/A"}
             </p>
           </Card>
-          <Card className="bg-card/50 border-border/50 p-4">
+          <Card className="bg-card border-border p-4">
             <p className="text-[10px] text-muted-foreground uppercase font-mono">Host Type</p>
             <p className="text-xs font-mono font-semibold mt-1">
               {structural.isIPBased ? "Direct IP Host" : "Standard Domain"}
@@ -1039,7 +1165,7 @@ function URLResultView({ data }: { data: any }) {
 
       {/* Telemetry Findings */}
       {findings.length > 0 && (
-        <Card className="bg-card/50 border-border/50">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <FileSearch className="w-4 h-4 text-primary" />
@@ -1050,7 +1176,7 @@ function URLResultView({ data }: { data: any }) {
             {findings.map((finding: any, i: number) => (
               <div
                 key={i}
-                className="p-3 rounded-lg bg-background/40 border border-border/30 space-y-1"
+                className="p-3 rounded-lg bg-card border border-border space-y-1"
               >
                 <div className="flex items-center gap-2">
                   <Badge
@@ -1100,7 +1226,7 @@ function FlagItem({
   detected: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+    <div className="flex items-center justify-between p-2 rounded-lg bg-card">
       <span className="text-sm">{label}</span>
       {detected ? (
         <div className="flex items-center gap-1 text-severity-critical">

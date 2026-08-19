@@ -15,6 +15,10 @@ import {
   abusixLookupIP,
   shodanLookupIP,
   shodanResolveDomain,
+  otxLookupURL,
+  otxLookupDomain,
+  alphaMountainLookupURI,
+  urlqueryLookup,
 } from "./threat-apis";
 
 import {
@@ -89,6 +93,9 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
         virusTotal: null,
         criminalIP: null,
         abusix: null,
+        otx: null,
+        alphaMountain: null,
+        urlquery: null,
         abuseScore: null,
         isKnownMalicious: false,
         suspiciousReports: 0,
@@ -169,6 +176,30 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     });
   }
 
+  if (threatIntelligence.otx && threatIntelligence.otx.pulseCount > 0) {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: threatIntelligence.otx.pulseCount >= 3 ? "CRITICAL" : "HIGH",
+      description: `AlienVault OTX: Indicator flagged in ${threatIntelligence.otx.pulseCount} threat pulse${threatIntelligence.otx.pulseCount > 1 ? "s" : ""}.`,
+    });
+  }
+
+  if (threatIntelligence.alphaMountain && threatIntelligence.alphaMountain.riskScore > 30) {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: threatIntelligence.alphaMountain.riskScore >= 70 ? "CRITICAL" : "HIGH",
+      description: `alphaMountain AI: Threat rating ${threatIntelligence.alphaMountain.threatScore.toFixed(2)}/5.0 (${threatIntelligence.alphaMountain.riskScore}% risk).`,
+    });
+  }
+
+  if (threatIntelligence.urlquery && threatIntelligence.urlquery.totalHits > 0) {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: "LOW",
+      description: `URLQuery: ${threatIntelligence.urlquery.totalHits} previous scan report(s) found in database.`,
+    });
+  }
+
   // Sort findings by severity
   const severityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   allFindings.sort(
@@ -210,6 +241,9 @@ interface ThreatIntelData {
   virusTotal: URLAnalysisResult["threatIntelligence"]["virusTotal"];
   criminalIP: URLAnalysisResult["threatIntelligence"]["criminalIP"];
   abusix: URLAnalysisResult["threatIntelligence"]["abusix"];
+  otx: URLAnalysisResult["threatIntelligence"]["otx"];
+  alphaMountain: URLAnalysisResult["threatIntelligence"]["alphaMountain"];
+  urlquery: URLAnalysisResult["threatIntelligence"]["urlquery"];
   abuseScore: number | null;
   isKnownMalicious: boolean;
   suspiciousReports: number;
@@ -223,6 +257,9 @@ async function fetchThreatIntelligence(
     virusTotal: null,
     criminalIP: null,
     abusix: null,
+    otx: null,
+    alphaMountain: null,
+    urlquery: null,
     abuseScore: null,
     isKnownMalicious: false,
     suspiciousReports: 0,
@@ -389,6 +426,76 @@ async function fetchThreatIntelligence(
       })()
     );
   }
+
+  // 6. AlienVault OTX Lookup (URL & Domain indicators)
+  queries.push(
+    (async () => {
+      try {
+        const otxData = await otxLookupURL(urlString);
+        const otxDomain = (!otxData || (otxData.pulseCount as number) === 0) && parsed.domain ? await otxLookupDomain(parsed.domain) : null;
+        const finalOtx = (otxData && (otxData.pulseCount as number) > 0) ? otxData : otxDomain;
+        if (finalOtx && typeof finalOtx.pulseCount === "number") {
+          result.otx = {
+            pulseCount: finalOtx.pulseCount as number,
+            pulses: ((finalOtx.pulses as Array<Record<string, unknown>>) || []).map((p) => ({
+              id: (p.id as string) || "",
+              name: (p.name as string) || "",
+              author: (p.author as string) || "",
+              tags: (p.tags as string[]) || [],
+            })),
+          };
+          if ((finalOtx.pulseCount as number) > 0) {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += finalOtx.pulseCount as number;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] OTX lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 7. alphaMountain.ai Threat & Category Intelligence
+  queries.push(
+    (async () => {
+      try {
+        const target = parsed.domain || urlString;
+        const alphaData = await alphaMountainLookupURI(target);
+        if (alphaData) {
+          result.alphaMountain = {
+            threatScore: alphaData.threatScore as number,
+            riskScore: alphaData.riskScore as number,
+            categories: (alphaData.categories as number[]) || [],
+            confidence: (alphaData.confidence as number) || 0,
+            source: alphaData.source as string,
+          };
+          if ((alphaData.riskScore as number) >= 50) {
+            result.isKnownMalicious = true;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] alphaMountain lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 8. URLQuery Search
+  queries.push(
+    (async () => {
+      try {
+        const target = parsed.domain || urlString;
+        const uqData = await urlqueryLookup(target);
+        if (uqData) {
+          result.urlquery = {
+            totalHits: (uqData.totalHits as number) || 0,
+            reports: (uqData.reports as Array<{ id: string; url: string; status: string; date: string }>) || [],
+          };
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] URLQuery lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
 
   // Wait for all queries to settle safely
   await Promise.allSettled(queries);

@@ -365,7 +365,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
       </div>
 
       {/* External Threat Intelligence Vendors */}
-      {analysis.threatIntelligence.virusTotal && (
+      {(analysis.threatIntelligence.virusTotal || analysis.threatIntelligence.alphaMountain || analysis.threatIntelligence.otx || analysis.threatIntelligence.urlquery) && (
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="px-5 py-3.5 bg-muted/40 border-b border-border/60 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -374,39 +374,86 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
                 External Threat Intelligence Signals
               </h2>
             </div>
-            {analysis.threatIntelligence.virusTotal.lastAnalysisDate && (
+            {analysis.threatIntelligence.virusTotal?.lastAnalysisDate && (
               <span className="text-[11px] text-muted-foreground font-mono">
                 Analyzed: {new Date(analysis.threatIntelligence.virusTotal.lastAnalysisDate).toLocaleDateString()}
               </span>
             )}
           </div>
 
-          <div className="p-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase font-mono">Malicious Engines</div>
-                <div className="text-2xl font-extrabold text-rose-400 font-mono mt-1">
-                  {analysis.threatIntelligence.virusTotal.maliciousEngines}
+          <div className="p-5 space-y-4">
+            {analysis.threatIntelligence.virusTotal && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                  <div className="text-xs text-muted-foreground uppercase font-mono">VT Malicious</div>
+                  <div className="text-2xl font-extrabold text-rose-400 font-mono mt-1">
+                    {analysis.threatIntelligence.virusTotal.maliciousEngines}
+                  </div>
+                </div>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                  <div className="text-xs text-muted-foreground uppercase font-mono">VT Suspicious</div>
+                  <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
+                    {analysis.threatIntelligence.virusTotal.suspiciousEngines}
+                  </div>
+                </div>
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
+                  <div className="text-xs text-muted-foreground uppercase font-mono">VT Harmless</div>
+                  <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
+                    {analysis.threatIntelligence.virusTotal.harmlessEngines}
+                  </div>
+                </div>
+                <div className="bg-muted/40 border border-border/40 rounded-lg p-3">
+                  <div className="text-xs text-muted-foreground uppercase font-mono">VT Undetected</div>
+                  <div className="text-2xl font-extrabold text-muted-foreground font-mono mt-1">
+                    {analysis.threatIntelligence.virusTotal.undetectedEngines}
+                  </div>
                 </div>
               </div>
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase font-mono">Suspicious Engines</div>
-                <div className="text-2xl font-extrabold text-amber-400 font-mono mt-1">
-                  {analysis.threatIntelligence.virusTotal.suspiciousEngines}
+            )}
+
+            {/* Additional multi-vendor cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {analysis.threatIntelligence.alphaMountain && (
+                <div className="p-3.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-cyan-400 font-semibold">alphaMountain.ai</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground">
+                      {analysis.threatIntelligence.alphaMountain.threatScore.toFixed(2)}/5.0
+                    </span>
+                    <span className="text-xs font-mono text-cyan-300">
+                      {analysis.threatIntelligence.alphaMountain.riskScore}% Risk
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase font-mono">Harmless Engines</div>
-                <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
-                  {analysis.threatIntelligence.virusTotal.harmlessEngines}
+              )}
+
+              {analysis.threatIntelligence.otx && (
+                <div className="p-3.5 rounded-lg bg-purple-500/10 border border-purple-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-purple-400 font-semibold">AlienVault OTX</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground">
+                      {analysis.threatIntelligence.otx.pulseCount} Pulses
+                    </span>
+                    <span className="text-xs font-mono text-purple-300">
+                      {analysis.threatIntelligence.otx.pulseCount > 0 ? "Flagged" : "Clean"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-muted/40 border border-border/40 rounded-lg p-3">
-                <div className="text-xs text-muted-foreground uppercase font-mono">Undetected Engines</div>
-                <div className="text-2xl font-extrabold text-muted-foreground font-mono mt-1">
-                  {analysis.threatIntelligence.virusTotal.undetectedEngines}
+              )}
+
+              {analysis.threatIntelligence.urlquery && (
+                <div className="p-3.5 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-blue-400 font-semibold">URLQuery Sandbox</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground">
+                      {analysis.threatIntelligence.urlquery.totalHits} Reports
+                    </span>
+                    <span className="text-xs font-mono text-blue-300">
+                      Historical
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

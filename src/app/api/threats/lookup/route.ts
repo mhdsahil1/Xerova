@@ -11,7 +11,7 @@ import {
   mergedIPLookup,
   mergedDomainLookup,
   mergedURLLookup,
-  vtLookupHash,
+  mergedHashLookup,
   nvdLookupCVE,
 } from "@/lib/threat-apis";
 import ThreatSearch from "@/models/ThreatSearch";
@@ -67,32 +67,9 @@ export async function POST(request: Request) {
       }
 
       case "hash": {
-        const vtData = await vtLookupHash(query);
-        if (!vtData) {
-          results = {
-            hash: query,
-            sources: [],
-            riskScore: 0,
-            severity: "info",
-            error: "Hash not found in VirusTotal database.",
-          };
-        } else {
-          const stats = vtData.lastAnalysisStats as Record<string, number>;
-          const malicious = (stats?.malicious ?? 0) + (stats?.suspicious ?? 0);
-          const total =
-            malicious + (stats?.undetected ?? 0) + (stats?.harmless ?? 0);
-          riskScore =
-            total > 0
-              ? Math.min(100, Math.round((malicious / total) * 100))
-              : 0;
-          results = {
-            ...vtData,
-            riskScore,
-            severity: scoreToSeverity(riskScore),
-            detectionRate: `${malicious}/${total}`,
-            sources: ["VirusTotal"],
-          };
-        }
+        const hashData = await mergedHashLookup(query);
+        results = hashData as unknown as Record<string, unknown>;
+        riskScore = hashData.riskScore;
         break;
       }
 

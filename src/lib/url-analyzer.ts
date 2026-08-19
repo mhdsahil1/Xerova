@@ -7,7 +7,16 @@
 // → Evidence Aggregation → Unified Risk Score → Severity + Risk Factors
 
 export interface RiskFactor {
-  source: "Local URL Analysis" | "VirusTotal" | "Criminal IP" | "Abusix" | "AbuseIPDB" | "Shodan";
+  source:
+    | "Local URL Analysis"
+    | "VirusTotal"
+    | "Criminal IP"
+    | "Abusix"
+    | "AbuseIPDB"
+    | "Shodan"
+    | "AlienVault OTX"
+    | "alphaMountain.ai"
+    | "URLQuery";
   category: string;
   reason: string;
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -88,6 +97,21 @@ export interface URLAnalysisResult {
       listed: boolean;
       threatLevel: string;
       categories: string[];
+    } | null;
+    otx?: {
+      pulseCount: number;
+      pulses: Array<{ id: string; name: string; author: string; tags: string[] }>;
+    } | null;
+    alphaMountain?: {
+      threatScore: number;
+      riskScore: number;
+      categories: number[];
+      confidence: number;
+      source?: string;
+    } | null;
+    urlquery?: {
+      totalHits: number;
+      reports: Array<{ id: string; url: string; status: string; date: string }>;
     } | null;
     abuseScore: number | null;
     isKnownMalicious: boolean;
@@ -850,6 +874,48 @@ export function calculateUnifiedRiskScore(
         scoreContribution: score,
       });
     }
+  }
+
+  // 5. AlienVault OTX Evidence
+  if (threatIntelligence.otx && threatIntelligence.otx.pulseCount > 0) {
+    sources.push("AlienVault OTX");
+    const otxScore = Math.min(80, threatIntelligence.otx.pulseCount * 20);
+    threatIntelRisk = Math.max(threatIntelRisk, otxScore);
+    allRiskFactors.push({
+      source: "AlienVault OTX",
+      category: "Threat Pulses",
+      reason: `Flagged in ${threatIntelligence.otx.pulseCount} AlienVault OTX threat pulse${threatIntelligence.otx.pulseCount > 1 ? "s" : ""}`,
+      severity: threatIntelligence.otx.pulseCount >= 5 ? "CRITICAL" : threatIntelligence.otx.pulseCount >= 2 ? "HIGH" : "MEDIUM",
+      scoreContribution: otxScore,
+    });
+  }
+
+  // 6. alphaMountain.ai Evidence
+  if (threatIntelligence.alphaMountain && threatIntelligence.alphaMountain.riskScore > 0) {
+    sources.push("alphaMountain.ai");
+    const alphaScore = threatIntelligence.alphaMountain.riskScore;
+    threatIntelRisk = Math.max(threatIntelRisk, alphaScore);
+    if (alphaScore >= 25) {
+      allRiskFactors.push({
+        source: "alphaMountain.ai",
+        category: "AI Threat Rating",
+        reason: `alphaMountain AI risk rating: ${threatIntelligence.alphaMountain.threatScore.toFixed(2)}/5.0 (${alphaScore}% risk score)`,
+        severity: alphaScore >= 75 ? "CRITICAL" : alphaScore >= 50 ? "HIGH" : "MEDIUM",
+        scoreContribution: alphaScore,
+      });
+    }
+  }
+
+  // 7. URLQuery Evidence
+  if (threatIntelligence.urlquery && threatIntelligence.urlquery.totalHits > 0) {
+    sources.push("URLQuery");
+    allRiskFactors.push({
+      source: "URLQuery",
+      category: "Sandbox History",
+      reason: `Found in ${threatIntelligence.urlquery.totalHits} prior URLQuery security scan report${threatIntelligence.urlquery.totalHits > 1 ? "s" : ""}`,
+      severity: "LOW",
+      scoreContribution: 10,
+    });
   }
 
   // Composite Unified Risk Score:

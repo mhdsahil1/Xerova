@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
@@ -13,7 +11,7 @@
 # testing
 /coverage
 
-# next.js
+# Next.js
 /.next/
 /out/
 
@@ -30,27 +28,27 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# environment files
 .env*
+!.env.example
 
-# vercel
+# Vercel
 .vercel
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-.freebuff
+# local tools / generated files
+.freebuff/
 test-db.mjs
-
 
 .agents/
 .claude/
-# .gemini/
-
 .gemini/
 .originkit/
 
+# internal URL-analysis documentation
 URL_ANALYSIS_IMPLEMENTATION.md
 URL_ANALYSIS_MODULE.md
 URL_ANALYSIS_QUICK_REFERENCE.md

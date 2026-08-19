@@ -254,7 +254,7 @@ export function CreateReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-card border-border">
+      <DialogContent className="w-[94vw] sm:max-w-[94vw] md:max-w-4xl lg:max-w-5xl max-h-[92vh] overflow-y-auto bg-card border-border">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
@@ -534,7 +534,7 @@ export function CreateReportDialog({
             <Button
               type="submit"
               disabled={saving || !title.trim()}
-              className="bg-gradient-to-r from-cyber-cyan to-cyber-blue text-white font-semibold"
+              className="bg-primary text-primary-foreground font-medium"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Create Report

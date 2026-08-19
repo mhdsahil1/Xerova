@@ -5,10 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
-   XEROVA — Cybersecurity Design System
+   XEROVA — Cybersecurity Intelligence Console
+   Design System v3.0 — Layered Application Shell
    ============================================ */
 
 @theme inline {
+  --color-canvas-bg: var(--canvas-bg);
+  --color-shell-bg: var(--shell-bg);
+  --color-panel-bg: var(--panel-bg);
+  --color-panel-highlight: var(--panel-highlight);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -51,12 +56,10 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* XEROVA Custom Colors */
+  /* XEROVA Brand Colors */
   --color-cyber-cyan: oklch(0.78 0.15 194);
   --color-cyber-teal: oklch(0.72 0.13 180);
   --color-cyber-blue: oklch(0.62 0.18 260);
-  --color-cyber-purple: oklch(0.58 0.2 290);
-  --color-cyber-green: oklch(0.72 0.19 150);
 
   /* Severity tokens — used for threat data risk levels */
   --color-severity-critical: var(--severity-critical);
@@ -65,130 +68,129 @@
   --color-severity-low: var(--severity-low);
   --color-severity-info: var(--severity-info);
 
-  /* Status tokens — used for UI feedback (success/warning/error/info) */
+  /* Status tokens — used for UI feedback */
   --color-status-success: var(--status-success);
   --color-status-warning: var(--status-warning);
   --color-status-error: var(--status-error);
   --color-status-info: var(--status-info);
 }
 
-/* Light theme — kept minimal since XEROVA is dark-first */
 :root {
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.42 0.15 260);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.96 0.01 260);
-  --secondary-foreground: oklch(0.28 0.05 260);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --accent: oklch(0.94 0.02 194);
-  --accent-foreground: oklch(0.3 0.1 194);
+  --canvas-bg: #e6e8ee;
+  --shell-bg: #ffffff;
+  --panel-bg: #f3f5f9;
+  --panel-highlight: #e8ecf4;
+  --background: #f8f9fc;
+  --foreground: #101217;
+  --card: #ffffff;
+  --card-foreground: #101217;
+  --popover: #ffffff;
+  --popover-foreground: #101217;
+  --primary: oklch(0.45 0.14 194);
+  --primary-foreground: #ffffff;
+  --secondary: #eef1f6;
+  --secondary-foreground: #1e222b;
+  --muted: #edf0f5;
+  --muted-foreground: #666e80;
+  --accent: #e2e8f4;
+  --accent-foreground: #0d1117;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.005 260);
-  --input: oklch(0.91 0.005 260);
-  --ring: oklch(0.42 0.15 260);
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.08);
+  --ring: oklch(0.45 0.14 194);
   --chart-1: oklch(0.78 0.15 194);
-  --chart-2: oklch(0.62 0.18 260);
-  --chart-3: oklch(0.58 0.2 290);
-  --chart-4: oklch(0.72 0.19 150);
-  --chart-5: oklch(0.7 0.18 50);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.97 0.005 260);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.42 0.15 260);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.94 0.01 260);
-  --sidebar-accent-foreground: oklch(0.28 0.05 260);
-  --sidebar-border: oklch(0.91 0.005 260);
-  --sidebar-ring: oklch(0.42 0.15 260);
+  --chart-2: #8b5cf6;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --radius: 0.75rem;
+  --sidebar: #f3f5f9;
+  --sidebar-foreground: #101217;
+  --sidebar-primary: oklch(0.45 0.14 194);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e4e8f0;
+  --sidebar-accent-foreground: #101217;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-ring: oklch(0.45 0.14 194);
 
-  /* Severity — light theme */
-  --severity-critical: oklch(0.55 0.25 25);
-  --severity-high: oklch(0.6 0.2 50);
-  --severity-medium: oklch(0.6 0.18 85);
-  --severity-low: oklch(0.55 0.14 230);
-  --severity-info: oklch(0.55 0.15 160);
+  --severity-critical: #ef4444;
+  --severity-high: #f97316;
+  --severity-medium: #eab308;
+  --severity-low: #3b82f6;
+  --severity-info: #06b6d4;
 
-  /* Status — light theme */
-  --status-success: oklch(0.52 0.17 150);
-  --status-warning: oklch(0.65 0.18 85);
-  --status-error: oklch(0.55 0.25 25);
-  --status-info: oklch(0.55 0.15 240);
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
 
-  /* Chart theming — light */
-  --chart-tooltip-bg: oklch(1 0 0);
-  --chart-tooltip-border: oklch(0.91 0.005 260);
-  --chart-tooltip-text: oklch(0.145 0 0);
-  --chart-grid: oklch(0.91 0.005 260);
-  --chart-axis: oklch(0.5 0.02 260);
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: rgba(0, 0, 0, 0.1);
+  --chart-tooltip-text: #101217;
+  --chart-grid: rgba(0, 0, 0, 0.06);
+  --chart-axis: #8892a4;
 
-  /* Scrollbar — light */
-  --scrollbar-thumb: oklch(0.78 0.005 260);
-  --scrollbar-thumb-hover: oklch(0.68 0.01 260);
+  --scrollbar-thumb: #cfd5e2;
+  --scrollbar-thumb-hover: #b8c0d1;
 }
 
-/* Dark theme — the primary XEROVA experience */
+/* Dark mode — default primary XEROVA reference environment */
 .dark {
-  --background: oklch(0.12 0.015 260);
-  --foreground: oklch(0.93 0.01 260);
-  --card: oklch(0.16 0.02 260);
-  --card-foreground: oklch(0.93 0.01 260);
-  --popover: oklch(0.16 0.02 260);
-  --popover-foreground: oklch(0.93 0.01 260);
+  --canvas-bg: #0d0e12;
+  --shell-bg: #08090c;
+  --panel-bg: #12141a;
+  --panel-highlight: #181b22;
+  --background: #08090c;
+  --foreground: #f4f5f8;
+  --card: #12141a;
+  --card-foreground: #f4f5f8;
+  --popover: #12141a;
+  --popover-foreground: #f4f5f8;
   --primary: oklch(0.78 0.15 194);
-  --primary-foreground: oklch(0.12 0.015 260);
-  --secondary: oklch(0.22 0.025 260);
-  --secondary-foreground: oklch(0.88 0.01 260);
-  --muted: oklch(0.2 0.02 260);
-  --muted-foreground: oklch(0.6 0.02 260);
-  --accent: oklch(0.22 0.03 260);
+  --primary-foreground: #08090c;
+  --secondary: #181b22;
+  --secondary-foreground: #e4e7ee;
+  --muted: #151820;
+  --muted-foreground: #848a9a;
+  --accent: #1a1e27;
   --accent-foreground: oklch(0.78 0.15 194);
-  --destructive: oklch(0.63 0.25 25);
-  --border: oklch(0.26 0.025 260);
-  --input: oklch(0.22 0.025 260);
+  --destructive: #f43f5e;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
   --ring: oklch(0.78 0.15 194);
   --chart-1: oklch(0.78 0.15 194);
-  --chart-2: oklch(0.62 0.18 260);
-  --chart-3: oklch(0.58 0.2 290);
-  --chart-4: oklch(0.72 0.19 150);
-  --chart-5: oklch(0.7 0.18 50);
-  --sidebar: oklch(0.14 0.018 260);
-  --sidebar-foreground: oklch(0.93 0.01 260);
+  --chart-2: #a78bfa;
+  --chart-3: #34d399;
+  --chart-4: #fbbf24;
+  --chart-5: #f87171;
+  --sidebar: #12141a;
+  --sidebar-foreground: #f4f5f8;
   --sidebar-primary: oklch(0.78 0.15 194);
-  --sidebar-primary-foreground: oklch(0.12 0.015 260);
-  --sidebar-accent: oklch(0.2 0.025 260);
-  --sidebar-accent-foreground: oklch(0.78 0.15 194);
-  --sidebar-border: oklch(0.26 0.025 260);
+  --sidebar-primary-foreground: #08090c;
+  --sidebar-accent: #1e222c;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: oklch(0.78 0.15 194);
 
-  /* Severity — dark theme */
-  --severity-critical: oklch(0.63 0.25 25);
-  --severity-high: oklch(0.7 0.18 50);
-  --severity-medium: oklch(0.8 0.15 85);
-  --severity-low: oklch(0.7 0.12 230);
-  --severity-info: oklch(0.72 0.15 160);
+  --severity-critical: #f43f5e;
+  --severity-high: #fb923c;
+  --severity-medium: #facc15;
+  --severity-low: #60a5fa;
+  --severity-info: #38bdf8;
 
-  /* Status — dark theme */
-  --status-success: oklch(0.72 0.19 150);
-  --status-warning: oklch(0.8 0.15 85);
-  --status-error: oklch(0.63 0.25 25);
-  --status-info: oklch(0.7 0.12 230);
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-error: #f43f5e;
+  --status-info: #60a5fa;
 
-  /* Chart theming — dark */
-  --chart-tooltip-bg: oklch(0.16 0.02 260);
-  --chart-tooltip-border: oklch(0.26 0.025 260);
-  --chart-tooltip-text: oklch(0.93 0.01 260);
-  --chart-grid: oklch(0.3 0.02 260);
-  --chart-axis: oklch(0.5 0.02 260);
+  --chart-tooltip-bg: #12141a;
+  --chart-tooltip-border: rgba(255, 255, 255, 0.12);
+  --chart-tooltip-text: #f4f5f8;
+  --chart-grid: rgba(255, 255, 255, 0.05);
+  --chart-axis: #717888;
 
-  /* Scrollbar — dark */
-  --scrollbar-thumb: oklch(0.3 0.02 260);
-  --scrollbar-thumb-hover: oklch(0.4 0.03 260);
+  --scrollbar-thumb: #232733;
+  --scrollbar-thumb-hover: #323747;
 }
 
 @layer base {
@@ -196,7 +198,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    background-color: var(--canvas-bg);
+    color: var(--foreground);
+    @apply antialiased;
   }
   html {
     @apply font-sans scroll-smooth;
@@ -204,184 +208,51 @@
 }
 
 /* ============================================
-   XEROVA Custom Utilities
+   Custom Layered Shell & Panel Utilities
    ============================================ */
 
 @layer utilities {
-  /* Glassmorphism card effect — theme-aware */
-  .glass {
-    background: var(--card) / 75%;
-    backdrop-filter: blur(24px) saturate(200%);
-    border: 1px solid oklch(1 0 0 / 10%);
-  }
-  .dark .glass {
-    background: oklch(0.16 0.02 260 / 85%);
-    border: 1px solid oklch(1 0 0 / 12%);
-    box-shadow: inset 0 1px 1px oklch(1 0 0 / 10%);
-  }
-  :root .glass {
-    background: oklch(1 0 0 / 85%);
-    border-color: oklch(0 0 0 / 10%);
-    box-shadow: 0 8px 32px oklch(0 0 0 / 5%);
+  .app-shell {
+    background-color: var(--shell-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.05);
   }
 
-  .glass-light {
-    background: oklch(1 0 0 / 60%);
-    backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid oklch(0 0 0 / 8%);
+  .panel-card {
+    background-color: var(--panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 1.25rem;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Glow effects */
-  .glow-cyan {
-    box-shadow: 0 0 20px oklch(0.78 0.15 194 / 20%),
-      0 0 60px oklch(0.78 0.15 194 / 10%);
+  .panel-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
-  .glow-purple {
-    box-shadow: 0 0 20px oklch(0.58 0.2 290 / 20%),
-      0 0 60px oklch(0.58 0.2 290 / 10%);
+  .panel-highlight {
+    background-color: var(--panel-highlight);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .glow-red {
-    box-shadow: 0 0 20px oklch(0.63 0.25 25 / 25%),
-      0 0 60px oklch(0.63 0.25 25 / 10%);
+  .tool-dock {
+    background-color: var(--panel-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.5);
   }
 
-  /* Animated gradient border */
-  .gradient-border {
-    position: relative;
-    border: none;
-  }
-  .gradient-border::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      oklch(0.78 0.15 194),
-      oklch(0.58 0.2 290),
-      oklch(0.62 0.18 260)
-    );
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  /* Text gradient */
-  .text-gradient {
-    background: linear-gradient(
-      135deg,
-      oklch(0.78 0.15 194),
-      oklch(0.62 0.18 260)
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .text-gradient-warm {
-    background: linear-gradient(
-      135deg,
-      oklch(0.78 0.15 194),
-      oklch(0.58 0.2 290)
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Grid pattern background */
-  .bg-grid {
-    background-image: linear-gradient(
-        oklch(1 0 0 / 3%) 1px,
-        transparent 1px
-      ),
-      linear-gradient(90deg, oklch(1 0 0 / 3%) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-
-  /* Dot pattern background */
-  .bg-dots {
-    background-image: radial-gradient(
-      oklch(1 0 0 / 8%) 1px,
-      transparent 1px
-    );
-    background-size: 20px 20px;
-  }
-
-  /* Animated pulse ring */
-  .pulse-ring {
-    animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-  }
-
-  /* Fade up animation */
-  .animate-fade-up {
-    animation: fade-up 0.5s ease-out forwards;
-  }
-
-  /* Shimmer effect */
-  .shimmer {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      oklch(1 0 0 / 5%) 50%,
-      transparent 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
+  .pill-indicator {
+    border-radius: 9999px;
   }
 }
 
 /* ============================================
-   Keyframes
-   ============================================ */
-
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 oklch(0.78 0.15 194 / 40%);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 10px oklch(0.78 0.15 194 / 0%);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 oklch(0.78 0.15 194 / 0%);
-  }
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* ============================================
-   Scrollbar Styling — Theme-Aware
+   Scrollbar Styling
    ============================================ */
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -390,31 +261,22 @@
 
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
-  border-radius: 4px;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
 
-/* Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
-/* ============================================
-   Selection Styling — Theme-Aware
-   ============================================ */
-
 ::selection {
   background: oklch(0.78 0.15 194 / 30%);
   color: var(--foreground);
 }
-
-/* ============================================
-   Reduced Motion — Accessibility
-   ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -424,11 +286,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-
-  .pulse-ring,
-  .shimmer,
-  .animate-fade-up {
-    animation: none !important;
   }
 }

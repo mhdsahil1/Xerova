@@ -38,7 +38,7 @@ export function RiskDistributionChart({ data }: RiskDistributionChartProps) {
               contentStyle={{
                 backgroundColor: chartTheme.tooltipBg,
                 border: `1px solid ${chartTheme.tooltipBorder}`,
-                borderRadius: "8px",
+                borderRadius: "6px",
                 fontSize: "12px",
                 color: chartTheme.tooltipText,
               }}

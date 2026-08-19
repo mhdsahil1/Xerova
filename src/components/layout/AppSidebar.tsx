@@ -10,21 +10,14 @@ import {
   FileText,
   Settings,
   LogOut,
+  Zap,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -41,7 +34,7 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Threat Intel",
+    title: "Threat Intelligence",
     href: "/threats",
     icon: Search,
   },
@@ -75,94 +68,157 @@ export function AppSidebar() {
     : "XA";
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
-          <Image
-            src="/XEROVA final.svg"
-            alt="XEROVA"
-            width={120}
-            height={36}
-            className="h-9 w-auto object-contain transition-transform group-hover:scale-105"
-            priority
-          />
-        </Link>
-      </SidebarHeader>
+    <aside
+      aria-label="Navigation Sidebar"
+      className="shrink-0 flex flex-row md:flex-col items-center justify-between py-3 px-3 md:py-4 md:px-2.5 rounded-2xl bg-[#12141a] border border-white/[0.08] shadow-xl md:w-16 lg:w-18 md:sticky md:top-0 md:self-start z-30"
+    >
+      {/* Top Group: Brand Emblem + Connected Telemetry Pill + Top-Positioned Navigation */}
+      <div className="flex md:flex-col items-center gap-2.5 md:gap-3 w-full">
+        {/* Brand Emblem */}
+        <Tooltip>
+          <TooltipTrigger render={<Link href="/dashboard" className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-transform active:scale-95 flex items-center justify-center" aria-label="XEROVA Dashboard" />}>
+            <div className="relative flex items-center justify-center w-6 h-6">
+              <Image
+                src="/xerova-icon.svg"
+                alt="XEROVA"
+                width={24}
+                height={24}
+                className="w-5 h-5 object-contain"
+                priority
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-[#181a24] text-white border-white/10 text-xs font-mono">
+            XEROVA Console
+          </TooltipContent>
+        </Tooltip>
 
-      <SidebarSeparator />
+        {/* Connected Threat Feeds Badge */}
+        <Tooltip>
+          <TooltipTrigger render={<div className="hidden md:flex flex-col items-center justify-center w-7 h-7 rounded-full bg-primary/10 border border-primary/20 text-primary cursor-pointer hover:bg-primary/20 transition-colors" />}>
+            <span className="text-[10px] font-mono font-bold leading-none">9+</span>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-[#181a24] text-white border-white/10 text-xs">
+            9 Threat Engines Operational
+          </TooltipContent>
+        </Tooltip>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs text-muted-foreground uppercase tracking-wider">
-            Navigation
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" &&
-                    pathname.startsWith(item.href));
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={isActive}
-                      className={
+        {/* Divider */}
+        <div className="hidden md:block w-8 h-px bg-white/[0.08] my-1" />
+
+        {/* Primary Navigation Icons — Positioned at TOP */}
+        <nav className="flex md:flex-col items-center gap-2">
+          {navItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger
+                  render={
+                    <Link
+                      href={item.href}
+                      aria-label={item.title}
+                      className={`w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-150 group relative ${
                         isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                          : "text-muted-foreground hover:text-foreground"
-                      }
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+                          ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] font-semibold scale-100"
+                          : "text-[#8a8f9d] hover:text-white hover:bg-white/[0.08]"
+                      }`}
+                    />
+                  }
+                >
+                  <item.icon
+                    className={`w-5 h-5 transition-transform duration-150 ${
+                      isActive ? "scale-105 stroke-[2.3]" : "group-hover:scale-110"
+                    }`}
+                  />
+                  {isActive && (
+                    <span className="absolute -left-1 w-1 h-3.5 rounded-r-full bg-primary hidden md:block" />
+                  )}
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="bg-[#181b22] text-white border-white/10 text-xs font-medium px-2.5 py-1"
+                >
+                  {item.title}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </nav>
+      </div>
 
-      <SidebarFooter className="p-4">
-        <SidebarSeparator className="mb-4" />
+      {/* Bottom Group: Profile & Sign Out Controls */}
+      <div className="flex md:flex-col items-center gap-2 md:mt-6 pt-0 md:pt-3 md:border-t md:border-white/[0.06] w-full justify-center">
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-sidebar-accent transition-colors text-left" aria-label="User menu">
-            <Avatar className="h-8 w-8">
+          <DropdownMenuTrigger
+            render={
+              <button
+                className="p-1 rounded-full hover:ring-2 hover:ring-primary/40 transition-all outline-none"
+                aria-label="User account menu"
+              />
+            }
+          >
+            <Avatar className="h-8 w-8 rounded-full border border-white/10">
               <AvatarImage
                 src={session?.user?.image || ""}
-                alt={session?.user?.name || "User"}
+                alt={session?.user?.name || "Analyst"}
               />
-              <AvatarFallback className="bg-gradient-to-br from-cyber-cyan to-cyber-blue text-white text-xs font-bold">
+              <AvatarFallback className="bg-primary/20 text-primary text-[10px] font-bold">
                 {userInitials}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {session?.user?.name || "Analyst"}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="right"
+            align="end"
+            className="w-52 bg-[#14161f] border-white/10 text-white rounded-xl shadow-2xl p-1.5"
+          >
+            <div className="px-2.5 py-2 border-b border-white/[0.06]">
+              <p className="text-xs font-semibold text-white truncate">
+                {session?.user?.name || "SOC Analyst"}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {session?.user?.email || ""}
+              <p className="text-[10px] text-[#8a8f9d] truncate font-mono">
+                {session?.user?.email || "analyst@xerova.io"}
               </p>
             </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem render={<Link href="/settings" />}>
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+            <DropdownMenuItem
+              render={<Link href="/settings" className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-200 hover:text-white rounded-lg hover:bg-white/[0.08] transition-colors" />}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              Settings &amp; Engines
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-white/[0.06] my-1" />
             <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-destructive focus:text-destructive"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-400 hover:text-rose-300 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-3.5 h-3.5" />
               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </SidebarFooter>
-    </Sidebar>
+
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="hidden md:flex w-8 h-8 rounded-xl items-center justify-center text-[#8a8f9d] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                aria-label="Sign out"
+              />
+            }
+          >
+            <LogOut className="w-4 h-4" />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-[#181b22] text-white border-white/10 text-xs">
+            Sign Out
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </aside>
   );
 }
+
+export default AppSidebar;

@@ -28,9 +28,9 @@ export const metadata: Metadata = {
     "security analysis",
   ],
   icons: {
-    icon: "/XEVORA FEVI final.svg",
-    shortcut: "/XEVORA FEVI final.svg",
-    apple: "/XEVORA FEVI final.svg",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/xerova-icon.svg",
   },
 };
 
@@ -45,7 +45,7 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} h-full`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col antialiased">
+      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

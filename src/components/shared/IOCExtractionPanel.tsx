@@ -83,7 +83,7 @@ export function IOCExtractionPanel({
   };
 
   return (
-    <Card className="bg-card/50 border-border/50">
+    <Card className="bg-card border-border">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <FileSearch className="w-5 h-5 text-primary" />
@@ -99,7 +99,7 @@ export function IOCExtractionPanel({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Paste raw log data, email header, or report text here..."
-            className="min-h-[120px] font-mono text-sm bg-background/50 border-border/50 focus:border-primary"
+            className="min-h-[120px] font-mono text-sm bg-card border-border focus:border-primary/60"
           />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">
@@ -108,7 +108,7 @@ export function IOCExtractionPanel({
             <Button
               onClick={handleExtract}
               disabled={!inputText.trim()}
-              className="bg-gradient-to-r from-cyber-cyan to-cyber-blue text-white"
+              className="bg-primary text-primary-foreground"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Extract IOCs

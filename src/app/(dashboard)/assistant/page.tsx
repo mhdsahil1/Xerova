@@ -164,53 +164,53 @@ export default function AssistantPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 h-[calc(100dvh-8rem)] flex flex-col"
+      className="space-y-5 h-[calc(100dvh-7.5rem)] flex flex-col"
     >
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-          <MessageSquare className="w-7 h-7 text-primary" />
-          AI Assistant
-          <Badge variant="secondary" className="text-[10px] ml-2 gap-1">
-            <Sparkles className="w-3 h-3" />
-            Gemini-Powered
+        <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2.5">
+          <MessageSquare className="w-5 h-5 text-primary" />
+          AI Security Assistant
+          <Badge variant="secondary" className="text-[10px] ml-2 gap-1 font-mono">
+            <Sparkles className="w-3 h-3 text-primary" />
+            Gemini
           </Badge>
         </h1>
-        <p className="text-muted-foreground mt-1">
-          AI-powered cybersecurity analyst — analyze threats, explain findings, and get remediation guidance.
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Cybersecurity copilot for threat analysis, IOC triage, and remediation advice.
         </p>
       </div>
 
-      <Card className="flex-1 flex flex-col bg-card/50 border-border/50 overflow-hidden">
+      <Card className="flex-1 flex flex-col bg-card border-border overflow-hidden">
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="space-y-6" role="log" aria-label="Conversation messages">
+          <div className="space-y-5" role="log" aria-label="Conversation messages">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-3 max-w-[80%] ${
+                className={`flex gap-3 max-w-[85%] ${
                   msg.role === "user" ? "ml-auto flex-row-reverse" : ""
                 }`}
               >
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 text-xs font-semibold ${
                     msg.role === "assistant"
-                      ? "bg-gradient-to-br from-cyber-cyan to-cyber-blue text-white"
-                      : "bg-muted"
+                      ? "bg-primary/15 text-primary border border-primary/25"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {msg.role === "assistant" ? (
-                    <Bot className="w-4 h-4" />
+                    <Bot className="w-3.5 h-3.5" />
                   ) : (
-                    <User className="w-4 h-4" />
+                    <User className="w-3.5 h-3.5" />
                   )}
                 </div>
-                <div className={`space-y-2 ${msg.role === "user" ? "text-right" : ""}`}>
+                <div className={`space-y-2 min-w-0 ${msg.role === "user" ? "text-right" : ""}`}>
                   <div
-                    className={`p-3 rounded-lg text-sm ${
+                    className={`p-3.5 rounded-lg text-xs md:text-sm leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-primary/20 border border-primary/30 text-foreground whitespace-pre-wrap"
-                        : "bg-background/50 border border-border/50 prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs"
+                        ? "bg-primary/10 border border-primary/20 text-foreground whitespace-pre-wrap inline-block text-left"
+                        : "bg-background/80 border border-border prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs"
                     }`}
                   >
                     {msg.role === "assistant" ? (
@@ -224,21 +224,20 @@ export default function AssistantPage() {
                   
                   {/* Extracted IOCs as clickable badges */}
                   {msg.iocs && msg.iocs.length > 0 && (
-                    <div className={`flex flex-wrap gap-2 mt-2 ${msg.role === "user" ? "justify-end" : ""}`}>
+                    <div className={`flex flex-wrap gap-1.5 mt-1.5 ${msg.role === "user" ? "justify-end" : ""}`}>
                       {msg.iocs.map((ioc, idx) => (
                         <Button
                           key={idx}
                           variant="outline"
                           size="sm"
-                          className="h-7 text-xs bg-background hover:bg-accent hover:border-primary transition-all group"
+                          className="h-6 text-[11px] font-mono bg-card hover:bg-accent hover:border-primary/50 transition-colors duration-150 group"
                           onClick={() => runAnalysis(ioc)}
                         >
-                          {ioc.type === "ip" && <Wifi className="w-3 h-3 mr-1.5 text-status-info group-hover:text-primary transition-colors" />}
-                          {ioc.type === "domain" && <Globe className="w-3 h-3 mr-1.5 text-status-success group-hover:text-primary transition-colors" />}
-                          {ioc.type === "hash" && <Hash className="w-3 h-3 mr-1.5 text-severity-high group-hover:text-primary transition-colors" />}
-                          {ioc.type === "cve" && <ShieldAlert className="w-3 h-3 mr-1.5 text-severity-critical group-hover:text-primary transition-colors" />}
-                          {ioc.value.length > 40 ? ioc.value.slice(0, 37) + "..." : ioc.value}
-                          <ShieldAlert className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          {ioc.type === "ip" && <Wifi className="w-2.5 h-2.5 mr-1 text-status-info" />}
+                          {ioc.type === "domain" && <Globe className="w-2.5 h-2.5 mr-1 text-status-success" />}
+                          {ioc.type === "hash" && <Hash className="w-2.5 h-2.5 mr-1 text-severity-high" />}
+                          {ioc.type === "cve" && <ShieldAlert className="w-2.5 h-2.5 mr-1 text-severity-critical" />}
+                          {ioc.value.length > 35 ? ioc.value.slice(0, 32) + "..." : ioc.value}
                         </Button>
                       ))}
                     </div>
@@ -250,17 +249,17 @@ export default function AssistantPage() {
             <AnimatePresence>
               {isTyping && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="flex gap-3 max-w-[80%]"
+                  className="flex gap-3 max-w-[85%]"
                   aria-live="polite"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyber-cyan to-cyber-blue text-white flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-md bg-primary/15 text-primary border border-primary/25 flex items-center justify-center shrink-0">
+                    <Bot className="w-3.5 h-3.5" />
                   </div>
-                  <div className="p-4 rounded-lg bg-background/50 border border-border/50 flex items-center gap-1">
-                    <span className="sr-only">XEROVA AI is thinking</span>
+                  <div className="p-3 rounded-lg bg-background/80 border border-border flex items-center gap-1.5">
+                    <span className="sr-only">XEROVA AI is analyzing</span>
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -271,7 +270,7 @@ export default function AssistantPage() {
           </div>
         </ScrollArea>
 
-        <CardFooter className="p-4 border-t border-border/50 bg-background/30">
+        <CardFooter className="p-3 border-t border-border bg-card/60">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -282,17 +281,17 @@ export default function AssistantPage() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about threats, paste IOCs, or describe a security issue..."
-              className="flex-1 bg-background/50 border-border/50 focus:border-primary"
+              placeholder="Ask about threats, paste IOCs, or request remediation guidance..."
+              className="flex-1 h-9 bg-card border-border focus:border-primary/60 text-xs"
               disabled={isTyping}
             />
             <Button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="bg-gradient-to-r from-cyber-cyan to-cyber-blue hover:opacity-90 text-white shrink-0"
+              className="h-9 px-3 bg-primary text-primary-foreground shrink-0"
               aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
             </Button>
           </form>
         </CardFooter>

@@ -23,74 +23,59 @@ export function ThreatTrendsChart({ data }: ThreatTrendsChartProps) {
   const chartTheme = useChartTheme();
 
   return (
-    <div className="h-[260px] w-full">
+    <div className="h-[220px] w-full">
       <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-        <AreaChart data={data}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="colorInvestigations" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="5%"
-                stopColor="oklch(0.78 0.15 194)"
-                stopOpacity={0.3}
-              />
-              <stop
-                offset="95%"
-                stopColor="oklch(0.78 0.15 194)"
-                stopOpacity={0}
-              />
+              <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.4} />
+              <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.0} />
             </linearGradient>
             <linearGradient id="colorThreats" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="5%"
-                stopColor="oklch(0.58 0.2 290)"
-                stopOpacity={0.3}
-              />
-              <stop
-                offset="95%"
-                stopColor="oklch(0.58 0.2 290)"
-                stopOpacity={0}
-              />
+              <stop offset="5%" stopColor="#00f0ff" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#00f0ff" stopOpacity={0.0} />
             </linearGradient>
           </defs>
           <CartesianGrid
-            strokeDasharray="3 3"
-            stroke={chartTheme.gridColor}
+            strokeDasharray="2 2"
+            stroke="rgba(255,255,255,0.05)"
             vertical={false}
           />
           <XAxis
             dataKey="date"
-            stroke={chartTheme.axisColor}
-            fontSize={12}
+            stroke="#717888"
+            fontSize={11}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            stroke={chartTheme.axisColor}
-            fontSize={12}
+            stroke="#717888"
+            fontSize={11}
             tickLine={false}
             axisLine={false}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: chartTheme.tooltipBg,
-              border: `1px solid ${chartTheme.tooltipBorder}`,
-              borderRadius: "8px",
-              fontSize: "12px",
-              color: chartTheme.tooltipText,
+              backgroundColor: "#181b24",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "10px",
+              fontSize: "11px",
+              color: "#ffffff",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
             }}
           />
           <Area
-            type="monotone"
+            type="natural"
             dataKey="investigations"
-            stroke="oklch(0.78 0.15 194)"
+            stroke="#a78bfa"
             fillOpacity={1}
             fill="url(#colorInvestigations)"
-            strokeWidth={2}
+            strokeWidth={2.5}
           />
           <Area
-            type="monotone"
+            type="natural"
             dataKey="threats"
-            stroke="oklch(0.58 0.2 290)"
+            stroke="#00f0ff"
             fillOpacity={1}
             fill="url(#colorThreats)"
             strokeWidth={2}
@@ -101,3 +86,4 @@ export function ThreatTrendsChart({ data }: ThreatTrendsChartProps) {
   );
 }
 
+export default ThreatTrendsChart;

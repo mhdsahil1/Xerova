@@ -487,6 +487,328 @@ export async function abusixLookupIP(ip: string) {
 }
 
 // ============================================================
+// AlienVault OTX (Open Threat Exchange)
+// ============================================================
+const OTX_BASE = "https://otx.alienvault.com/api/v1";
+const OTX_KEY = process.env.OTX_API_KEY || "";
+
+function otxHeaders() {
+  return {
+    "X-OTX-API-KEY": OTX_KEY,
+    Accept: "application/json",
+  };
+}
+
+export async function otxLookupIP(ip: string) {
+  if (!OTX_KEY) return null;
+  const cacheKey = `otx:ip:${ip}`;
+  const cached = getCached<Record<string, unknown>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(`${OTX_BASE}/indicators/IPv4/${encodeURIComponent(ip)}/general`, {
+      headers: otxHeaders(),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const pulseInfo = json.pulse_info || {};
+    const pulses = (pulseInfo.pulses || []).slice(0, 10).map((p: Record<string, unknown>) => ({
+      id: p.id,
+      name: p.name || "",
+      description: p.description || "",
+      author: p.author_name || "",
+      tags: (p.tags as string[]) || [],
+      malwareFamilies: (p.malware_families as string[]) || [],
+      adversary: p.adversary || "",
+      references: (p.references as string[]) || [],
+      created: p.created || "",
+    }));
+
+    const result = {
+      pulseCount: pulseInfo.count ?? 0,
+      pulses,
+      reputation: json.reputation ?? 0,
+      country: json.country_name ?? "",
+      city: json.city ?? "",
+      asn: json.asn ?? "",
+      validation: (json.validation || []).map((v: Record<string, string>) => ({
+        source: v.source || "",
+        message: v.message || "",
+        name: v.name || "",
+      })),
+      source: "AlienVault OTX",
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[OTX] IP lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function otxLookupDomain(domain: string) {
+  if (!OTX_KEY) return null;
+  const cacheKey = `otx:domain:${domain}`;
+  const cached = getCached<Record<string, unknown>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(`${OTX_BASE}/indicators/domain/${encodeURIComponent(domain)}/general`, {
+      headers: otxHeaders(),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const pulseInfo = json.pulse_info || {};
+    const pulses = (pulseInfo.pulses || []).slice(0, 10).map((p: Record<string, unknown>) => ({
+      id: p.id,
+      name: p.name || "",
+      description: p.description || "",
+      author: p.author_name || "",
+      tags: (p.tags as string[]) || [],
+      malwareFamilies: (p.malware_families as string[]) || [],
+      adversary: p.adversary || "",
+      references: (p.references as string[]) || [],
+      created: p.created || "",
+    }));
+
+    const result = {
+      pulseCount: pulseInfo.count ?? 0,
+      pulses,
+      alexa: json.alexa || "",
+      validation: (json.validation || []).map((v: Record<string, string>) => ({
+        source: v.source || "",
+        message: v.message || "",
+        name: v.name || "",
+      })),
+      source: "AlienVault OTX",
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[OTX] Domain lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function otxLookupURL(url: string) {
+  if (!OTX_KEY) return null;
+  const cacheKey = `otx:url:${url}`;
+  const cached = getCached<Record<string, unknown>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(`${OTX_BASE}/indicators/url/${encodeURIComponent(url)}/general`, {
+      headers: otxHeaders(),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const pulseInfo = json.pulse_info || {};
+    const pulses = (pulseInfo.pulses || []).slice(0, 10).map((p: Record<string, unknown>) => ({
+      id: p.id,
+      name: p.name || "",
+      description: p.description || "",
+      author: p.author_name || "",
+      tags: (p.tags as string[]) || [],
+      created: p.created || "",
+    }));
+
+    const result = {
+      pulseCount: pulseInfo.count ?? 0,
+      pulses,
+      alexa: json.alexa || "",
+      source: "AlienVault OTX",
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[OTX] URL lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function otxLookupHash(hash: string) {
+  if (!OTX_KEY) return null;
+  const cacheKey = `otx:hash:${hash}`;
+  const cached = getCached<Record<string, unknown>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(`${OTX_BASE}/indicators/file/${encodeURIComponent(hash)}/general`, {
+      headers: otxHeaders(),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const pulseInfo = json.pulse_info || {};
+    const pulses = (pulseInfo.pulses || []).slice(0, 10).map((p: Record<string, unknown>) => ({
+      id: p.id,
+      name: p.name || "",
+      description: p.description || "",
+      author: p.author_name || "",
+      tags: (p.tags as string[]) || [],
+      malwareFamilies: (p.malware_families as string[]) || [],
+      adversary: p.adversary || "",
+      references: (p.references as string[]) || [],
+      created: p.created || "",
+    }));
+
+    const result = {
+      pulseCount: pulseInfo.count ?? 0,
+      pulses,
+      adversary: json.adversary || "",
+      malwareFamilies: json.malware_families || [],
+      source: "AlienVault OTX",
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[OTX] Hash lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function otxGetLivePulses(limit = 8) {
+  if (!OTX_KEY) return [];
+  const cacheKey = `otx:live_pulses:${limit}`;
+  const cached = getCached<Record<string, unknown>[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    let res = await safeFetch(`${OTX_BASE}/pulses/subscribed?limit=${limit}`, {
+      headers: otxHeaders(),
+    });
+    if (!res.ok) {
+      res = await safeFetch(`${OTX_BASE}/pulses/activity?limit=${limit}`, {
+        headers: otxHeaders(),
+      });
+    }
+    if (!res.ok) return [];
+    const json = await res.json();
+    const results = (json.results || []).slice(0, limit).map((p: Record<string, unknown>) => ({
+      id: p.id,
+      name: p.name || "Emerging Threat Campaign",
+      description: p.description || "",
+      author: p.author_name || "AlienVault OTX",
+      tags: ((p.tags as string[]) || []).slice(0, 6),
+      adversary: p.adversary || null,
+      targetedCountries: ((p.targeted_countries as string[]) || []).slice(0, 5),
+      malwareFamilies: ((p.malware_families as string[]) || []).slice(0, 5),
+      indicatorCount: p.indicator_count || (p.indicators as unknown[])?.length || 0,
+      created: p.created ? new Date(p.created as string).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      references: ((p.references as string[]) || []).slice(0, 3),
+    }));
+    setCache(cacheKey, results, 15 * 60_000);
+    return results;
+  } catch (e) {
+    console.error("[OTX] Live pulses fetch failed:", (e as Error).message);
+    return [];
+  }
+}
+
+// ============================================================
+// alphaMountain.ai / ThreatYeti
+// ============================================================
+const ALPHA_BASE = "https://api.alphamountain.ai";
+const ALPHA_KEY = process.env.ALPHA_MOUNTAIN_API || process.env.THREATYETI_API_KEY || "";
+
+export async function alphaMountainLookupURI(uri: string) {
+  if (!ALPHA_KEY) return null;
+  const cacheKey = `alpha:${uri}`;
+  const cached = getCached<Record<string, unknown>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const [threatRes, catRes] = await Promise.all([
+      safeFetch(`${ALPHA_BASE}/threat/uri/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ license: ALPHA_KEY, uri, version: "1.0" }),
+      }),
+      safeFetch(`${ALPHA_BASE}/category/uri/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ license: ALPHA_KEY, uri, version: "1.0" }),
+      }),
+    ]);
+
+    let threatData: Record<string, unknown> | null = null;
+    let catData: Record<string, unknown> | null = null;
+
+    if (threatRes.ok) {
+      const j = await threatRes.json();
+      threatData = j?.threat ?? null;
+    }
+    if (catRes.ok) {
+      const j = await catRes.json();
+      catData = j?.category ?? null;
+    }
+
+    if (!threatData && !catData) return null;
+
+    const rawScore = typeof threatData?.score === "number" ? threatData.score : 1.0;
+    const normalizedRisk = Math.min(100, Math.max(0, Math.round(((rawScore - 1.0) / 4.0) * 100)));
+
+    const result = {
+      threatScore: rawScore,
+      riskScore: normalizedRisk,
+      scope: (threatData?.scope as string) || "uri",
+      source: (threatData?.source as string) || "alphaMountain.ai",
+      categories: (catData?.categories as number[]) || [],
+      confidence: typeof catData?.confidence === "number" ? catData.confidence : 0,
+      severity: normalizedRisk >= 75 ? "critical" : normalizedRisk >= 50 ? "high" : normalizedRisk >= 25 ? "medium" : "low",
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[alphaMountain] URI lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
+// URLQuery
+// ============================================================
+const URLQUERY_BASE = "https://api.urlquery.net/public/v1";
+const URLQUERY_KEY = process.env.URL_QUERY_API_KEY || "";
+
+export async function urlqueryLookup(query: string) {
+  if (!URLQUERY_KEY) return null;
+  const cacheKey = `urlquery:${query}`;
+  const cached = getCached<Record<string, unknown>>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `${URLQUERY_BASE}/search/reports/?q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          "x-apikey": URLQUERY_KEY,
+          Accept: "application/json",
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const reports = (json.reports || []).slice(0, 5).map((r: Record<string, unknown>) => ({
+      id: r.id || r.report_id || "",
+      url: r.url || "",
+      status: r.status || "completed",
+      date: r.date || r.created || "",
+    }));
+
+    const result = {
+      totalHits: json.total_hits ?? 0,
+      reports,
+      source: "URLQuery",
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[URLQuery] Search failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
 // NVD (National Vulnerability Database)
 // ============================================================
 const NVD_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0";
@@ -637,15 +959,16 @@ export async function nvdLatestCVEs(limit = 8) {
 }
 
 // ============================================================
-// Merged IP Lookup (all 5 APIs in parallel)
+// Merged IP Lookup (all engines in parallel)
 // ============================================================
 export async function mergedIPLookup(ip: string) {
-  const [vt, abuse, shodan, cip, abusix] = await Promise.all([
+  const [vt, abuse, shodan, cip, abusix, otx] = await Promise.all([
     vtLookupIP(ip),
     abuseIPDBLookup(ip),
     shodanLookupIP(ip),
     criminalIPLookupIP(ip),
     abusixLookupIP(ip),
+    otxLookupIP(ip),
   ]);
 
   const sources: string[] = [];
@@ -654,6 +977,7 @@ export async function mergedIPLookup(ip: string) {
   if (shodan) sources.push("Shodan");
   if (cip) sources.push("Criminal IP");
   if (abusix) sources.push("Abusix");
+  if (otx) sources.push("AlienVault OTX");
 
   // Merge: prefer AbuseIPDB for geo, Shodan for ports, VT for reputation
   const abuseScore = abuse?.abuseConfidenceScore ?? 0;
@@ -671,6 +995,9 @@ export async function mergedIPLookup(ip: string) {
   // Abusix listed = high risk signal
   const abusixScore = abusix?.listed ? 75 : 0;
 
+  // OTX threat pulses
+  const otxScore = (otx?.pulseCount as number) > 0 ? Math.min(100, (otx?.pulseCount as number) * 15) : 0;
+
   // Composite risk score — takes the maximum across all sources
   const riskScore = Math.min(
     100,
@@ -679,18 +1006,19 @@ export async function mergedIPLookup(ip: string) {
       vtScore,
       shodan?.vulns?.length ? 70 : 0,
       cipScore,
-      abusixScore
+      abusixScore,
+      otxScore
     )
   );
 
   return {
     ip,
-    country: abuse?.countryName || (cip?.country as string) || shodan?.country || vt?.country || "Unknown",
+    country: abuse?.countryName || (cip?.country as string) || (otx?.country as string) || shodan?.country || vt?.country || "Unknown",
     countryCode: abuse?.countryCode || (cip?.countryCode as string) || shodan?.countryCode || "",
-    city: (cip?.city as string) || shodan?.city || "",
+    city: (cip?.city as string) || (otx?.city as string) || shodan?.city || "",
     isp: abuse?.isp || (cip?.isp as string) || shodan?.isp || "",
     org: shodan?.org || (cip?.org as string) || vt?.asOwner || "",
-    asn: shodan?.asn || vt?.asn || "",
+    asn: (otx?.asn as string) || shodan?.asn || vt?.asn || "",
     hostname: (shodan?.hostnames as string[])?.[0] || (abuse?.hostnames as string[])?.[0] || "",
     reputation: riskScore,
     isVPN: (cip?.isVPN as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("vpn") || false,
@@ -710,7 +1038,7 @@ export async function mergedIPLookup(ip: string) {
         ...((abuse?.hostnames as string[]) ?? []),
       ]),
     ],
-    threats: buildThreats(vt, abuse, shodan, cip, abusix),
+    threats: buildThreats(vt, abuse, shodan, cip, abusix, otx),
     whois: parseWhoisString((vt?.whois as string) || ""),
     vtAnalysisStats: vt?.lastAnalysisStats ?? null,
     criminalIP: cip ? {
@@ -725,6 +1053,12 @@ export async function mergedIPLookup(ip: string) {
       categories: abusix.categories,
       lastSeen: abusix.lastSeen,
     } : null,
+    otx: otx ? {
+      pulseCount: otx.pulseCount,
+      pulses: otx.pulses,
+      reputation: otx.reputation,
+      validation: otx.validation,
+    } : null,
     sources,
     riskScore,
     severity: scoreToSeverity(riskScore),
@@ -736,7 +1070,8 @@ function buildThreats(
   abuse: Record<string, unknown> | null,
   shodan: Record<string, unknown> | null,
   cip?: Record<string, unknown> | null,
-  abusix?: Record<string, unknown> | null
+  abusix?: Record<string, unknown> | null,
+  otx?: Record<string, unknown> | null
 ) {
   const threats: { source: string; description: string; date: string; severity: string }[] = [];
 
@@ -814,6 +1149,18 @@ function buildThreats(
     });
   }
 
+  // AlienVault OTX Threat Pulses
+  if (otx && typeof otx.pulseCount === "number" && otx.pulseCount > 0) {
+    const pulseList = (otx.pulses as { name: string; author: string }[]) || [];
+    const topNames = pulseList.slice(0, 2).map((p) => p.name).filter(Boolean).join(", ");
+    threats.push({
+      source: "AlienVault OTX",
+      description: `Associated with ${otx.pulseCount} threat pulse${otx.pulseCount > 1 ? "s" : ""}${topNames ? ` (${topNames})` : ""}`,
+      date: new Date().toISOString().slice(0, 10),
+      severity: otx.pulseCount > 5 ? "critical" : otx.pulseCount > 1 ? "high" : "medium",
+    });
+  }
+
   // Add latest abuse reports as threats
   const reports = (abuse?.reports as { reportedAt: string; comment: string; categories: number[] }[]) ?? [];
   for (const report of reports.slice(0, 2)) {
@@ -865,10 +1212,13 @@ function parseWhoisString(whois: string): Record<string, string> {
 // Merged Domain Lookup
 // ============================================================
 export async function mergedDomainLookup(domain: string) {
-  const [vt, shodanDns, cipDomain] = await Promise.all([
+  const [vt, shodanDns, cipDomain, otxDomain, alphaDomain, urlqueryDomain] = await Promise.all([
     vtLookupDomain(domain),
     shodanResolveDomain(domain),
     criminalIPScanDomain(domain),
+    otxLookupDomain(domain),
+    alphaMountainLookupURI(domain),
+    urlqueryLookup(domain),
   ]);
 
   // If Shodan resolved an IP, also look it up
@@ -882,6 +1232,9 @@ export async function mergedDomainLookup(domain: string) {
   if (vt) sources.push("VirusTotal");
   if (shodanDns) sources.push("Shodan");
   if (cipDomain) sources.push("Criminal IP");
+  if (otxDomain) sources.push("AlienVault OTX");
+  if (alphaDomain) sources.push("alphaMountain.ai");
+  if (urlqueryDomain) sources.push("URLQuery");
 
   const vtMalicious = (vt?.lastAnalysisStats as Record<string, number>)?.malicious ?? 0;
   const vtTotal =
@@ -896,7 +1249,11 @@ export async function mergedDomainLookup(domain: string) {
   const cipMalware = typeof cipDomain?.malwareScore === "number" ? cipDomain.malwareScore : 0;
   const cipDomainRisk = Math.max(cipPhishing, cipMalware);
 
-  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk));
+  // OTX & alphaMountain risk
+  const otxRisk = (otxDomain?.pulseCount as number) > 0 ? Math.min(100, (otxDomain?.pulseCount as number) * 15) : 0;
+  const alphaRisk = typeof alphaDomain?.riskScore === "number" ? alphaDomain.riskScore : 0;
+
+  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, otxRisk, alphaRisk));
 
   // Parse DNS records from VT
   const dnsRecords = ((vt?.lastDnsRecords as Record<string, unknown>[]) ?? []).map(
@@ -962,6 +1319,23 @@ export async function mergedDomainLookup(domain: string) {
       severity: cipMalware > 80 ? "critical" : "high",
     });
   }
+  if (otxDomain && (otxDomain.pulseCount as number) > 0) {
+    const count = otxDomain.pulseCount as number;
+    domainThreats.push({
+      source: "AlienVault OTX",
+      description: `Flagged in ${count} threat pulse${count > 1 ? "s" : ""}`,
+      date: new Date().toISOString().slice(0, 10),
+      severity: count > 5 ? "critical" : count > 1 ? "high" : "medium",
+    });
+  }
+  if (alphaDomain && (alphaDomain.riskScore as number) >= 50) {
+    domainThreats.push({
+      source: "alphaMountain.ai",
+      description: `AI Risk Score: ${(alphaDomain.threatScore as number).toFixed(2)}/5.0 (${(alphaDomain.severity as string).toUpperCase()})`,
+      date: new Date().toISOString().slice(0, 10),
+      severity: alphaDomain.severity as string,
+    });
+  }
 
   return {
     domain,
@@ -986,7 +1360,89 @@ export async function mergedDomainLookup(domain: string) {
       title: cipDomain.title,
       technologies: cipDomain.technologies,
     } : null,
+    otx: otxDomain ? {
+      pulseCount: otxDomain.pulseCount,
+      pulses: otxDomain.pulses,
+      alexa: otxDomain.alexa,
+      validation: otxDomain.validation,
+    } : null,
+    alphaMountain: alphaDomain ? {
+      threatScore: alphaDomain.threatScore,
+      riskScore: alphaDomain.riskScore,
+      categories: alphaDomain.categories,
+      confidence: alphaDomain.confidence,
+      source: alphaDomain.source,
+    } : null,
+    urlquery: urlqueryDomain ? {
+      totalHits: urlqueryDomain.totalHits,
+      reports: urlqueryDomain.reports,
+    } : null,
     threats: domainThreats,
+    sources,
+    riskScore,
+    severity: scoreToSeverity(riskScore),
+  };
+}
+
+// ============================================================
+// Merged Hash Lookup (VirusTotal + AlienVault OTX)
+// ============================================================
+export async function mergedHashLookup(hash: string) {
+  const [vtData, otxData] = await Promise.all([
+    vtLookupHash(hash),
+    otxLookupHash(hash),
+  ]);
+
+  const sources: string[] = [];
+  if (vtData) sources.push("VirusTotal");
+  if (otxData && (otxData.pulseCount as number) > 0) sources.push("AlienVault OTX");
+
+  if (!vtData && (!otxData || (otxData.pulseCount as number) === 0)) {
+    return {
+      hash,
+      sources: [],
+      riskScore: 0,
+      severity: "info",
+      error: "Hash not found in VirusTotal or AlienVault OTX databases.",
+    };
+  }
+
+  let vtScore = 0;
+  let detectionRate = "0/0";
+  if (vtData) {
+    const stats = vtData.lastAnalysisStats as Record<string, number>;
+    const malicious = (stats?.malicious ?? 0) + (stats?.suspicious ?? 0);
+    const total = malicious + (stats?.undetected ?? 0) + (stats?.harmless ?? 0);
+    vtScore = total > 0 ? Math.min(100, Math.round((malicious / total) * 100)) : 0;
+    detectionRate = `${malicious}/${total}`;
+  }
+
+  const otxPulseCount = (otxData?.pulseCount as number) || 0;
+  const otxScore = otxPulseCount > 0 ? Math.min(100, otxPulseCount * 20) : 0;
+  const riskScore = Math.min(100, Math.max(vtScore, otxScore));
+
+  const allTags = [
+    ...((vtData?.tags as string[]) || []),
+    ...(((otxData?.pulses as { tags: string[] }[]) || []).flatMap((p) => p.tags || [])),
+  ];
+
+  return {
+    hash,
+    meaningfulName: vtData?.meaningfulName || (otxData?.pulses as { name: string }[])?.[0]?.name || "File Hash Analysis",
+    fileType: vtData?.fileType || "",
+    fileSize: vtData?.fileSize || 0,
+    md5: vtData?.md5 || "",
+    sha1: vtData?.sha1 || "",
+    sha256: vtData?.sha256 || hash,
+    detectionRate,
+    lastAnalysisStats: vtData?.lastAnalysisStats || null,
+    tags: [...new Set(allTags)].slice(0, 15),
+    otx: otxData ? {
+      pulseCount: otxData.pulseCount,
+      pulses: otxData.pulses,
+      adversary: otxData.adversary,
+      malwareFamilies: otxData.malwareFamilies,
+    } : null,
     sources,
     riskScore,
     severity: scoreToSeverity(riskScore),
@@ -1024,4 +1480,3 @@ export async function mergedURLLookup(url: string) {
       : null,
   };
 }
-

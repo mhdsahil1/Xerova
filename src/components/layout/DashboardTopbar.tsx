@@ -1,58 +1,100 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Moon, Sun, Bell } from "lucide-react";
+import { Moon, Sun, Bell, Search, ShieldCheck, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 const breadcrumbMap: Record<string, string> = {
-  "/dashboard": "Dashboard",
+  "/dashboard": "Overview",
   "/threats": "Threat Intelligence",
-  "/assistant": "AI Assistant",
-  "/reports": "Reports",
-  "/settings": "Settings",
+  "/assistant": "AI Copilot",
+  "/reports": "Incident Reports",
+  "/settings": "Preferences",
 };
 
 export function DashboardTopbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
-  const pageTitle = breadcrumbMap[pathname] || "Dashboard";
+  const pageTitle = breadcrumbMap[pathname] || "Console";
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="h-6" />
+    <header className="w-full flex items-center justify-between gap-4 py-2 px-1 mb-2 shrink-0">
+      {/* Left: Brand / Section Name */}
+      <div className="flex items-center gap-3 min-w-0">
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-xl bg-white/[0.08] border border-white/10 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+            <Zap className="w-4 h-4 text-primary fill-primary/30" />
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm tracking-tight text-white flex items-center gap-1.5">
+              XEROVA
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-primary/15 text-primary border border-primary/25">
+                INTEL
+              </span>
+            </span>
+          </div>
+        </Link>
 
-      {/* Breadcrumbs */}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">XEROVA</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="font-medium">{pageTitle}</span>
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#8a8f9d] font-mono">
+          <span>/</span>
+          <span className="text-white font-sans font-medium">{pageTitle}</span>
+        </div>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Notifications">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-cyber-cyan rounded-full" aria-hidden="true" />
-          <span className="sr-only">New notifications available</span>
+      {/* Center: Reference Status Pill Badge */}
+      <div className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#12141a] border border-white/[0.08] text-xs shadow-inner">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-white font-mono">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          100%
+        </span>
+        <span className="text-[#8a8f9d]">threat telemetry feeds operational today</span>
+      </div>
+
+      {/* Right Controls */}
+      <div className="flex items-center gap-2">
+        {/* Quick Search Shortcut */}
+        <Link
+          href="/threats"
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#12141a] hover:bg-[#181b22] border border-white/[0.08] text-xs text-[#8a8f9d] hover:text-white transition-colors"
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span>Quick Lookup...</span>
+          <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-[#8a8f9d]">
+            ⌘K
+          </kbd>
+        </Link>
+
+        {/* Notifications Pill */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2.5 rounded-full bg-[#12141a] border border-white/[0.08] text-xs text-[#8a8f9d] hover:text-white flex items-center gap-1.5"
+          aria-label="Threat alerts"
+        >
+          <Bell className="w-3.5 h-3.5 text-[#8a8f9d]" />
+          <span className="text-[11px] font-mono text-primary font-bold">+4</span>
         </Button>
 
-        {/* Theme Toggle */}
+        {/* Theme Toggle Button */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9"
+          className="h-8 w-8 rounded-full bg-[#12141a] border border-white/[0.08] text-[#8a8f9d] hover:text-white"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label="Toggle theme"
         >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <Sun className="h-3.5 w-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-3.5 w-3.5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
       </div>
     </header>
   );
 }
+
+export default DashboardTopbar;

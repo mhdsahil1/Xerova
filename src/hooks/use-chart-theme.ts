@@ -17,11 +17,11 @@ export interface ChartTheme {
 }
 
 const DARK_DEFAULTS: ChartTheme = {
-  tooltipBg: "oklch(0.16 0.02 260)",
-  tooltipBorder: "oklch(0.26 0.025 260)",
-  tooltipText: "oklch(0.93 0.01 260)",
-  gridColor: "oklch(0.3 0.02 260)",
-  axisColor: "oklch(0.5 0.02 260)",
+  tooltipBg: "oklch(0.12 0.008 260)",
+  tooltipBorder: "oklch(0.20 0.01 260)",
+  tooltipText: "oklch(0.93 0.008 260)",
+  gridColor: "oklch(0.18 0.008 260)",
+  axisColor: "oklch(0.45 0.01 260)",
   severityCritical: "oklch(0.63 0.25 25)",
   severityHigh: "oklch(0.7 0.18 50)",
   severityMedium: "oklch(0.8 0.15 85)",
