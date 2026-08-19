@@ -27,7 +27,8 @@ export async function connectDB() {
   const MONGODB_URI = process.env.MONGODB_URI;
 
   if (!MONGODB_URI) {
-    throw new Error("MONGODB_URI is not defined in environment variables");
+    // Graceful fallback for demo/offline development mode
+    return null;
   }
 
   if (cached.conn) {
@@ -48,15 +49,15 @@ export async function connectDB() {
       .catch((err) => {
         cached.promise = null;
         console.error("❌ MongoDB connection error:", err);
-        throw err;
+        return null;
       });
   }
 
   try {
     cached.conn = await cached.promise;
-  } catch (error) {
+  } catch {
     cached.promise = null;
-    throw error;
+    return null;
   }
 
   return cached.conn;

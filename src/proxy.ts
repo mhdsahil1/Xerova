@@ -7,7 +7,6 @@ export default auth;
 
 export const config = {
   matcher: [
-    // Protect dashboard routes
     "/dashboard/:path*",
     "/threats/:path*",
     "/assistant/:path*",

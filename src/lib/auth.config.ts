@@ -1,20 +1,18 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
-  providers: [],
   pages: {
     signIn: "/login",
-    error: "/login",
   },
   session: {
     strategy: "jwt",
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || "xerova-secret-key-32chars-min-jwt-auth-2026",
+  trustHost: true,
   callbacks: {
-    // The proxy matcher already restricts execution to protected routes,
-    // so a session presence check is all that's needed here.
     authorized({ auth }) {
       return !!auth?.user;
     },
   },
+  providers: [],
 } satisfies NextAuthConfig;

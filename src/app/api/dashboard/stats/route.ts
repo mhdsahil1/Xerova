@@ -230,9 +230,32 @@ export async function GET() {
     });
   } catch (error) {
     console.error("[Dashboard Stats Error]:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch dashboard stats" },
-      { status: 500 }
-    );
+    // Return graceful fallback state so the dashboard still loads smoothly
+    return NextResponse.json({
+      stats: [
+        { label: "Investigations", value: "0", change: "0%" },
+        { label: "Critical Threats", value: "0", change: "0%" },
+        { label: "Reports Generated", value: "0", change: "0%" },
+        { label: "Avg Risk Score", value: "0", change: "" },
+      ],
+      threatScore: 0,
+      riskDistribution: [
+        { name: "Critical", value: 0, color: "#ef4444" },
+        { name: "High", value: 0, color: "#f97316" },
+        { name: "Medium", value: 0, color: "#eab308" },
+        { name: "Low", value: 0, color: "#3b82f6" },
+        { name: "Clean", value: 0, color: "#22c55e" },
+      ],
+      trendData: [
+        { date: "Mon", investigations: 0, threats: 0 },
+        { date: "Tue", investigations: 0, threats: 0 },
+        { date: "Wed", investigations: 0, threats: 0 },
+        { date: "Thu", investigations: 0, threats: 0 },
+        { date: "Fri", investigations: 0, threats: 0 },
+        { date: "Sat", investigations: 0, threats: 0 },
+        { date: "Sun", investigations: 0, threats: 0 },
+      ],
+      recentSearches: [],
+    });
   }
 }

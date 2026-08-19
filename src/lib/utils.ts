@@ -24,21 +24,34 @@ export function formatDateTime(date: Date | string): string {
 }
 
 export function getRiskColor(score: number): string {
-  if (score >= 1) return "text-severity-critical";
+  if (score >= 75) return "text-severity-critical";
+  if (score >= 50) return "text-severity-high";
+  if (score >= 25) return "text-severity-medium";
+  if (score >= 1)  return "text-severity-low";
   return "text-status-success";
 }
 
 export function getRiskLabel(score: number): string {
-  if (score >= 80) return "Critical Danger";
-  if (score >= 60) return "High Danger";
-  if (score >= 40) return "Medium Danger";
-  if (score >= 1) return "Danger";
+  if (score >= 75) return "Critical Risk";
+  if (score >= 50) return "High Risk";
+  if (score >= 25) return "Medium Risk";
+  if (score >= 1)  return "Low Risk";
   return "Clean";
 }
 
 export function getRiskBgColor(score: number): string {
-  if (score >= 1) return "bg-severity-critical/10 border-severity-critical/20";
-  return "bg-status-success/10 border-status-success/20";
+  if (score >= 75) return "bg-severity-critical/10 border-severity-critical/30";
+  if (score >= 50) return "bg-severity-high/10 border-severity-high/30";
+  if (score >= 25) return "bg-severity-medium/10 border-severity-medium/30";
+  if (score >= 1)  return "bg-severity-low/10 border-severity-low/30";
+  return "bg-status-success/10 border-status-success/30";
+}
+
+export function getRiskGradient(score: number): string {
+  if (score >= 75) return "from-severity-critical to-severity-high";
+  if (score >= 50) return "from-severity-high to-severity-medium";
+  if (score >= 25) return "from-severity-medium to-severity-low";
+  return "from-status-success to-severity-low";
 }
 
 

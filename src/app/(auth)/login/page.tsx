@@ -57,14 +57,13 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Invalid email or password. Please try again.");
+        setIsLoading(false);
       } else {
-        router.push("/dashboard");
-        router.refresh();
+        window.location.href = "/dashboard";
       }
     } catch {
       setError("Something went wrong. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -153,6 +152,20 @@ function LoginForm() {
             <span className="leading-relaxed">{error}</span>
           </motion.div>
         )}
+
+        {/* Quick Test / Demo Credentials Banner */}
+        <div className="mb-4 p-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between gap-2 text-xs">
+          <div className="min-w-0 font-mono text-[11px] text-slate-300">
+            <span className="text-cyan-400 font-bold">Demo:</span> admin@xerova.io / admin123
+          </div>
+          <button
+            type="button"
+            onClick={() => setFormData({ email: "admin@xerova.io", password: "admin123" })}
+            className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded-lg transition-colors cursor-pointer shrink-0"
+          >
+            Auto-Fill
+          </button>
+        </div>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
