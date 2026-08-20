@@ -51,10 +51,10 @@ async function safeFetch(
 // VirusTotal
 // ============================================================
 const VT_BASE = "https://www.virustotal.com/api/v3";
-const VT_KEY = process.env.VIRUSTOTAL_API_KEY || "";
+export const getVTKey = () => process.env.VIRUSTOTAL_API_KEY || "";
 
 function vtHeaders() {
-  return { "x-apikey": VT_KEY, Accept: "application/json" };
+  return { "x-apikey": getVTKey(), Accept: "application/json" };
 }
 
 export async function vtLookupIP(ip: string) {
@@ -231,9 +231,11 @@ export async function vtLookupHash(hash: string) {
 // AbuseIPDB
 // ============================================================
 const ABUSE_BASE = "https://api.abuseipdb.com/api/v2";
-const ABUSE_KEY = process.env.ABUSEIPDB_API_KEY || "";
+export const getAbuseKey = () => process.env.ABUSEIPDB_API_KEY || "";
 
 export async function abuseIPDBLookup(ip: string) {
+  const key = getAbuseKey();
+  if (!key) return null;
   const cacheKey = `abuse:${ip}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -241,7 +243,7 @@ export async function abuseIPDBLookup(ip: string) {
   try {
     const res = await safeFetch(
       `${ABUSE_BASE}/check?ipAddress=${encodeURIComponent(ip)}&maxAgeInDays=90&verbose=true`,
-      { headers: { Key: ABUSE_KEY, Accept: "application/json" } }
+      { headers: { Key: key, Accept: "application/json" } }
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -279,16 +281,18 @@ export async function abuseIPDBLookup(ip: string) {
 // Shodan
 // ============================================================
 const SHODAN_BASE = "https://api.shodan.io";
-const SHODAN_KEY = process.env.SHODAN_API_KEY || "";
+export const getShodanKey = () => process.env.SHODAN_API_KEY || "";
 
 export async function shodanLookupIP(ip: string) {
+  const key = getShodanKey();
+  if (!key) return null;
   const cacheKey = `shodan:ip:${ip}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
 
   try {
     const res = await safeFetch(
-      `${SHODAN_BASE}/shodan/host/${ip}?key=${SHODAN_KEY}&minify=true`
+      `${SHODAN_BASE}/shodan/host/${ip}?key=${key}&minify=true`
     );
     if (!res.ok) return null;
     const d = await res.json();
@@ -316,13 +320,15 @@ export async function shodanLookupIP(ip: string) {
 }
 
 export async function shodanResolveDomain(domain: string) {
+  const key = getShodanKey();
+  if (!key) return null;
   const cacheKey = `shodan:resolve:${domain}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
 
   try {
     const res = await safeFetch(
-      `${SHODAN_BASE}/dns/resolve?hostnames=${domain}&key=${SHODAN_KEY}`
+      `${SHODAN_BASE}/dns/resolve?hostnames=${domain}&key=${key}`
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -341,14 +347,14 @@ export async function shodanResolveDomain(domain: string) {
 // Criminal IP
 // ============================================================
 const CIP_BASE = "https://api.criminalip.io/v1";
-const CIP_KEY = process.env.CRIMINAL_IP_API_KEY || "";
+export const getCriminalIPKey = () => process.env.CRIMINAL_IP_API_KEY || "";
 
 function cipHeaders() {
-  return { "x-api-key": CIP_KEY, Accept: "application/json" };
+  return { "x-api-key": getCriminalIPKey(), Accept: "application/json" };
 }
 
 export async function criminalIPLookupIP(ip: string) {
-  if (!CIP_KEY) return null;
+  if (!getCriminalIPKey()) return null;
   const cacheKey = `cip:ip:${ip}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -397,7 +403,7 @@ export async function criminalIPLookupIP(ip: string) {
 }
 
 export async function criminalIPScanDomain(domain: string) {
-  if (!CIP_KEY) return null;
+  if (!getCriminalIPKey()) return null;
   const cacheKey = `cip:domain:${domain}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -450,10 +456,11 @@ export async function criminalIPScanDomain(domain: string) {
 // Abusix Threat Intelligence
 // ============================================================
 const ABUSIX_BASE = "https://threat-intel-api.abusix.com/beta";
-const ABUSIX_KEY = process.env.ABUSIX_API_KEY || "";
+export const getAbusixKey = () => process.env.ABUSIX_API_KEY || "";
 
 export async function abusixLookupIP(ip: string) {
-  if (!ABUSIX_KEY) return null;
+  const key = getAbusixKey();
+  if (!key) return null;
   const cacheKey = `abusix:${ip}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -461,7 +468,7 @@ export async function abusixLookupIP(ip: string) {
   try {
     const res = await safeFetch(
       `${ABUSIX_BASE}/query/${encodeURIComponent(ip)}`,
-      { headers: { "x-api-key": ABUSIX_KEY, Accept: "application/json" } }
+      { headers: { "x-api-key": key, Accept: "application/json" } }
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -490,17 +497,17 @@ export async function abusixLookupIP(ip: string) {
 // AlienVault OTX (Open Threat Exchange)
 // ============================================================
 const OTX_BASE = "https://otx.alienvault.com/api/v1";
-const OTX_KEY = process.env.OTX_API_KEY || "";
+export const getOTXKey = () => process.env.OTX_API_KEY || "";
 
 function otxHeaders() {
   return {
-    "X-OTX-API-KEY": OTX_KEY,
+    "X-OTX-API-KEY": getOTXKey(),
     Accept: "application/json",
   };
 }
 
 export async function otxLookupIP(ip: string) {
-  if (!OTX_KEY) return null;
+  if (!getOTXKey()) return null;
   const cacheKey = `otx:ip:${ip}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -547,7 +554,7 @@ export async function otxLookupIP(ip: string) {
 }
 
 export async function otxLookupDomain(domain: string) {
-  if (!OTX_KEY) return null;
+  if (!getOTXKey()) return null;
   const cacheKey = `otx:domain:${domain}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -591,7 +598,7 @@ export async function otxLookupDomain(domain: string) {
 }
 
 export async function otxLookupURL(url: string) {
-  if (!OTX_KEY) return null;
+  if (!getOTXKey()) return null;
   const cacheKey = `otx:url:${url}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -627,7 +634,7 @@ export async function otxLookupURL(url: string) {
 }
 
 export async function otxLookupHash(hash: string) {
-  if (!OTX_KEY) return null;
+  if (!getOTXKey()) return null;
   const cacheKey = `otx:hash:${hash}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -667,7 +674,7 @@ export async function otxLookupHash(hash: string) {
 }
 
 export async function otxGetLivePulses(limit = 8) {
-  if (!OTX_KEY) return [];
+  if (!getOTXKey()) return [];
   const cacheKey = `otx:live_pulses:${limit}`;
   const cached = getCached<Record<string, unknown>[]>(cacheKey);
   if (cached) return cached;
@@ -708,10 +715,11 @@ export async function otxGetLivePulses(limit = 8) {
 // alphaMountain.ai / ThreatYeti
 // ============================================================
 const ALPHA_BASE = "https://api.alphamountain.ai";
-const ALPHA_KEY = process.env.ALPHA_MOUNTAIN_API || process.env.THREATYETI_API_KEY || "";
+export const getAlphaKey = () => process.env.ALPHA_MOUNTAIN_API || process.env.THREATYETI_API_KEY || "";
 
 export async function alphaMountainLookupURI(uri: string) {
-  if (!ALPHA_KEY) return null;
+  const key = getAlphaKey();
+  if (!key) return null;
   const cacheKey = `alpha:${uri}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -721,12 +729,12 @@ export async function alphaMountainLookupURI(uri: string) {
       safeFetch(`${ALPHA_BASE}/threat/uri/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ license: ALPHA_KEY, uri, version: "1.0" }),
+        body: JSON.stringify({ license: key, uri, version: "1.0" }),
       }),
       safeFetch(`${ALPHA_BASE}/category/uri/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ license: ALPHA_KEY, uri, version: "1.0" }),
+        body: JSON.stringify({ license: key, uri, version: "1.0" }),
       }),
     ]);
 
@@ -768,10 +776,11 @@ export async function alphaMountainLookupURI(uri: string) {
 // URLQuery
 // ============================================================
 const URLQUERY_BASE = "https://api.urlquery.net/public/v1";
-const URLQUERY_KEY = process.env.URL_QUERY_API_KEY || "";
+export const getUrlQueryKey = () => process.env.URL_QUERY_API_KEY || "";
 
 export async function urlqueryLookup(query: string) {
-  if (!URLQUERY_KEY) return null;
+  const key = getUrlQueryKey();
+  if (!key) return null;
   const cacheKey = `urlquery:${query}`;
   const cached = getCached<Record<string, unknown>>(cacheKey);
   if (cached) return cached;
@@ -781,7 +790,7 @@ export async function urlqueryLookup(query: string) {
       `${URLQUERY_BASE}/search/reports/?q=${encodeURIComponent(query)}`,
       {
         headers: {
-          "x-apikey": URLQUERY_KEY,
+          "x-apikey": key,
           Accept: "application/json",
         },
       }
@@ -1457,19 +1466,7 @@ export async function mergedURLLookup(url: string) {
   const analysis = await analyzeURL(url);
 
   return {
-    url: analysis.url,
-    riskScore: analysis.riskScore,
-    severity: analysis.severity,
-    verdict: analysis.verdict,
-    threatLevel: analysis.threatLevel,
-    sources: analysis.sources,
-    riskFactors: analysis.riskFactors,
-    riskBreakdown: analysis.riskBreakdown,
-    structural: analysis.structural,
-    urlCharacteristics: analysis.urlCharacteristics,
-    domainCharacteristics: analysis.domainCharacteristics,
-    threatIntelligence: analysis.threatIntelligence,
-    findings: analysis.findings,
+    ...analysis,
     lastAnalysisStats: analysis.threatIntelligence?.virusTotal
       ? {
           malicious: analysis.threatIntelligence.virusTotal.maliciousEngines,

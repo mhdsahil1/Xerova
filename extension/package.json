@@ -1,0 +1,15 @@
+{
+  "name": "xerova-browser-guard",
+  "version": "1.0.0",
+  "description": "XEROVA Browser Guard — Detect suspicious and malicious websites while browsing.",
+  "private": true,
+  "scripts": {
+    "build": "tsc && node scripts/copy-static.js",
+    "watch": "tsc --watch",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/chrome": "^0.0.287"
+  }
+}

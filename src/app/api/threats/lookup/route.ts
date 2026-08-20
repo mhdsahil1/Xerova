@@ -98,6 +98,10 @@ export async function POST(request: Request) {
       }
     }
 
+    const finalSeverity =
+      ((results as Record<string, unknown>).severity as string) ||
+      scoreToSeverity(riskScore);
+
     // Store search in DB (fire-and-forget)
     const userId = session?.user?.id;
     if (userId) {
@@ -109,7 +113,7 @@ export async function POST(request: Request) {
             type,
             results,
             riskScore,
-            severity: scoreToSeverity(riskScore),
+            severity: finalSeverity,
             tags: (results as Record<string, unknown>).sources
               ? ((results as Record<string, unknown>).sources as string[])
               : [],
@@ -123,7 +127,7 @@ export async function POST(request: Request) {
       type,
       results,
       riskScore,
-      severity: scoreToSeverity(riskScore),
+      severity: finalSeverity,
     });
   } catch (error) {
     const msg =

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=400">
+  <title>XEROVA Browser Guard</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="app">
+    <!-- ===== Header ===== -->
+    <header id="header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">XEROVA</span>
+          <span class="brand-sub">BROWSER GUARD</span>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        <span class="status-label">ACTIVE</span>
+      </div>
+    </header>
+
+    <!-- ===== Current URL Section ===== -->
+    <section id="url-section">
+      <div class="section-label">CURRENT WEBSITE</div>
+      <div id="current-url" class="url-display">—</div>
+    </section>
+
+    <!-- ===== State: Idle ===== -->
+    <section id="state-idle" class="state-section">
+      <button id="btn-analyze" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        Analyze with XEROVA
+      </button>
+      <p class="privacy-note">URL is only sent when you click analyze.</p>
+    </section>
+
+    <!-- ===== State: Loading ===== -->
+    <section id="state-loading" class="state-section hidden">
+      <div class="loading-container">
+        <div class="scanner">
+          <div class="scanner-ring"></div>
+          <div class="scanner-ring scanner-ring-2"></div>
+          <div class="scanner-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="loading-text">Analyzing URL...</div>
+        <div class="loading-subtext">Querying multi-source threat intelligence</div>
+      </div>
+    </section>
+
+    <!-- ===== State: Result ===== -->
+    <section id="state-result" class="state-section hidden">
+      <!-- Threat Status Header -->
+      <div id="result-header" class="result-header">
+        <div class="section-label">THREAT STATUS</div>
+        <div class="score-container">
+          <div class="score-ring" id="score-ring">
+            <svg viewBox="0 0 120 120" class="score-svg">
+              <circle cx="60" cy="60" r="52" class="score-track"/>
+              <circle cx="60" cy="60" r="52" class="score-fill" id="score-circle"/>
+            </svg>
+            <div class="score-value">
+              <span id="score-number">0</span>
+              <span class="score-max">/ 100</span>
+            </div>
+          </div>
+          <div id="verdict-badge" class="verdict-badge">—</div>
+        </div>
+      </div>
+
+      <!-- Risk Factors -->
+      <div id="risk-factors-section" class="result-panel hidden">
+        <div class="section-label">RISK FACTORS</div>
+        <div id="risk-factors-list" class="risk-factors-list"></div>
+      </div>
+
+      <!-- Sources -->
+      <div id="sources-section" class="result-panel hidden">
+        <div class="section-label">INTELLIGENCE SOURCES</div>
+        <div id="sources-list" class="sources-list"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="result-actions">
+        <button id="btn-full-investigation" class="btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+          Full Investigation
+        </button>
+        <button id="btn-reanalyze" class="btn-ghost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Re-analyze
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== State: Error ===== -->
+    <section id="state-error" class="state-section hidden">
+      <div class="error-container">
+        <div class="error-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="error-title">Unable to Analyze</div>
+        <div id="error-message" class="error-message">An error occurred.</div>
+        <div class="error-actions">
+          <button id="btn-retry" class="btn-primary btn-small">Try Again</button>
+          <button id="btn-open-xerova-error" class="btn-ghost btn-small">Open XEROVA</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== State: Invalid URL ===== -->
+    <section id="state-invalid" class="state-section hidden">
+      <div class="invalid-container">
+        <div class="invalid-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+        <div class="invalid-title">Cannot Analyze</div>
+        <div id="invalid-message" class="invalid-message">This page cannot be analyzed.</div>
+      </div>
+    </section>
+
+    <!-- ===== Divider ===== -->
+    <div class="divider"></div>
+
+    <!-- ===== More XEROVA Tools ===== -->
+    <section id="tools-section">
+      <div class="section-label">MORE XEROVA TOOLS</div>
+      <div class="tools-grid">
+        <button class="tool-item" data-route="/threats">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          IP Intelligence
+        </button>
+        <button class="tool-item" data-route="/threats">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          IOC Extractor
+        </button>
+        <button class="tool-item" data-route="/threats">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          CVE Intelligence
+        </button>
+        <button class="tool-item" data-route="/reports">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          Reports
+        </button>
+        <button class="tool-item" data-route="/assistant">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          AI Assistant
+        </button>
+        <button class="tool-item" data-route="/">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+          </svg>
+          Open XEROVA
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer id="footer">
+      <span>XEROVA Browser Guard v1.0</span>
+      <span class="footer-sep">·</span>
+      <a id="link-privacy" href="#">Privacy</a>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

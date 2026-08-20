@@ -127,9 +127,9 @@ export function sanitizeQuery(
 export function scoreToSeverity(
   score: number
 ): "critical" | "high" | "medium" | "low" | "info" {
-  if (score >= 80) return "critical";
-  if (score >= 60) return "high";
-  if (score >= 40) return "medium";
-  if (score >= 20) return "low";
+  if (score >= 75) return "critical";
+  if (score >= 55) return "high";
+  if (score >= 35) return "medium";
+  if (score >= 15) return "low";
   return "info";
 }

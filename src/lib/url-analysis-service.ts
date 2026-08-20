@@ -234,6 +234,7 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     threatIntelligence,
     riskBreakdown: scoring.breakdown,
     findings: allFindings,
+    timestamp: new Date().toISOString(),
   };
 }
 

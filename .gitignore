@@ -53,3 +53,7 @@ URL_ANALYSIS_IMPLEMENTATION.md
 URL_ANALYSIS_MODULE.md
 URL_ANALYSIS_QUICK_REFERENCE.md
 URL_ANALYSIS_STATUS.txt
+
+# Browser Guard Extension
+extension/dist/
+extension/node_modules/

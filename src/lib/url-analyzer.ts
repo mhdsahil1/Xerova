@@ -134,6 +134,17 @@ export interface URLAnalysisResult {
     severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
     description: string;
   }>;
+
+  // Analysis Metadata
+  timestamp?: string;
+  providerResults?: Record<
+    string,
+    {
+      status: "success" | "timeout" | "error" | "unconfigured";
+      evidence: boolean;
+      scoreContribution?: number;
+    }
+  >;
 }
 
 export interface URLParseResult {
@@ -798,7 +809,7 @@ export function calculateUnifiedRiskScore(
 
   let threatIntelRisk = 0;
 
-  // 1. VirusTotal Evidence
+  // 1. VirusTotal Evidence & Attribution
   if (threatIntelligence.virusTotal) {
     sources.push("VirusTotal");
     const { maliciousEngines, suspiciousEngines, reputation } = threatIntelligence.virusTotal;
@@ -829,7 +840,7 @@ export function calculateUnifiedRiskScore(
     }
   }
 
-  // 2. Criminal IP Evidence
+  // 2. Criminal IP Evidence & Attribution
   if (threatIntelligence.criminalIP) {
     sources.push("Criminal IP");
     const phishing = threatIntelligence.criminalIP.phishingScore ?? 0;
@@ -840,28 +851,30 @@ export function calculateUnifiedRiskScore(
       allRiskFactors.push({
         source: "Criminal IP",
         category: "Threat Intelligence",
-        reason: `Criminal IP risk assessment: ${phishing > 0 ? `Phishing score ${phishing}` : `Malware score ${malware}`}`,
+        reason: `Criminal IP risk assessment: ${phishing > 0 ? `Phishing score ${phishing}%` : `Malware score ${malware}%`}`,
         severity: cipMax >= 70 ? "CRITICAL" : cipMax >= 40 ? "HIGH" : "MEDIUM",
         scoreContribution: cipMax,
       });
     }
   }
 
-  // 3. Abusix Evidence
-  if (threatIntelligence.abusix?.listed) {
+  // 3. Abusix Evidence & Attribution
+  if (threatIntelligence.abusix) {
     sources.push("Abusix");
-    threatIntelRisk = Math.max(threatIntelRisk, 75);
-    allRiskFactors.push({
-      source: "Abusix",
-      category: "Blocklist",
-      reason: `Domain/IP actively listed on Abusix threat intelligence blocklist (${threatIntelligence.abusix.threatLevel})`,
-      severity: "CRITICAL",
-      scoreContribution: 75,
-    });
+    if (threatIntelligence.abusix.listed) {
+      threatIntelRisk = Math.max(threatIntelRisk, 75);
+      allRiskFactors.push({
+        source: "Abusix",
+        category: "Blocklist",
+        reason: `Domain/IP actively listed on Abusix threat intelligence blocklist (${threatIntelligence.abusix.threatLevel})`,
+        severity: "CRITICAL",
+        scoreContribution: 75,
+      });
+    }
   }
 
-  // 4. AbuseIPDB Evidence
-  if (threatIntelligence.abuseScore !== null && threatIntelligence.abuseScore > 0) {
+  // 4. AbuseIPDB Evidence & Attribution
+  if (threatIntelligence.abuseScore !== null && threatIntelligence.abuseScore !== undefined) {
     sources.push("AbuseIPDB");
     const score = threatIntelligence.abuseScore;
     threatIntelRisk = Math.max(threatIntelRisk, score);
@@ -876,22 +889,24 @@ export function calculateUnifiedRiskScore(
     }
   }
 
-  // 5. AlienVault OTX Evidence
-  if (threatIntelligence.otx && threatIntelligence.otx.pulseCount > 0) {
+  // 5. AlienVault OTX Evidence & Attribution
+  if (threatIntelligence.otx) {
     sources.push("AlienVault OTX");
-    const otxScore = Math.min(80, threatIntelligence.otx.pulseCount * 20);
-    threatIntelRisk = Math.max(threatIntelRisk, otxScore);
-    allRiskFactors.push({
-      source: "AlienVault OTX",
-      category: "Threat Pulses",
-      reason: `Flagged in ${threatIntelligence.otx.pulseCount} AlienVault OTX threat pulse${threatIntelligence.otx.pulseCount > 1 ? "s" : ""}`,
-      severity: threatIntelligence.otx.pulseCount >= 5 ? "CRITICAL" : threatIntelligence.otx.pulseCount >= 2 ? "HIGH" : "MEDIUM",
-      scoreContribution: otxScore,
-    });
+    if (threatIntelligence.otx.pulseCount > 0) {
+      const otxScore = Math.min(80, threatIntelligence.otx.pulseCount * 20);
+      threatIntelRisk = Math.max(threatIntelRisk, otxScore);
+      allRiskFactors.push({
+        source: "AlienVault OTX",
+        category: "Threat Pulses",
+        reason: `Flagged in ${threatIntelligence.otx.pulseCount} AlienVault OTX threat pulse${threatIntelligence.otx.pulseCount > 1 ? "s" : ""}`,
+        severity: threatIntelligence.otx.pulseCount >= 5 ? "CRITICAL" : threatIntelligence.otx.pulseCount >= 2 ? "HIGH" : "MEDIUM",
+        scoreContribution: otxScore,
+      });
+    }
   }
 
-  // 6. alphaMountain.ai Evidence
-  if (threatIntelligence.alphaMountain && threatIntelligence.alphaMountain.riskScore > 0) {
+  // 6. alphaMountain.ai Evidence & Attribution
+  if (threatIntelligence.alphaMountain) {
     sources.push("alphaMountain.ai");
     const alphaScore = threatIntelligence.alphaMountain.riskScore;
     threatIntelRisk = Math.max(threatIntelRisk, alphaScore);
@@ -906,16 +921,18 @@ export function calculateUnifiedRiskScore(
     }
   }
 
-  // 7. URLQuery Evidence
-  if (threatIntelligence.urlquery && threatIntelligence.urlquery.totalHits > 0) {
+  // 7. URLQuery Evidence & Attribution
+  if (threatIntelligence.urlquery) {
     sources.push("URLQuery");
-    allRiskFactors.push({
-      source: "URLQuery",
-      category: "Sandbox History",
-      reason: `Found in ${threatIntelligence.urlquery.totalHits} prior URLQuery security scan report${threatIntelligence.urlquery.totalHits > 1 ? "s" : ""}`,
-      severity: "LOW",
-      scoreContribution: 10,
-    });
+    if (threatIntelligence.urlquery.totalHits > 0) {
+      allRiskFactors.push({
+        source: "URLQuery",
+        category: "Sandbox History",
+        reason: `Found in ${threatIntelligence.urlquery.totalHits} prior URLQuery security scan report${threatIntelligence.urlquery.totalHits > 1 ? "s" : ""}`,
+        severity: "LOW",
+        scoreContribution: 10,
+      });
+    }
   }
 
   // Composite Unified Risk Score:
