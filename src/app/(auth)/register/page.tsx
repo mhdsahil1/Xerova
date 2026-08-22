@@ -196,7 +196,7 @@ export default function RegisterPage() {
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="analyst@xerova.io"
+                  placeholder="example@gmail.com"                                                   
                   value={formData.email}
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })

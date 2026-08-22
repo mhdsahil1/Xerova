@@ -41,11 +41,74 @@ export interface ThreatSearchResult {
   timestamp: Date;
 }
 
+export interface IP2LocationData {
+  ip: string;
+  countryCode: string;
+  countryName: string;
+  regionName: string;
+  cityName: string;
+  latitude: number;
+  longitude: number;
+  zipCode: string;
+  timeZone: string;
+  asn: string;
+  asName: string;
+  isProxy: boolean;
+}
+
+export interface HostedDomainsData {
+  ip: string;
+  totalDomains: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+  domains: string[];
+}
+
+export interface IP2WhoisContact {
+  name?: string;
+  organization?: string;
+  streetAddress?: string;
+  city?: string;
+  region?: string;
+  zipCode?: string;
+  country?: string;
+  phone?: string;
+  fax?: string;
+  email?: string;
+}
+
+export interface IP2WhoisData {
+  domain: string;
+  domainId?: string;
+  status?: string;
+  createDate?: string;
+  updateDate?: string;
+  expireDate?: string;
+  domainAge?: number;
+  whoisServer?: string;
+  registrar?: {
+    ianaId?: string;
+    name?: string;
+    url?: string;
+  };
+  registrant?: IP2WhoisContact;
+  admin?: IP2WhoisContact;
+  tech?: IP2WhoisContact;
+  billing?: IP2WhoisContact;
+  nameservers?: string[];
+}
+
 export interface IPResult {
   ip: string;
   country: string;
   countryCode: string;
   city: string;
+  region?: string;
+  latitude?: number;
+  longitude?: number;
+  zipCode?: string;
+  timeZone?: string;
   isp: string;
   org: string;
   asn: string;
@@ -60,6 +123,11 @@ export interface IPResult {
   whois: Record<string, string>;
   ports?: number[];
   threats: ThreatReference[];
+  ip2location?: IP2LocationData | null;
+  hostedDomains?: HostedDomainsData | null;
+  sources?: string[];
+  riskScore?: number;
+  severity?: SeverityLevel;
 }
 
 export interface DomainResult {
@@ -67,6 +135,7 @@ export interface DomainResult {
   registrar: string;
   registeredDate: string;
   expiryDate: string;
+  domainAge?: number | null;
   nameservers: string[];
   status: string[];
   country: string;
@@ -74,6 +143,10 @@ export interface DomainResult {
   dnsRecords: DNSRecord[];
   sslCert?: SSLCertInfo;
   threats: ThreatReference[];
+  ip2whois?: IP2WhoisData | null;
+  sources?: string[];
+  riskScore?: number;
+  severity?: SeverityLevel;
 }
 
 export interface DNSRecord {

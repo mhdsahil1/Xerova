@@ -5,6 +5,7 @@
 // Features: caching, timeouts, parallel requests, graceful degradation.
 
 import { scoreToSeverity } from "./sanitize";
+import type { IP2LocationData, IP2WhoisData, HostedDomainsData } from "../types";
 
 // ---- In-Memory Cache ----
 interface CacheEntry {
@@ -818,6 +819,159 @@ export async function urlqueryLookup(query: string) {
 }
 
 // ============================================================
+// Yandex Safe Browsing
+// ============================================================
+const YANDEX_BASE = "https://sba.yandex.net/v4/threatMatches:find";
+export const getYandexKey = () => process.env.YANDEX_API_KEY || "";
+
+export interface YandexThreatMatch {
+  threatType: string;
+  platformType: string;
+  threatEntryType: string;
+}
+
+export interface YandexSafeBrowsingResult {
+  isSafe: boolean;
+  matches: YandexThreatMatch[];
+}
+
+export async function yandexSafeBrowsingLookup(url: string): Promise<YandexSafeBrowsingResult | null> {
+  const key = getYandexKey();
+  if (!key) return null;
+  const cacheKey = `yandex:${url}`;
+  const cached = getCached<YandexSafeBrowsingResult>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(`${YANDEX_BASE}?key=${key}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        client: { clientId: "xerova-platform", clientVersion: "1.0.0" },
+        threatInfo: {
+          threatTypes: [
+            "MALWARE",
+            "SOCIAL_ENGINEERING",
+            "UNWANTED_SOFTWARE",
+            "POTENTIALLY_HARMFUL_APPLICATION",
+          ],
+          platformTypes: ["ANY_PLATFORM", "WINDOWS", "LINUX", "ANDROID", "IOS"],
+          threatEntryTypes: ["URL"],
+          threatEntries: [{ url }],
+        },
+      }),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const rawMatches = Array.isArray(data?.matches) ? data.matches : [];
+    const matches: YandexThreatMatch[] = rawMatches.map((m: Record<string, unknown>) => ({
+      threatType: String(m.threatType || "MALWARE"),
+      platformType: String(m.platformType || "ANY_PLATFORM"),
+      threatEntryType: String(m.threatEntryType || "URL"),
+    }));
+
+    const result: YandexSafeBrowsingResult = {
+      isSafe: matches.length === 0,
+      matches,
+    };
+
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[Yandex] Safe Browsing lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
+// VXVault Live Malware URL Feed
+// ============================================================
+const VXVAULT_FEED_URL = "http://vxvault.net/URL_List.php";
+let vxvaultMemoryCache: { urls: Set<string>; list: string[]; timestamp: number } | null = null;
+const VXVAULT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+export async function getVXVaultMaliciousURLs(): Promise<string[]> {
+  const now = Date.now();
+  if (vxvaultMemoryCache && now - vxvaultMemoryCache.timestamp < VXVAULT_CACHE_TTL) {
+    return vxvaultMemoryCache.list;
+  }
+
+  try {
+    const res = await safeFetch(
+      VXVAULT_FEED_URL,
+      {
+        headers: {
+          "User-Agent": "XEROVA-Threat-Intel/1.0",
+          Accept: "text/plain,text/html,*/*",
+        },
+      },
+      8000
+    );
+
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0 && !l.startsWith("#"));
+
+      const urlSet = new Set(lines.map((u) => u.toLowerCase()));
+      vxvaultMemoryCache = {
+        urls: urlSet,
+        list: lines,
+        timestamp: now,
+      };
+      return lines;
+    }
+  } catch (e) {
+    console.error("[VXVault] Live feed fetch failed:", (e as Error).message);
+  }
+
+  return vxvaultMemoryCache ? vxvaultMemoryCache.list : [];
+}
+
+export async function vxvaultLookupURL(url: string): Promise<{ listed: boolean; matchUrl?: string } | null> {
+  try {
+    const maliciousUrls = await getVXVaultMaliciousURLs();
+    if (!maliciousUrls || maliciousUrls.length === 0) {
+      return { listed: false };
+    }
+
+    const cleanInput = url.trim().toLowerCase();
+    const inputWithoutProto = cleanInput.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+
+    for (const m of maliciousUrls) {
+      const cleanM = m.trim().toLowerCase();
+      const mWithoutProto = cleanM.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+
+      if (
+        cleanInput === cleanM ||
+        inputWithoutProto === mWithoutProto ||
+        (cleanM.length > 5 && (cleanInput.includes(cleanM) || cleanM.includes(inputWithoutProto)))
+      ) {
+        return { listed: true, matchUrl: m };
+      }
+    }
+
+    return { listed: false };
+  } catch (e) {
+    console.error("[VXVault] Lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function vxvaultGetLiveFeed(limit = 10): Promise<Array<{ url: string; source: string; timestamp: string }>> {
+  const urls = await getVXVaultMaliciousURLs();
+  const now = new Date().toISOString();
+  return urls.slice(0, limit).map((u) => ({
+    url: u,
+    source: "VXVault",
+    timestamp: now,
+  }));
+}
+
+// ============================================================
 // NVD (National Vulnerability Database)
 // ============================================================
 const NVD_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0";
@@ -968,16 +1122,191 @@ export async function nvdLatestCVEs(limit = 8) {
 }
 
 // ============================================================
+// IP2Location (IP Geolocation & Threat Signals)
+// ============================================================
+const IP2LOCATION_BASE = "https://api.ip2location.io";
+export const getIP2LocationKey = () =>
+  process.env.IP2LOCATION_API_KEY || process.env.IP2WHOIS_API_KEY || "";
+
+export async function ip2LocationLookup(ip: string): Promise<IP2LocationData | null> {
+  const key = getIP2LocationKey();
+  if (!key) return null;
+  const cleanIP = ip.trim();
+  const cacheKey = `ip2loc:ip:${cleanIP}`;
+  const cached = getCached<IP2LocationData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `${IP2LOCATION_BASE}/?key=${encodeURIComponent(key)}&ip=${encodeURIComponent(cleanIP)}`
+    );
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (d?.error) return null;
+
+    const result: IP2LocationData = {
+      ip: d.ip || cleanIP,
+      countryCode: d.country_code || "",
+      countryName: d.country_name || "",
+      regionName: d.region_name || "",
+      cityName: d.city_name || "",
+      latitude: typeof d.latitude === "number" ? d.latitude : parseFloat(d.latitude) || 0,
+      longitude: typeof d.longitude === "number" ? d.longitude : parseFloat(d.longitude) || 0,
+      zipCode: d.zip_code || "",
+      timeZone: d.time_zone || "",
+      asn: d.asn ? (String(d.asn).startsWith("AS") ? String(d.asn) : `AS${d.asn}`) : "",
+      asName: d.as || "",
+      isProxy: Boolean(d.is_proxy),
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[IP2Location] Lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
+// IP2WHOIS (Domain WHOIS & Hosted Domains)
+// ============================================================
+const IP2WHOIS_BASE = "https://api.ip2whois.com/v2";
+const IP2WHOIS_HOSTED_BASE = "https://domains.ip2whois.com/domains";
+export const getIP2WhoisKey = () =>
+  process.env.IP2WHOIS_API_KEY || process.env.IP2LOCATION_API_KEY || "";
+
+export async function ip2WhoisLookup(domain: string): Promise<IP2WhoisData | null> {
+  const key = getIP2WhoisKey();
+  if (!key) return null;
+  const cleanDomain = domain.trim().toLowerCase().replace(/^https?:\/\//i, "").split("/")[0].split(":")[0];
+  const cacheKey = `ip2whois:domain:${cleanDomain}`;
+  const cached = getCached<IP2WhoisData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `${IP2WHOIS_BASE}?key=${encodeURIComponent(key)}&domain=${encodeURIComponent(cleanDomain)}`
+    );
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (d?.error) return null;
+
+    const result: IP2WhoisData = {
+      domain: d.domain || cleanDomain,
+      domainId: d.domain_id || "",
+      status: d.status || "",
+      createDate: d.create_date || "",
+      updateDate: d.update_date || "",
+      expireDate: d.expire_date || "",
+      domainAge: typeof d.domain_age === "number" ? d.domain_age : parseInt(d.domain_age, 10) || undefined,
+      whoisServer: d.whois_server || "",
+      registrar: {
+        ianaId: d.registrar?.iana_id || "",
+        name: d.registrar?.name || "",
+        url: d.registrar?.url || "",
+      },
+      registrant: {
+        name: d.registrant?.name || "",
+        organization: d.registrant?.organization || "",
+        streetAddress: d.registrant?.street_address || "",
+        city: d.registrant?.city || "",
+        region: d.registrant?.region || "",
+        zipCode: d.registrant?.zip_code || "",
+        country: d.registrant?.country || "",
+        phone: d.registrant?.phone || "",
+        fax: d.registrant?.fax || "",
+        email: d.registrant?.email || "",
+      },
+      admin: {
+        name: d.admin?.name || "",
+        organization: d.admin?.organization || "",
+        streetAddress: d.admin?.street_address || "",
+        city: d.admin?.city || "",
+        region: d.admin?.region || "",
+        zipCode: d.admin?.zip_code || "",
+        country: d.admin?.country || "",
+        phone: d.admin?.phone || "",
+        fax: d.admin?.fax || "",
+        email: d.admin?.email || "",
+      },
+      tech: {
+        name: d.tech?.name || "",
+        organization: d.tech?.organization || "",
+        streetAddress: d.tech?.street_address || "",
+        city: d.tech?.city || "",
+        region: d.tech?.region || "",
+        zipCode: d.tech?.zip_code || "",
+        country: d.tech?.country || "",
+        phone: d.tech?.phone || "",
+        fax: d.tech?.fax || "",
+        email: d.tech?.email || "",
+      },
+      billing: {
+        name: d.billing?.name || "",
+        organization: d.billing?.organization || "",
+        streetAddress: d.billing?.street_address || "",
+        city: d.billing?.city || "",
+        region: d.billing?.region || "",
+        zipCode: d.billing?.zip_code || "",
+        country: d.billing?.country || "",
+        phone: d.billing?.phone || "",
+        fax: d.billing?.fax || "",
+        email: d.billing?.email || "",
+      },
+      nameservers: Array.isArray(d.nameservers) ? d.nameservers : [],
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[IP2WHOIS] Domain lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function ip2WhoisHostedDomains(ip: string, page = 1): Promise<HostedDomainsData | null> {
+  const key = getIP2WhoisKey();
+  if (!key) return null;
+  const cleanIP = ip.trim();
+  const cacheKey = `ip2whois:hosted:${cleanIP}:${page}`;
+  const cached = getCached<HostedDomainsData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `${IP2WHOIS_HOSTED_BASE}?key=${encodeURIComponent(key)}&ip=${encodeURIComponent(cleanIP)}&page=${page}`
+    );
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (d?.error) return null;
+
+    const result: HostedDomainsData = {
+      ip: d.ip || cleanIP,
+      totalDomains: typeof d.total_domains === "number" ? d.total_domains : parseInt(d.total_domains, 10) || 0,
+      page: d.page ?? page,
+      perPage: d.per_page ?? (Array.isArray(d.domains) ? d.domains.length : 0),
+      totalPages: d.total_pages ?? 1,
+      domains: Array.isArray(d.domains) ? d.domains : [],
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[IP2WHOIS] Hosted domains lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
 // Merged IP Lookup (all engines in parallel)
 // ============================================================
 export async function mergedIPLookup(ip: string) {
-  const [vt, abuse, shodan, cip, abusix, otx] = await Promise.all([
+  const [vt, abuse, shodan, cip, abusix, otx, ip2loc, hostedDomains] = await Promise.all([
     vtLookupIP(ip),
     abuseIPDBLookup(ip),
     shodanLookupIP(ip),
     criminalIPLookupIP(ip),
     abusixLookupIP(ip),
     otxLookupIP(ip),
+    ip2LocationLookup(ip),
+    ip2WhoisHostedDomains(ip),
   ]);
 
   const sources: string[] = [];
@@ -987,8 +1316,10 @@ export async function mergedIPLookup(ip: string) {
   if (cip) sources.push("Criminal IP");
   if (abusix) sources.push("Abusix");
   if (otx) sources.push("AlienVault OTX");
+  if (ip2loc) sources.push("IP2Location");
+  if (hostedDomains && hostedDomains.totalDomains > 0) sources.push("IP2WHOIS");
 
-  // Merge: prefer AbuseIPDB for geo, Shodan for ports, VT for reputation
+  // Merge: prefer AbuseIPDB/IP2Location for geo, Shodan for ports, VT for reputation
   const abuseScore = abuse?.abuseConfidenceScore ?? 0;
   const vtMalicious = (vt?.lastAnalysisStats as Record<string, number>)?.malicious ?? 0;
   const vtTotal =
@@ -1007,6 +1338,9 @@ export async function mergedIPLookup(ip: string) {
   // OTX threat pulses
   const otxScore = (otx?.pulseCount as number) > 0 ? Math.min(100, (otx?.pulseCount as number) * 15) : 0;
 
+  // IP2Location proxy score contribution
+  const ip2locProxyScore = ip2loc?.isProxy ? 35 : 0;
+
   // Composite risk score — takes the maximum across all sources
   const riskScore = Math.min(
     100,
@@ -1016,23 +1350,37 @@ export async function mergedIPLookup(ip: string) {
       shodan?.vulns?.length ? 70 : 0,
       cipScore,
       abusixScore,
-      otxScore
+      otxScore,
+      ip2locProxyScore
     )
   );
 
+  const country = ip2loc?.countryName || abuse?.countryName || (cip?.country as string) || (otx?.country as string) || shodan?.country || vt?.country || "Unknown";
+  const countryCode = ip2loc?.countryCode || abuse?.countryCode || (cip?.countryCode as string) || shodan?.countryCode || "";
+  const city = ip2loc?.cityName || (cip?.city as string) || (otx?.city as string) || shodan?.city || "";
+  const region = ip2loc?.regionName || "";
+  const isp = ip2loc?.asName || abuse?.isp || (cip?.isp as string) || shodan?.isp || "";
+  const org = shodan?.org || (cip?.org as string) || ip2loc?.asName || vt?.asOwner || "";
+  const asn = ip2loc?.asn || (otx?.asn as string) || shodan?.asn || vt?.asn || "";
+
   return {
     ip,
-    country: abuse?.countryName || (cip?.country as string) || (otx?.country as string) || shodan?.country || vt?.country || "Unknown",
-    countryCode: abuse?.countryCode || (cip?.countryCode as string) || shodan?.countryCode || "",
-    city: (cip?.city as string) || (otx?.city as string) || shodan?.city || "",
-    isp: abuse?.isp || (cip?.isp as string) || shodan?.isp || "",
-    org: shodan?.org || (cip?.org as string) || vt?.asOwner || "",
-    asn: (otx?.asn as string) || shodan?.asn || vt?.asn || "",
+    country,
+    countryCode,
+    city,
+    region,
+    latitude: ip2loc?.latitude ?? undefined,
+    longitude: ip2loc?.longitude ?? undefined,
+    zipCode: ip2loc?.zipCode || "",
+    timeZone: ip2loc?.timeZone || "",
+    isp,
+    org,
+    asn,
     hostname: (shodan?.hostnames as string[])?.[0] || (abuse?.hostnames as string[])?.[0] || "",
     reputation: riskScore,
     isVPN: (cip?.isVPN as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("vpn") || false,
     isTor: (cip?.isTor as boolean) || abuse?.isTor || false,
-    isProxy: (cip?.isProxy as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("proxy") || false,
+    isProxy: (cip?.isProxy as boolean) || (ip2loc?.isProxy as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("proxy") || false,
     isBot: (cip?.isScanner as boolean) || false,
     isHosting: (cip?.isHosting as boolean) || false,
     isDarkweb: (cip?.isDarkweb as boolean) || false,
@@ -1047,7 +1395,7 @@ export async function mergedIPLookup(ip: string) {
         ...((abuse?.hostnames as string[]) ?? []),
       ]),
     ],
-    threats: buildThreats(vt, abuse, shodan, cip, abusix, otx),
+    threats: buildThreats(vt, abuse, shodan, cip, abusix, otx, ip2loc),
     whois: parseWhoisString((vt?.whois as string) || ""),
     vtAnalysisStats: vt?.lastAnalysisStats ?? null,
     criminalIP: cip ? {
@@ -1068,6 +1416,28 @@ export async function mergedIPLookup(ip: string) {
       reputation: otx.reputation,
       validation: otx.validation,
     } : null,
+    ip2location: ip2loc ? {
+      ip: ip2loc.ip,
+      countryCode: ip2loc.countryCode,
+      countryName: ip2loc.countryName,
+      regionName: ip2loc.regionName,
+      cityName: ip2loc.cityName,
+      latitude: ip2loc.latitude,
+      longitude: ip2loc.longitude,
+      zipCode: ip2loc.zipCode,
+      timeZone: ip2loc.timeZone,
+      asn: ip2loc.asn,
+      asName: ip2loc.asName,
+      isProxy: ip2loc.isProxy,
+    } : null,
+    hostedDomains: hostedDomains ? {
+      ip: hostedDomains.ip,
+      totalDomains: hostedDomains.totalDomains,
+      page: hostedDomains.page,
+      perPage: hostedDomains.perPage,
+      totalPages: hostedDomains.totalPages,
+      domains: hostedDomains.domains,
+    } : null,
     sources,
     riskScore,
     severity: scoreToSeverity(riskScore),
@@ -1080,7 +1450,8 @@ function buildThreats(
   shodan: Record<string, unknown> | null,
   cip?: Record<string, unknown> | null,
   abusix?: Record<string, unknown> | null,
-  otx?: Record<string, unknown> | null
+  otx?: Record<string, unknown> | null,
+  ip2loc?: IP2LocationData | Record<string, unknown> | null
 ) {
   const threats: { source: string; description: string; date: string; severity: string }[] = [];
 
@@ -1170,6 +1541,16 @@ function buildThreats(
     });
   }
 
+  // IP2Location Proxy/VPN Alert
+  if (ip2loc?.isProxy) {
+    threats.push({
+      source: "IP2Location",
+      description: "Identified as active Proxy / VPN / Anonymizer exit node",
+      date: new Date().toISOString().slice(0, 10),
+      severity: "medium",
+    });
+  }
+
   // Add latest abuse reports as threats
   const reports = (abuse?.reports as { reportedAt: string; comment: string; categories: number[] }[]) ?? [];
   for (const report of reports.slice(0, 2)) {
@@ -1221,13 +1602,14 @@ function parseWhoisString(whois: string): Record<string, string> {
 // Merged Domain Lookup
 // ============================================================
 export async function mergedDomainLookup(domain: string) {
-  const [vt, shodanDns, cipDomain, otxDomain, alphaDomain, urlqueryDomain] = await Promise.all([
+  const [vt, shodanDns, cipDomain, otxDomain, alphaDomain, urlqueryDomain, ip2whois] = await Promise.all([
     vtLookupDomain(domain),
     shodanResolveDomain(domain),
     criminalIPScanDomain(domain),
     otxLookupDomain(domain),
     alphaMountainLookupURI(domain),
     urlqueryLookup(domain),
+    ip2WhoisLookup(domain),
   ]);
 
   // If Shodan resolved an IP, also look it up
@@ -1244,6 +1626,7 @@ export async function mergedDomainLookup(domain: string) {
   if (otxDomain) sources.push("AlienVault OTX");
   if (alphaDomain) sources.push("alphaMountain.ai");
   if (urlqueryDomain) sources.push("URLQuery");
+  if (ip2whois) sources.push("IP2WHOIS");
 
   const vtMalicious = (vt?.lastAnalysisStats as Record<string, number>)?.malicious ?? 0;
   const vtTotal =
@@ -1262,7 +1645,17 @@ export async function mergedDomainLookup(domain: string) {
   const otxRisk = (otxDomain?.pulseCount as number) > 0 ? Math.min(100, (otxDomain?.pulseCount as number) * 15) : 0;
   const alphaRisk = typeof alphaDomain?.riskScore === "number" ? alphaDomain.riskScore : 0;
 
-  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, otxRisk, alphaRisk));
+  // Newly Registered Domain (NRD) risk
+  let nrdRisk = 0;
+  if (typeof ip2whois?.domainAge === "number") {
+    if (ip2whois.domainAge < 30) {
+      nrdRisk = 65;
+    } else if (ip2whois.domainAge < 90) {
+      nrdRisk = 35;
+    }
+  }
+
+  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, otxRisk, alphaRisk, nrdRisk));
 
   // Parse DNS records from VT
   const dnsRecords = ((vt?.lastDnsRecords as Record<string, unknown>[]) ?? []).map(
@@ -1345,17 +1738,37 @@ export async function mergedDomainLookup(domain: string) {
       severity: alphaDomain.severity as string,
     });
   }
+  if (typeof ip2whois?.domainAge === "number") {
+    if (ip2whois.domainAge < 30) {
+      domainThreats.push({
+        source: "IP2WHOIS",
+        description: `Newly Registered Domain (NRD): Domain was created ${ip2whois.domainAge} day(s) ago`,
+        date: ip2whois.createDate ? ip2whois.createDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        severity: "high",
+      });
+    } else if (ip2whois.domainAge < 90) {
+      domainThreats.push({
+        source: "IP2WHOIS",
+        description: `Recently Registered Domain: Domain was created ${ip2whois.domainAge} days ago`,
+        date: ip2whois.createDate ? ip2whois.createDate.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        severity: "medium",
+      });
+    }
+  }
 
   return {
     domain,
-    registrar: vt?.registrar || whoisData["Registrar"] || "Unknown",
-    registeredDate: (vt?.creationDate as string) || whoisData["Creation Date"] || "",
-    expiryDate: whoisData["Registry Expiry Date"] || "",
-    nameservers: dnsRecords
-      .filter((r) => r.type === "NS")
-      .map((r) => r.value),
-    status: [],
-    country: whoisData["Registrant Country"] || (cipDomain?.country as string) || (shodanHost as Record<string, string>)?.country || "",
+    registrar: (ip2whois?.registrar as Record<string, string>)?.name || vt?.registrar || whoisData["Registrar"] || "Unknown",
+    registeredDate: (ip2whois?.createDate as string)?.slice(0, 10) || (vt?.creationDate as string) || whoisData["Creation Date"] || "",
+    expiryDate: (ip2whois?.expireDate as string)?.slice(0, 10) || whoisData["Registry Expiry Date"] || "",
+    domainAge: typeof ip2whois?.domainAge === "number" ? ip2whois.domainAge : null,
+    nameservers: (Array.isArray(ip2whois?.nameservers) && ip2whois.nameservers.length > 0)
+      ? (ip2whois.nameservers as string[])
+      : dnsRecords
+          .filter((r) => r.type === "NS")
+          .map((r) => r.value),
+    status: ip2whois?.status ? [String(ip2whois.status)] : [],
+    country: (ip2whois?.registrant as Record<string, string>)?.country || whoisData["Registrant Country"] || (cipDomain?.country as string) || (shodanHost as Record<string, string>)?.country || "",
     reputation: riskScore,
     dnsRecords,
     sslCert,
@@ -1386,12 +1799,29 @@ export async function mergedDomainLookup(domain: string) {
       totalHits: urlqueryDomain.totalHits,
       reports: urlqueryDomain.reports,
     } : null,
+    ip2whois: ip2whois ? {
+      domain: ip2whois.domain,
+      domainId: ip2whois.domainId,
+      status: ip2whois.status,
+      createDate: ip2whois.createDate,
+      updateDate: ip2whois.updateDate,
+      expireDate: ip2whois.expireDate,
+      domainAge: ip2whois.domainAge,
+      whoisServer: ip2whois.whoisServer,
+      registrar: ip2whois.registrar,
+      registrant: ip2whois.registrant,
+      admin: ip2whois.admin,
+      tech: ip2whois.tech,
+      billing: ip2whois.billing,
+      nameservers: ip2whois.nameservers,
+    } : null,
     threats: domainThreats,
     sources,
     riskScore,
     severity: scoreToSeverity(riskScore),
   };
 }
+
 
 // ============================================================
 // Merged Hash Lookup (VirusTotal + AlienVault OTX)

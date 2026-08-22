@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { verifyEmailAddress } from "./email-validator";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -22,6 +23,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password are required");
+        }
+
+        const emailStr = String(credentials.email).trim().toLowerCase();
+        const verification = await verifyEmailAddress(emailStr);
+        if (!verification.isValid && verification.isDisposable) {
+          throw new Error("Disposable or temporary email accounts are not permitted.");
         }
 
         await connectDB();

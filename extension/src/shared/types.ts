@@ -15,7 +15,9 @@ export interface RiskFactor {
     | "Shodan"
     | "AlienVault OTX"
     | "alphaMountain.ai"
-    | "URLQuery";
+    | "URLQuery"
+    | "Yandex Safe Browsing"
+    | "VXVault Threat Feed";
   category: string;
   reason: string;
   severity: Severity;
@@ -118,6 +120,14 @@ export interface ThreatIntelligence {
   urlquery?: {
     totalHits: number;
     reports: Array<{ id: string; url: string; status: string; date: string }>;
+  } | null;
+  yandex?: {
+    isSafe: boolean;
+    matches: Array<{ threatType: string; platformType: string; threatEntryType: string }>;
+  } | null;
+  vxvault?: {
+    listed: boolean;
+    matchUrl?: string;
   } | null;
   abuseScore: number | null;
   isKnownMalicious: boolean;

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { registerSchema } from "@/lib/validations";
+import { verifyEmailAddress } from "@/lib/email-validator";
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +19,15 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password } = validatedData.data;
+
+    // Verify email address against spam/fake/disposable databases
+    const emailVerification = await verifyEmailAddress(email);
+    if (!emailVerification.isValid) {
+      return NextResponse.json(
+        { error: emailVerification.reason || "Invalid or disposable email address." },
+        { status: 400 }
+      );
+    }
 
     await connectDB();
 

@@ -10,32 +10,85 @@ async function verifyAll() {
     mergedURLLookup,
     mergedHashLookup,
     otxGetLivePulses,
+    ip2LocationLookup,
+    ip2WhoisLookup,
+    ip2WhoisHostedDomains,
   } = await import("./src/lib/threat-apis.ts");
 
   const { geminiChat } = await import("./src/lib/gemini.ts");
 
-  // 1. Verify IP Lookup
-  console.log("\n1. Testing mergedIPLookup('8.8.8.8')...");
+  // 1. Verify Direct IP2Location Lookup
+  console.log("\n1. Testing ip2LocationLookup('161.248.22.174')...");
   try {
-    const ipRes = await mergedIPLookup("8.8.8.8");
-    console.log("IP Result Sources:", ipRes.sources);
-    console.log("IP Country:", ipRes.country);
-    console.log("IP OTX Attached:", !!ipRes.otx);
-    console.log("IP Threat Count:", ipRes.threats.length);
+    const locRes = await ip2LocationLookup("161.248.22.174");
+    console.log("IP2Location Data:", {
+      ip: locRes?.ip,
+      country: locRes?.countryName,
+      region: locRes?.regionName,
+      city: locRes?.cityName,
+      coords: `${locRes?.latitude}, ${locRes?.longitude}`,
+      asn: locRes?.asn,
+      asName: locRes?.asName,
+      isProxy: locRes?.isProxy,
+    });
   } catch (e) {
-    console.error("IP lookup error:", e);
+    console.error("IP2Location lookup error:", e);
   }
 
-  // 2. Verify Domain Lookup
-  console.log("\n2. Testing mergedDomainLookup('google.com')...");
+  // 2. Verify Direct IP2WHOIS Domain Lookup
+  console.log("\n2. Testing ip2WhoisLookup('example.com')...");
   try {
-    const domainRes = await mergedDomainLookup("google.com");
-    console.log("Domain Result Sources:", domainRes.sources);
-    console.log("Domain alphaMountain Attached:", !!domainRes.alphaMountain);
-    console.log("Domain OTX Attached:", !!domainRes.otx);
-    console.log("Domain URLQuery Attached:", !!domainRes.urlquery);
+    const whoisRes = await ip2WhoisLookup("example.com");
+    console.log("IP2WHOIS Data:", {
+      domain: whoisRes?.domain,
+      status: whoisRes?.status,
+      createDate: whoisRes?.createDate,
+      domainAge: whoisRes?.domainAge,
+      registrar: whoisRes?.registrar?.name,
+      registrantOrg: whoisRes?.registrant?.organization,
+      nameservers: whoisRes?.nameservers,
+    });
   } catch (e) {
-    console.error("Domain lookup error:", e);
+    console.error("IP2WHOIS lookup error:", e);
+  }
+
+  // 3. Verify Direct IP2WHOIS Hosted Domains (Reverse IP) Lookup
+  console.log("\n3. Testing ip2WhoisHostedDomains('8.8.8.8')...");
+  try {
+    const hostedRes = await ip2WhoisHostedDomains("8.8.8.8");
+    console.log("Hosted Domains Data:", {
+      ip: hostedRes?.ip,
+      totalDomains: hostedRes?.totalDomains,
+      domainsSample: hostedRes?.domains?.slice(0, 3),
+    });
+  } catch (e) {
+    console.error("IP2WHOIS hosted domains error:", e);
+  }
+
+  // 4. Verify Merged IP Lookup
+  console.log("\n4. Testing mergedIPLookup('161.248.22.174')...");
+  try {
+    const ipRes = await mergedIPLookup("161.248.22.174");
+    console.log("IP Result Sources:", ipRes.sources);
+    console.log("IP Country:", ipRes.country);
+    console.log("IP City/Region:", `${ipRes.city}, ${ipRes.region}`);
+    console.log("IP Coords:", `${ipRes.latitude}, ${ipRes.longitude}`);
+    console.log("IP2Location Attached:", !!ipRes.ip2location);
+    console.log("Hosted Domains Attached:", !!ipRes.hostedDomains);
+  } catch (e) {
+    console.error("Merged IP lookup error:", e);
+  }
+
+  // 5. Verify Merged Domain Lookup
+  console.log("\n5. Testing mergedDomainLookup('example.com')...");
+  try {
+    const domainRes = await mergedDomainLookup("example.com");
+    console.log("Domain Result Sources:", domainRes.sources);
+    console.log("Domain Registrar:", domainRes.registrar);
+    console.log("Domain Age:", domainRes.domainAge);
+    console.log("IP2WHOIS Attached:", !!domainRes.ip2whois);
+  } catch (e) {
+    console.error("Merged Domain lookup error:", e);
   }
 
   // 3. Verify Hash Lookup

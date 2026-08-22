@@ -19,6 +19,10 @@ import {
   otxLookupDomain,
   alphaMountainLookupURI,
   urlqueryLookup,
+  yandexSafeBrowsingLookup,
+  vxvaultLookupURL,
+  ip2LocationLookup,
+  ip2WhoisLookup,
 } from "./threat-apis";
 
 import {
@@ -200,6 +204,30 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     });
   }
 
+  if (threatIntelligence.ip2whois && typeof threatIntelligence.ip2whois.domainAge === "number") {
+    if (threatIntelligence.ip2whois.domainAge < 30) {
+      allFindings.push({
+        category: "Domain Intelligence",
+        severity: "HIGH",
+        description: `IP2WHOIS: Newly registered domain created only ${threatIntelligence.ip2whois.domainAge} day(s) ago.`,
+      });
+    } else if (threatIntelligence.ip2whois.domainAge < 90) {
+      allFindings.push({
+        category: "Domain Intelligence",
+        severity: "MEDIUM",
+        description: `IP2WHOIS: Domain created recently (${threatIntelligence.ip2whois.domainAge} days ago).`,
+      });
+    }
+  }
+
+  if (threatIntelligence.ip2location?.isProxy) {
+    allFindings.push({
+      category: "Network Intelligence",
+      severity: "MEDIUM",
+      description: `IP2Location: Host IP is identified as an active Proxy / VPN / Anonymizer node.`,
+    });
+  }
+
   // Sort findings by severity
   const severityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   allFindings.sort(
@@ -245,6 +273,10 @@ interface ThreatIntelData {
   otx: URLAnalysisResult["threatIntelligence"]["otx"];
   alphaMountain: URLAnalysisResult["threatIntelligence"]["alphaMountain"];
   urlquery: URLAnalysisResult["threatIntelligence"]["urlquery"];
+  yandex: URLAnalysisResult["threatIntelligence"]["yandex"];
+  vxvault: URLAnalysisResult["threatIntelligence"]["vxvault"];
+  ip2whois?: { domainAge: number | null; registrar: string; createDate: string } | null;
+  ip2location?: { countryName: string; cityName: string; isProxy: boolean } | null;
   abuseScore: number | null;
   isKnownMalicious: boolean;
   suspiciousReports: number;
@@ -261,6 +293,10 @@ async function fetchThreatIntelligence(
     otx: null,
     alphaMountain: null,
     urlquery: null,
+    yandex: null,
+    vxvault: null,
+    ip2whois: null,
+    ip2location: null,
     abuseScore: null,
     isKnownMalicious: false,
     suspiciousReports: 0,
@@ -497,6 +533,88 @@ async function fetchThreatIntelligence(
       }
     })()
   );
+
+  // 9. Yandex Safe Browsing Lookup
+  queries.push(
+    (async () => {
+      try {
+        const yandexData = await yandexSafeBrowsingLookup(urlString);
+        if (yandexData) {
+          result.yandex = yandexData;
+          if (!yandexData.isSafe) {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += 5;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] Yandex lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 10. VXVault Live Malware Feed Lookup
+  queries.push(
+    (async () => {
+      try {
+        const vxData = await vxvaultLookupURL(urlString);
+        if (vxData) {
+          result.vxvault = vxData;
+          if (vxData.listed) {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += 10;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] VXVault lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 11. IP2WHOIS Domain Lookup
+  if (!parsed.isIPBased && parsed.domain) {
+    queries.push(
+      (async () => {
+        try {
+          const whois = await ip2WhoisLookup(parsed.domain);
+          if (whois) {
+            result.ip2whois = {
+              domainAge: typeof whois.domainAge === "number" ? whois.domainAge : null,
+              registrar: (whois.registrar as Record<string, string>)?.name || "",
+              createDate: (whois.createDate as string) || "",
+            };
+            if (typeof whois.domainAge === "number" && whois.domainAge < 30) {
+              result.suspiciousReports += 5;
+            }
+          }
+        } catch (err) {
+          console.error("[ThreatIntel] IP2WHOIS lookup error (non-fatal):", (err as Error).message);
+        }
+      })()
+    );
+  }
+
+  // 12. IP2Location Geolocation & Proxy Lookup (for IP-based hosts)
+  if (parsed.isIPBased && parsed.ipAddress) {
+    queries.push(
+      (async () => {
+        try {
+          const loc = await ip2LocationLookup(parsed.ipAddress!);
+          if (loc) {
+            result.ip2location = {
+              countryName: loc.countryName,
+              cityName: loc.cityName,
+              isProxy: loc.isProxy,
+            };
+            if (loc.isProxy) {
+              result.suspiciousReports += 4;
+            }
+          }
+        } catch (err) {
+          console.error("[ThreatIntel] IP2Location lookup error (non-fatal):", (err as Error).message);
+        }
+      })()
+    );
+  }
 
   // Wait for all queries to settle safely
   await Promise.allSettled(queries);

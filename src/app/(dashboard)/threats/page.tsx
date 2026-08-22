@@ -25,6 +25,10 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
+  Compass,
+  Layers,
+  ShieldCheck,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -874,6 +878,212 @@ function IPDomainResultView({
                   </span>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* IP2Location Geolocation & Network Telemetry */}
+        {data.ip2location && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-cyan-400" />
+                  IP2Location Geolocation & Network Intelligence
+                </span>
+                <Badge variant="secondary" className="text-[10px] font-mono">
+                  IP2Location Verified
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Location</p>
+                <p className="text-xs font-semibold mt-1">
+                  {[data.ip2location.cityName, data.ip2location.regionName, data.ip2location.countryName]
+                    .filter(Boolean)
+                    .join(", ") || "Unknown"}
+                  {data.ip2location.countryCode && (
+                    <span className="text-muted-foreground ml-1 font-mono">({data.ip2location.countryCode})</span>
+                  )}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Coordinates</p>
+                {data.ip2location.latitude !== 0 || data.ip2location.longitude !== 0 ? (
+                  <a
+                    href={`https://www.google.com/maps?q=${data.ip2location.latitude},${data.ip2location.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono text-primary hover:underline flex items-center gap-1 mt-1"
+                  >
+                    {data.ip2location.latitude.toFixed(4)}, {data.ip2location.longitude.toFixed(4)}
+                    <ExternalLink className="w-3 h-3 shrink-0" />
+                  </a>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1 font-mono">N/A</p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Postal / Timezone</p>
+                <p className="text-xs font-mono font-semibold mt-1">
+                  {data.ip2location.zipCode || "N/A"}{" "}
+                  {data.ip2location.timeZone ? `(${data.ip2location.timeZone})` : ""}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Autonomous System (AS)</p>
+                <p className="text-xs font-mono font-semibold truncate mt-1" title={data.ip2location.asName}>
+                  {data.ip2location.asn ? `${data.ip2location.asn} - ` : ""}
+                  {data.ip2location.asName || "Unknown"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* IP2WHOIS Hosted Domains (Reverse IP) */}
+        {data.hostedDomains && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-emerald-400" />
+                  IP2WHOIS Hosted Domains (Reverse IP)
+                </span>
+                <Badge variant="outline" className="text-xs font-mono text-emerald-400 border-emerald-400/30">
+                  {data.hostedDomains.totalDomains} Total Domain{data.hostedDomains.totalDomains !== 1 ? "s" : ""}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Domains identified co-hosted on this IP infrastructure. Click any domain for 1-click intelligence lookup:
+              </p>
+              {data.hostedDomains.domains?.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {data.hostedDomains.domains.map((dom: string, i: number) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors font-mono text-xs py-1 px-2.5 flex items-center gap-1.5"
+                      onClick={() => onLookupIOC?.({ type: "domain", value: dom })}
+                      title={`Analyze domain ${dom}`}
+                    >
+                      <Globe className="w-3 h-3 text-muted-foreground" />
+                      {dom}
+                    </Badge>
+                  ))}
+                  {data.hostedDomains.totalDomains > data.hostedDomains.domains.length && (
+                    <span className="text-xs text-muted-foreground self-center font-mono pl-1">
+                      + {data.hostedDomains.totalDomains - data.hostedDomains.domains.length} more
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground font-mono">No domains currently listed on this IP.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* IP2WHOIS Domain Intelligence */}
+        {data.ip2whois && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-purple-400" />
+                  IP2WHOIS Structured Domain Intelligence
+                </span>
+                <div className="flex items-center gap-2">
+                  {typeof data.ip2whois.domainAge === "number" && (
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-mono ${
+                        data.ip2whois.domainAge < 30
+                          ? "text-destructive border-destructive/40 bg-destructive/10"
+                          : data.ip2whois.domainAge < 90
+                            ? "text-yellow-400 border-yellow-400/40 bg-yellow-400/10"
+                            : "text-muted-foreground"
+                      }`}
+                    >
+                      {data.ip2whois.domainAge < 30 ? "⚠️ NRD: " : ""}
+                      {data.ip2whois.domainAge.toLocaleString()} days old
+                    </Badge>
+                  )}
+                  {data.ip2whois.status && (
+                    <Badge variant="secondary" className="text-[10px] font-mono capitalize">
+                      {data.ip2whois.status}
+                    </Badge>
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Registrar</p>
+                  <p className="text-xs font-semibold mt-1 truncate" title={data.ip2whois.registrar?.name}>
+                    {data.ip2whois.registrar?.name || data.registrar || "Unknown"}
+                  </p>
+                  {data.ip2whois.registrar?.ianaId && (
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      IANA ID: {data.ip2whois.registrar.ianaId}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Registration Date</p>
+                  <p className="text-xs font-mono font-semibold mt-1">
+                    {data.ip2whois.createDate ? data.ip2whois.createDate.slice(0, 10) : data.registeredDate || "N/A"}
+                  </p>
+                  {data.ip2whois.updateDate && (
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      Updated: {data.ip2whois.updateDate.slice(0, 10)}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Registry Expiry</p>
+                  <p className="text-xs font-mono font-semibold mt-1">
+                    {data.ip2whois.expireDate ? data.ip2whois.expireDate.slice(0, 10) : data.expiryDate || "N/A"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Registrant Organization</p>
+                  <p className="text-xs font-semibold mt-1 truncate" title={data.ip2whois.registrant?.organization}>
+                    {data.ip2whois.registrant?.organization || "Redacted / Private"}
+                  </p>
+                  {data.ip2whois.registrant?.country && (
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                      Country: {data.ip2whois.registrant.country}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {data.ip2whois.nameservers && data.ip2whois.nameservers.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono mb-2">Authoritative Nameservers</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.ip2whois.nameservers.map((ns: string, i: number) => (
+                      <span
+                        key={i}
+                        className="text-[11px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border"
+                      >
+                        {ns}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

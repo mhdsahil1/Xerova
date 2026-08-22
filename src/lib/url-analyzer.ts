@@ -16,7 +16,9 @@ export interface RiskFactor {
     | "Shodan"
     | "AlienVault OTX"
     | "alphaMountain.ai"
-    | "URLQuery";
+    | "URLQuery"
+    | "Yandex Safe Browsing"
+    | "VXVault Threat Feed";
   category: string;
   reason: string;
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -112,6 +114,14 @@ export interface URLAnalysisResult {
     urlquery?: {
       totalHits: number;
       reports: Array<{ id: string; url: string; status: string; date: string }>;
+    } | null;
+    yandex?: {
+      isSafe: boolean;
+      matches: Array<{ threatType: string; platformType: string; threatEntryType: string }>;
+    } | null;
+    vxvault?: {
+      listed: boolean;
+      matchUrl?: string;
     } | null;
     abuseScore: number | null;
     isKnownMalicious: boolean;
@@ -931,6 +941,37 @@ export function calculateUnifiedRiskScore(
         reason: `Found in ${threatIntelligence.urlquery.totalHits} prior URLQuery security scan report${threatIntelligence.urlquery.totalHits > 1 ? "s" : ""}`,
         severity: "LOW",
         scoreContribution: 10,
+      });
+    }
+  }
+
+  // 8. Yandex Safe Browsing Evidence & Attribution
+  if (threatIntelligence.yandex) {
+    sources.push("Yandex Safe Browsing");
+    if (!threatIntelligence.yandex.isSafe && threatIntelligence.yandex.matches.length > 0) {
+      const threatTypes = threatIntelligence.yandex.matches.map((m) => m.threatType).join(", ");
+      threatIntelRisk = Math.max(threatIntelRisk, 80);
+      allRiskFactors.push({
+        source: "Yandex Safe Browsing",
+        category: "Safe Browsing",
+        reason: `Flagged as unsafe by Yandex Safe Browsing API: ${threatTypes}`,
+        severity: "CRITICAL",
+        scoreContribution: 80,
+      });
+    }
+  }
+
+  // 9. VXVault Live Malware Feed Evidence & Attribution
+  if (threatIntelligence.vxvault) {
+    sources.push("VXVault Threat Feed");
+    if (threatIntelligence.vxvault.listed) {
+      threatIntelRisk = Math.max(threatIntelRisk, 85);
+      allRiskFactors.push({
+        source: "VXVault Threat Feed",
+        category: "Malware Distribution",
+        reason: `Actively listed on VXVault live malware distribution feed${threatIntelligence.vxvault.matchUrl ? ` (${threatIntelligence.vxvault.matchUrl})` : ""}`,
+        severity: "CRITICAL",
+        scoreContribution: 85,
       });
     }
   }
