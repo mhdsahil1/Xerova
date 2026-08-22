@@ -716,9 +716,11 @@ export async function otxGetLivePulses(limit = 8) {
 // alphaMountain.ai / ThreatYeti
 // ============================================================
 const ALPHA_BASE = "https://api.alphamountain.ai";
+export const isAlphaMountainEnabled = () => process.env.ENABLE_ALPHA_MOUNTAIN === "true";
 export const getAlphaKey = () => process.env.ALPHA_MOUNTAIN_API || process.env.THREATYETI_API_KEY || "";
 
 export async function alphaMountainLookupURI(uri: string) {
+  if (!isAlphaMountainEnabled()) return null;
   const key = getAlphaKey();
   if (!key) return null;
   const cacheKey = `alpha:${uri}`;
