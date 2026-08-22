@@ -2,22 +2,18 @@ import dotenv from "dotenv";
 dotenv.config();
 
 async function verifyAll() {
-  console.log("=== STARTING FULL INTEGRATION VERIFICATION ===");
+  console.log("=== STARTING IP2LOCATION / IP2WHOIS INTEGRATION VERIFICATION ===");
 
   const {
-    mergedIPLookup,
-    mergedDomainLookup,
-    mergedURLLookup,
-    mergedHashLookup,
-    otxGetLivePulses,
     ip2LocationLookup,
     ip2WhoisLookup,
     ip2WhoisHostedDomains,
-  } = await import("./src/lib/threat-apis.ts");
+    enrichedIPLookup,
+    enrichedDomainLookup,
+    enrichedURLLookup,
+  } = await import("./src/lib/ip2-intelligence.ts");
 
-  const { geminiChat } = await import("./src/lib/gemini.ts");
-
-  // 1. Verify Direct IP2Location Lookup
+  // 1. Direct IP2Location lookup
   console.log("\n1. Testing ip2LocationLookup('161.248.22.174')...");
   try {
     const locRes = await ip2LocationLookup("161.248.22.174");
@@ -35,7 +31,7 @@ async function verifyAll() {
     console.error("IP2Location lookup error:", e);
   }
 
-  // 2. Verify Direct IP2WHOIS Domain Lookup
+  // 2. Direct IP2WHOIS domain lookup
   console.log("\n2. Testing ip2WhoisLookup('example.com')...");
   try {
     const whoisRes = await ip2WhoisLookup("example.com");
@@ -52,7 +48,7 @@ async function verifyAll() {
     console.error("IP2WHOIS lookup error:", e);
   }
 
-  // 3. Verify Direct IP2WHOIS Hosted Domains (Reverse IP) Lookup
+  // 3. Direct Hosted Domain / Reverse IP lookup
   console.log("\n3. Testing ip2WhoisHostedDomains('8.8.8.8')...");
   try {
     const hostedRes = await ip2WhoisHostedDomains("8.8.8.8");
@@ -62,13 +58,13 @@ async function verifyAll() {
       domainsSample: hostedRes?.domains?.slice(0, 3),
     });
   } catch (e) {
-    console.error("IP2WHOIS hosted domains error:", e);
+    console.error("Hosted-domain lookup error:", e);
   }
 
-  // 4. Verify Merged IP Lookup
-  console.log("\n4. Testing mergedIPLookup('161.248.22.174')...");
+  // 4. Enriched IP aggregation
+  console.log("\n4. Testing enrichedIPLookup('161.248.22.174')...");
   try {
-    const ipRes = await mergedIPLookup("161.248.22.174");
+    const ipRes = await enrichedIPLookup("161.248.22.174");
     console.log("IP Result Sources:", ipRes.sources);
     console.log("IP Country:", ipRes.country);
     console.log("IP City/Region:", `${ipRes.city}, ${ipRes.region}`);
@@ -76,72 +72,34 @@ async function verifyAll() {
     console.log("IP2Location Attached:", !!ipRes.ip2location);
     console.log("Hosted Domains Attached:", !!ipRes.hostedDomains);
   } catch (e) {
-    console.error("Merged IP lookup error:", e);
+    console.error("Enriched IP lookup error:", e);
   }
 
-  // 5. Verify Merged Domain Lookup
-  console.log("\n5. Testing mergedDomainLookup('example.com')...");
+  // 5. Enriched domain aggregation + NRD signal
+  console.log("\n5. Testing enrichedDomainLookup('example.com')...");
   try {
-    const domainRes = await mergedDomainLookup("example.com");
+    const domainRes = await enrichedDomainLookup("example.com");
     console.log("Domain Result Sources:", domainRes.sources);
     console.log("Domain Registrar:", domainRes.registrar);
     console.log("Domain Age:", domainRes.domainAge);
     console.log("IP2WHOIS Attached:", !!domainRes.ip2whois);
   } catch (e) {
-    console.error("Merged Domain lookup error:", e);
+    console.error("Enriched domain lookup error:", e);
   }
 
-  // 3. Verify Hash Lookup
-  console.log("\n3. Testing mergedHashLookup('44d88612fea8a8f36de82e1278abb02f')...");
+  // 6. URL analysis + IP2WHOIS domain-age enrichment
+  console.log("\n6. Testing enrichedURLLookup('https://example.com')...");
   try {
-    const hashRes = await mergedHashLookup("44d88612fea8a8f36de82e1278abb02f");
-    console.log("Hash Sources:", hashRes.sources);
-    console.log("Hash Risk Score:", hashRes.riskScore);
-    console.log("Hash Tags Count:", hashRes.tags?.length);
-  } catch (e) {
-    console.error("Hash lookup error:", e);
-  }
-
-  // 4. Verify Live Threat Pulses
-  console.log("\n4. Testing otxGetLivePulses(5)...");
-  try {
-    const pulses = await otxGetLivePulses(5);
-    console.log("Pulses retrieved count:", pulses.length);
-    if (pulses.length > 0) {
-      console.log("Sample Pulse:", {
-        id: pulses[0].id,
-        name: pulses[0].name,
-        author: pulses[0].author,
-        tags: pulses[0].tags,
-      });
-    }
-  } catch (e) {
-    console.error("Pulses error:", e);
-  }
-
-  // 5. Verify URL Analysis
-  console.log("\n5. Testing mergedURLLookup('https://google.com')...");
-  try {
-    const urlRes = await mergedURLLookup("https://google.com");
+    const urlRes = await enrichedURLLookup("https://example.com");
     console.log("URL Verdict:", urlRes.verdict);
     console.log("URL Risk Score:", urlRes.riskScore);
     console.log("URL Sources:", urlRes.sources);
+    console.log("URL Domain Age:", urlRes.domainCharacteristics?.domainAge);
   } catch (e) {
-    console.error("URL analysis error:", e);
+    console.error("Enriched URL lookup error:", e);
   }
 
-  // 6. Verify Gemini AI Assistant
-  console.log("\n6. Testing Gemini AI Assistant...");
-  try {
-    const aiResp = await geminiChat([
-      { role: "user", content: "Briefly explain what an IOC is in one sentence." },
-    ]);
-    console.log("Gemini Response:", aiResp.slice(0, 150));
-  } catch (e) {
-    console.error("Gemini error:", e);
-  }
-
-  console.log("\n=== INTEGRATION VERIFICATION COMPLETE ===");
+  console.log("\n=== IP2LOCATION / IP2WHOIS VERIFICATION COMPLETE ===");
 }
 
 verifyAll();
