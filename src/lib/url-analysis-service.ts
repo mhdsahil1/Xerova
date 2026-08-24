@@ -23,12 +23,19 @@ import {
   vxvaultLookupURL,
   ip2LocationLookup,
   ip2WhoisLookup,
+  checkphishScanURL,
+  urlscanLookup,
+  phishstatsLookupURL,
+  cloudmersiveScanURL,
+  ipstackLookupIP,
 } from "./threat-apis";
 
 import {
   parseURL,
   performLocalURLAnalysis,
   calculateUnifiedRiskScore,
+  CLOUDMERSIVE_ERROR_STATUSES,
+  CLOUDMERSIVE_THREAT_STATUSES,
   type URLAnalysisResult,
   type URLParseResult,
   type RiskFactor,
@@ -133,74 +140,65 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
 
   // Compile combined findings
   const allFindings = [...localAnalysis.findings];
+  const pResults = scoring.providerResults;
 
-  if (threatIntelligence.virusTotal) {
-    const { maliciousEngines, suspiciousEngines } = threatIntelligence.virusTotal;
-    if (maliciousEngines > 0) {
+  if (pResults["VirusTotal"]?.status === "threat") {
+    const vt = threatIntelligence.virusTotal;
+    if (vt && vt.maliciousEngines > 0) {
       allFindings.push({
         category: "Threat Intelligence",
-        severity: maliciousEngines >= 5 ? "CRITICAL" : "HIGH",
-        description: `VirusTotal: Detected as malicious by ${maliciousEngines} security vendors.`,
+        severity: vt.maliciousEngines >= 5 ? "CRITICAL" : "HIGH",
+        description: `VirusTotal: Detected as malicious by ${vt.maliciousEngines} security vendors.`,
       });
-    }
-    if (suspiciousEngines > 0) {
+    } else if (vt && vt.suspiciousEngines > 0) {
       allFindings.push({
         category: "Threat Intelligence",
         severity: "MEDIUM",
-        description: `VirusTotal: Flagged as suspicious by ${suspiciousEngines} security vendors.`,
+        description: `VirusTotal: Flagged as suspicious by ${vt.suspiciousEngines} security vendors.`,
       });
     }
   }
 
-  if (threatIntelligence.criminalIP?.riskScore || threatIntelligence.criminalIP?.phishingScore) {
-    const phishing = threatIntelligence.criminalIP.phishingScore ?? 0;
-    const malware = threatIntelligence.criminalIP.malwareScore ?? 0;
-    if (phishing > 0 || malware > 0) {
-      allFindings.push({
-        category: "Threat Intelligence",
-        severity: Math.max(phishing, malware) >= 70 ? "CRITICAL" : "HIGH",
-        description: `Criminal IP: Phishing score ${phishing}%, Malware score ${malware}%.`,
-      });
-    }
-  }
-
-  if (threatIntelligence.abusix?.listed) {
+  if (pResults["Criminal IP"]?.status === "threat") {
+    const phishing = threatIntelligence.criminalIP?.phishingScore ?? 0;
+    const malware = threatIntelligence.criminalIP?.malwareScore ?? 0;
     allFindings.push({
       category: "Threat Intelligence",
-      severity: "CRITICAL",
-      description: `Abusix: Domain/IP listed on threat intelligence blocklist (${threatIntelligence.abusix.threatLevel}).`,
+      severity: Math.max(phishing, malware) >= 70 ? "CRITICAL" : "HIGH",
+      description: `Criminal IP: Phishing score ${phishing}%, Malware score ${malware}%.`,
     });
   }
 
-  if (threatIntelligence.abuseScore && threatIntelligence.abuseScore > 20) {
+  if (pResults["Abusix"]?.status === "threat") {
     allFindings.push({
       category: "Threat Intelligence",
-      severity: threatIntelligence.abuseScore > 60 ? "HIGH" : "MEDIUM",
+      severity: "CRITICAL",
+      description: `Abusix: Domain/IP listed on threat intelligence blocklist (${threatIntelligence.abusix?.threatLevel}).`,
+    });
+  }
+
+  if (pResults["AbuseIPDB"]?.status === "threat") {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: (threatIntelligence.abuseScore || 0) > 60 ? "HIGH" : "MEDIUM",
       description: `AbuseIPDB: Abuse confidence score ${threatIntelligence.abuseScore}%.`,
     });
   }
 
-  if (threatIntelligence.otx && threatIntelligence.otx.pulseCount > 0) {
+  if (pResults["AlienVault OTX"]?.status === "threat") {
+    const otxResult = pResults["AlienVault OTX"];
     allFindings.push({
       category: "Threat Intelligence",
-      severity: threatIntelligence.otx.pulseCount >= 3 ? "CRITICAL" : "HIGH",
-      description: `AlienVault OTX: Indicator flagged in ${threatIntelligence.otx.pulseCount} threat pulse${threatIntelligence.otx.pulseCount > 1 ? "s" : ""}.`,
+      severity: otxResult.scoreContribution >= 50 ? "CRITICAL" : "HIGH",
+      description: `AlienVault OTX: Indicator flagged in ${threatIntelligence.otx?.pulseCount} threat pulse(s) (${otxResult.relevance} match).`,
     });
   }
 
-  if (threatIntelligence.alphaMountain && threatIntelligence.alphaMountain.riskScore > 30) {
+  if (pResults["alphaMountain.ai"]?.status === "threat") {
     allFindings.push({
       category: "Threat Intelligence",
-      severity: threatIntelligence.alphaMountain.riskScore >= 70 ? "CRITICAL" : "HIGH",
-      description: `alphaMountain AI: Threat rating ${threatIntelligence.alphaMountain.threatScore.toFixed(2)}/5.0 (${threatIntelligence.alphaMountain.riskScore}% risk).`,
-    });
-  }
-
-  if (threatIntelligence.urlquery && threatIntelligence.urlquery.totalHits > 0) {
-    allFindings.push({
-      category: "Threat Intelligence",
-      severity: "LOW",
-      description: `URLQuery: ${threatIntelligence.urlquery.totalHits} previous scan report(s) found in database.`,
+      severity: (threatIntelligence.alphaMountain?.riskScore || 0) >= 70 ? "CRITICAL" : "HIGH",
+      description: `alphaMountain AI: Threat rating ${threatIntelligence.alphaMountain?.threatScore.toFixed(2)}/5.0 (${threatIntelligence.alphaMountain?.riskScore}% risk).`,
     });
   }
 
@@ -225,6 +223,47 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
       category: "Network Intelligence",
       severity: "MEDIUM",
       description: `IP2Location: Host IP is identified as an active Proxy / VPN / Anonymizer node.`,
+    });
+  }
+
+  if (pResults["CheckPhish.ai"]?.status === "threat") {
+    const cp = threatIntelligence.checkphish;
+    allFindings.push({
+      category: "AI Threat Intelligence",
+      severity: cp?.disposition === "phish" ? "CRITICAL" : "HIGH",
+      description: `CheckPhish AI: ${cp?.disposition === "phish" ? `Verified phishing attack${cp?.brand ? ` impersonating ${cp.brand}` : ""}` : "Suspicious site behavior identified by visual and neural models."}`,
+    });
+  }
+
+  if (pResults["urlscan.io"]?.status === "threat") {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: "CRITICAL",
+      description: `urlscan.io: Sandbox verdict classified page as malicious (Score: ${threatIntelligence.urlscan?.score}/100).`,
+    });
+  }
+
+  if (pResults["PhishStats"]?.status === "threat") {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: (threatIntelligence.phishstats?.score || 0) >= 7 ? "CRITICAL" : "HIGH",
+      description: `PhishStats: Real-time phishing index score ${threatIntelligence.phishstats?.score.toFixed(1)}/10.0${threatIntelligence.phishstats?.targetBrand ? ` targeting ${threatIntelligence.phishstats.targetBrand}` : ""}.`,
+    });
+  }
+
+  if (pResults["Cloudmersive"]?.status === "threat") {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: "CRITICAL",
+      description: `Cloudmersive: Anti-malware scanner detected threat (${threatIntelligence.cloudmersive?.websiteThreatType || "Malicious code detected"}).`,
+    });
+  }
+
+  if (pResults["IPStack"]?.status === "threat") {
+    allFindings.push({
+      category: "Network Intelligence",
+      severity: "HIGH",
+      description: `IPStack: High risk security threat level detected on host server infrastructure.`,
     });
   }
 
@@ -263,6 +302,7 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     riskBreakdown: scoring.breakdown,
     findings: allFindings,
     timestamp: new Date().toISOString(),
+    providerResults: scoring.providerResults,
   };
 }
 
@@ -275,6 +315,11 @@ interface ThreatIntelData {
   urlquery: URLAnalysisResult["threatIntelligence"]["urlquery"];
   yandex: URLAnalysisResult["threatIntelligence"]["yandex"];
   vxvault: URLAnalysisResult["threatIntelligence"]["vxvault"];
+  checkphish: URLAnalysisResult["threatIntelligence"]["checkphish"];
+  urlscan: URLAnalysisResult["threatIntelligence"]["urlscan"];
+  phishstats: URLAnalysisResult["threatIntelligence"]["phishstats"];
+  cloudmersive: URLAnalysisResult["threatIntelligence"]["cloudmersive"];
+  ipstack?: URLAnalysisResult["threatIntelligence"]["ipstack"];
   ip2whois?: { domainAge: number | null; registrar: string; createDate: string } | null;
   ip2location?: { countryName: string; cityName: string; isProxy: boolean } | null;
   abuseScore: number | null;
@@ -295,6 +340,11 @@ async function fetchThreatIntelligence(
     urlquery: null,
     yandex: null,
     vxvault: null,
+    checkphish: null,
+    urlscan: null,
+    phishstats: null,
+    cloudmersive: null,
+    ipstack: null,
     ip2whois: null,
     ip2location: null,
     abuseScore: null,
@@ -470,18 +520,22 @@ async function fetchThreatIntelligence(
       try {
         const otxData = await otxLookupURL(urlString);
         const otxDomain = (!otxData || (otxData.pulseCount as number) === 0) && parsed.domain ? await otxLookupDomain(parsed.domain) : null;
-        const finalOtx = (otxData && (otxData.pulseCount as number) > 0) ? otxData : otxDomain;
+        const isUrlMatch = Boolean(otxData && (otxData.pulseCount as number) > 0);
+        const finalOtx = isUrlMatch ? otxData : otxDomain;
         if (finalOtx && typeof finalOtx.pulseCount === "number") {
           result.otx = {
             pulseCount: finalOtx.pulseCount as number,
+            sourceType: isUrlMatch ? "url" : "domain",
             pulses: ((finalOtx.pulses as Array<Record<string, unknown>>) || []).map((p) => ({
               id: (p.id as string) || "",
               name: (p.name as string) || "",
               author: (p.author as string) || "",
               tags: (p.tags as string[]) || [],
+              created: (p.created as string) || "",
+              modified: (p.modified as string) || "",
             })),
           };
-          if ((finalOtx.pulseCount as number) > 0) {
+          if ((finalOtx.pulseCount as number) > 0 && isUrlMatch) {
             result.isKnownMalicious = true;
             result.suspiciousReports += finalOtx.pulseCount as number;
           }
@@ -570,7 +624,130 @@ async function fetchThreatIntelligence(
     })()
   );
 
-  // 11. IP2WHOIS Domain Lookup
+  // 11. CheckPhish.ai Deep Learning AI Scan
+  queries.push(
+    (async () => {
+      try {
+        const cpData = await checkphishScanURL(urlString);
+        if (cpData) {
+          result.checkphish = {
+            disposition: cpData.disposition,
+            brand: cpData.brand,
+            insights: cpData.insights,
+            screenshotUrl: cpData.screenshotUrl,
+          };
+          if (cpData.disposition === "phish") {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += 8;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] CheckPhish scan error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 12. urlscan.io Automated Web Sandbox & Verdict Search
+  queries.push(
+    (async () => {
+      try {
+        const usData = await urlscanLookup(urlString);
+        if (usData) {
+          result.urlscan = {
+            score: usData.score,
+            malicious: usData.malicious,
+            categories: usData.categories,
+            technologies: usData.technologies,
+            screenshotUrl: usData.screenshotUrl,
+            reportUrl: usData.reportUrl,
+          };
+          if (usData.malicious || usData.score >= 50) {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += 6;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] urlscan lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 13. PhishStats Threat Intelligence Index
+  queries.push(
+    (async () => {
+      try {
+        const psData = await phishstatsLookupURL(urlString);
+        if (psData) {
+          result.phishstats = {
+            score: psData.score,
+            tags: psData.tags,
+            targetBrand: psData.targetBrand,
+            threatType: psData.threatType,
+          };
+          if (psData.score >= 5) {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += Math.round(psData.score);
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] PhishStats lookup error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 14. Cloudmersive Website / Anti-Malware Scan
+  queries.push(
+    (async () => {
+      try {
+        const cmData = await cloudmersiveScanURL(urlString);
+        if (cmData) {
+          result.cloudmersive = {
+            cleanResult: cmData.cleanResult,
+            websiteThreatType: cmData.websiteThreatType,
+            foundViruses: cmData.foundViruses,
+          };
+          const rawType = (cmData.websiteThreatType || "").trim().toLowerCase();
+          const isError = CLOUDMERSIVE_ERROR_STATUSES.has(rawType);
+          const isPositiveThreat =
+            !isError &&
+            ((cmData.foundViruses && cmData.foundViruses.length > 0) ||
+              CLOUDMERSIVE_THREAT_STATUSES.has(rawType));
+          if (isPositiveThreat) {
+            result.isKnownMalicious = true;
+            result.suspiciousReports += 7;
+          }
+        }
+      } catch (err) {
+        console.error("[ThreatIntel] Cloudmersive scan error (non-fatal):", (err as Error).message);
+      }
+    })()
+  );
+
+  // 15. IPStack Security & Threat Intelligence (if IP-based)
+  if (parsed.isIPBased && parsed.ipAddress) {
+    queries.push(
+      (async () => {
+        try {
+          const ips = await ipstackLookupIP(parsed.ipAddress!);
+          if (ips) {
+            result.ipstack = {
+              countryName: ips.countryName,
+              isProxy: ips.security?.isProxy || false,
+              threatLevel: ips.security?.threatLevel,
+              isTor: ips.security?.isTor || false,
+            };
+            if (ips.security?.threatLevel === "high" || ips.security?.threatLevel === "critical") {
+              result.suspiciousReports += 5;
+            }
+          }
+        } catch (err) {
+          console.error("[ThreatIntel] IPStack lookup error (non-fatal):", (err as Error).message);
+        }
+      })()
+    );
+  }
+
+  // 16. IP2WHOIS Domain Lookup
   if (!parsed.isIPBased && parsed.domain) {
     queries.push(
       (async () => {
@@ -593,7 +770,7 @@ async function fetchThreatIntelligence(
     );
   }
 
-  // 12. IP2Location Geolocation & Proxy Lookup (for IP-based hosts)
+  // 17. IP2Location Geolocation & Proxy Lookup (for IP-based hosts)
   if (parsed.isIPBased && parsed.ipAddress) {
     queries.push(
       (async () => {

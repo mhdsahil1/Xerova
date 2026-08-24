@@ -5,7 +5,16 @@
 // Features: caching, timeouts, parallel requests, graceful degradation.
 
 import { scoreToSeverity } from "./sanitize";
-import type { IP2LocationData, IP2WhoisData, HostedDomainsData } from "../types";
+import type {
+  IP2LocationData,
+  IP2WhoisData,
+  HostedDomainsData,
+  IPStackData,
+  PhishStatsData,
+  URLScanData,
+  CheckPhishData,
+  CloudmersiveData,
+} from "../types";
 
 // ---- In-Memory Cache ----
 interface CacheEntry {
@@ -1297,10 +1306,373 @@ export async function ip2WhoisHostedDomains(ip: string, page = 1): Promise<Hoste
 }
 
 // ============================================================
+// IPStack (IP Geolocation & Threat Detection)
+// ============================================================
+export const getIPStackKey = () => process.env.IPSTACK_API_KEY || "";
+
+export async function ipstackLookupIP(ip: string): Promise<IPStackData | null> {
+  const key = getIPStackKey();
+  if (!key) return null;
+  const cleanIP = ip.trim();
+  const cacheKey = `ipstack:ip:${cleanIP}`;
+  const cached = getCached<IPStackData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `http://api.ipstack.com/${encodeURIComponent(cleanIP)}?access_key=${encodeURIComponent(key)}&security=1`
+    );
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (d?.error || !d?.ip) return null;
+
+    const security = d.security
+      ? {
+          isProxy: Boolean(d.security.is_proxy),
+          proxyType: d.security.proxy_type || undefined,
+          isCrawler: Boolean(d.security.is_crawler),
+          crawlerName: d.security.crawler_name || undefined,
+          crawlerType: d.security.crawler_type || undefined,
+          isTor: Boolean(d.security.is_tor),
+          threatLevel: d.security.threat_level || "low",
+          threatTypes: Array.isArray(d.security.threat_types) ? d.security.threat_types : [],
+        }
+      : undefined;
+
+    const result: IPStackData = {
+      ip: d.ip || cleanIP,
+      type: d.type || "ipv4",
+      continentCode: d.continent_code || "",
+      continentName: d.continent_name || "",
+      countryCode: d.country_code || "",
+      countryName: d.country_name || "",
+      regionCode: d.region_code || "",
+      regionName: d.region_name || "",
+      city: d.city || "",
+      zip: d.zip || "",
+      latitude: typeof d.latitude === "number" ? d.latitude : parseFloat(d.latitude) || 0,
+      longitude: typeof d.longitude === "number" ? d.longitude : parseFloat(d.longitude) || 0,
+      asn: d.connection?.asn ? `AS${d.connection.asn}` : undefined,
+      isp: d.connection?.isp || undefined,
+      security,
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[IPStack] Lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
+// PhishStats (Real-Time Phishing Threat Intelligence)
+// ============================================================
+export const getPhishStatsKey = () => process.env.PHISHSTATS_API_KEY || "";
+
+export async function phishstatsLookupURL(url: string): Promise<PhishStatsData | null> {
+  const key = getPhishStatsKey();
+  const cleanUrl = url.trim().toLowerCase();
+  const cacheKey = `phishstats:url:${cleanUrl}`;
+  const cached = getCached<PhishStatsData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const cleanDomain = cleanUrl.replace(/^https?:\/\//i, "").split("/")[0].split(":")[0];
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (key) {
+      headers["Authorization"] = `Bearer ${key}`;
+      headers["apikey"] = key;
+    }
+
+    let res = await safeFetch(
+      `https://api.phishstats.info/api/v1/urls?url=${encodeURIComponent(url)}`,
+      { headers },
+      8000
+    );
+    if (!res.ok) {
+      res = await safeFetch(
+        `https://phishstats.info/api/phishing?_where=(url,like,~${encodeURIComponent(cleanDomain)}~)&_sort=-id&_size=1`,
+        { headers },
+        8000
+      );
+    }
+    if (!res.ok) return null;
+    const json = await res.json();
+    const item = Array.isArray(json) ? json[0] : Array.isArray(json?.data) ? json.data[0] : json?.data || json;
+    if (!item || (!item.url && !item.score && !item.phish_score)) return null;
+
+    const rawScore = typeof item.score === "number" ? item.score : typeof item.phish_score === "number" ? item.phish_score : typeof item.score === "string" ? parseFloat(item.score) : 0;
+    const tags = Array.isArray(item.tags)
+      ? item.tags
+      : typeof item.tags === "string"
+        ? item.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
+        : typeof item.tag === "string"
+          ? [item.tag]
+          : [];
+
+    const result: PhishStatsData = {
+      id: item.id ? String(item.id) : undefined,
+      url: item.url || url,
+      domain: item.domain || cleanDomain,
+      ip: item.ip || undefined,
+      country: item.country_name || item.country || undefined,
+      countryCode: item.country_code || undefined,
+      asn: item.asn || undefined,
+      score: rawScore,
+      tags,
+      targetBrand: item.target || item.brand || undefined,
+      title: item.title || undefined,
+      threatType: item.threat_type || "Phishing",
+      date: item.date || item.created_at || undefined,
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[PhishStats] URL lookup failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function phishstatsLookupDomain(domain: string): Promise<PhishStatsData | null> {
+  const cleanDomain = domain.trim().toLowerCase().replace(/^https?:\/\//i, "").split("/")[0].split(":")[0];
+  return phishstatsLookupURL(`http://${cleanDomain}`);
+}
+
+// ============================================================
+// urlscan.io (Automated Web Sandbox & Scanner)
+// ============================================================
+export const getUrlscanKey = () => process.env.URLSCAN_IO_API_KEY || "";
+
+export async function urlscanLookup(target: string): Promise<URLScanData | null> {
+  const key = getUrlscanKey();
+  const cleanTarget = target.trim();
+  const cacheKey = `urlscan:${cleanTarget}`;
+  const cached = getCached<URLScanData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (key) headers["API-Key"] = key;
+
+    const cleanDomain = cleanTarget.replace(/^https?:\/\//i, "").split("/")[0].split(":")[0];
+    const isDomain = !cleanTarget.includes("/") || cleanTarget.startsWith("http") === false;
+    const query = isDomain ? `page.domain:"${cleanDomain}"` : `page.url:"${cleanTarget}" OR page.domain:"${cleanDomain}"`;
+
+    const res = await safeFetch(
+      `https://urlscan.io/api/v1/search/?q=${encodeURIComponent(query)}&size=1`,
+      { headers },
+      10_000
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const item = json?.results?.[0];
+    if (!item) return null;
+
+    const page = item.page || {};
+    const verdicts = item.verdicts?.overall || item.verdicts?.engines || {};
+    const malicious = Boolean(verdicts.malicious || (verdicts.score && verdicts.score > 0));
+    const score = typeof verdicts.score === "number" ? verdicts.score : malicious ? 100 : 0;
+    const categories = Array.isArray(verdicts.categories) ? verdicts.categories : [];
+    const technologies = (item.stats?.technologies || []).map((t: Record<string, string>) => t.name || "").filter(Boolean);
+
+    const result: URLScanData = {
+      uuid: item._id || item.task?.uuid || "",
+      url: page.url || cleanTarget,
+      domain: page.domain || cleanDomain,
+      ip: page.ip || undefined,
+      country: page.country || undefined,
+      asn: page.asn || undefined,
+      server: page.server || undefined,
+      screenshotUrl: item.screenshot || (item._id ? `https://urlscan.io/screenshots/${item._id}.png` : undefined),
+      reportUrl: item.result || (item._id ? `https://urlscan.io/result/${item._id}/` : undefined),
+      malicious,
+      score,
+      categories,
+      technologies,
+      status: page.status,
+      title: page.title || undefined,
+      date: item.task?.time || undefined,
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[urlscan.io] Search failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
+// CheckPhish.ai / Bolster AI URL Scanner
+// ============================================================
+export const getCheckPhishKey = () => process.env.CHECKPHISH_API_KEY || "";
+
+export async function checkphishScanURL(url: string): Promise<CheckPhishData | null> {
+  const key = getCheckPhishKey();
+  if (!key) return null;
+  const cleanUrl = url.trim();
+  const cacheKey = `checkphish:${cleanUrl}`;
+  const cached = getCached<CheckPhishData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const scanRes = await safeFetch(
+      `https://api.checkphish.ai/api/neo/scan`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          apiKey: key,
+          urlInfo: { url: cleanUrl },
+          url: cleanUrl,
+        }),
+      },
+      10_000
+    );
+
+    if (!scanRes.ok) return null;
+    const scanJson = await scanRes.json();
+    const jobId = scanJson.jobID || scanJson.job_id;
+    if (!jobId) return null;
+
+    // Small delay to allow inference
+    await new Promise((r) => setTimeout(r, 2500));
+
+    const statusRes = await safeFetch(
+      `https://api.checkphish.ai/api/neo/scan/status`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          apiKey: key,
+          jobID: jobId,
+        }),
+      },
+      10_000
+    );
+
+    if (!statusRes.ok) return null;
+    const statusJson = await statusRes.json();
+
+    const disposition = statusJson.disposition
+      ? (statusJson.disposition.toLowerCase() as "phish" | "clean" | "suspicious")
+      : statusJson.status === "DONE" && statusJson.url_sha256
+        ? "clean"
+        : "unknown";
+
+    const result: CheckPhishData = {
+      jobId,
+      url: cleanUrl,
+      status: statusJson.status || "DONE",
+      disposition: disposition === "phish" || disposition === "suspicious" || disposition === "clean" ? disposition : "unknown",
+      brand: statusJson.brand || undefined,
+      insights: statusJson.insights || undefined,
+      scanTime: statusJson.scan_time || undefined,
+      screenshotUrl: statusJson.screenshot_url || undefined,
+      resolved: Boolean(statusJson.resolved),
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[CheckPhish.ai] Scan failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
+// Cloudmersive Security & Anti-Malware Detection
+// ============================================================
+export const getCloudmersiveKey = () => process.env.CLOUDMERSIVE_API_KEY || "";
+
+export async function cloudmersiveScanURL(url: string): Promise<CloudmersiveData | null> {
+  const key = getCloudmersiveKey();
+  if (!key) return null;
+  const cleanUrl = url.trim();
+  const cacheKey = `cloudmersive:url:${cleanUrl}`;
+  const cached = getCached<CloudmersiveData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `https://api.cloudmersive.com/virus/scan/website`,
+      {
+        method: "POST",
+        headers: {
+          Apikey: key,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ Url: cleanUrl }),
+      },
+      12_000
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+
+    const foundViruses = Array.isArray(json.FoundViruses)
+      ? json.FoundViruses.map((v: Record<string, string>) => ({
+          fileName: v.FileName || "",
+          virusName: v.VirusName || "",
+        }))
+      : [];
+
+    const result: CloudmersiveData = {
+      cleanResult: json.CleanResult !== false && foundViruses.length === 0,
+      websiteThreatType: json.WebsiteThreatType || "None",
+      foundViruses,
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[Cloudmersive] Website scan failed:", (e as Error).message);
+    return null;
+  }
+}
+
+export async function cloudmersiveScanIP(ip: string): Promise<CloudmersiveData | null> {
+  const key = getCloudmersiveKey();
+  if (!key) return null;
+  const cleanIP = ip.trim();
+  const cacheKey = `cloudmersive:ip:${cleanIP}`;
+  const cached = getCached<CloudmersiveData>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const res = await safeFetch(
+      `https://api.cloudmersive.com/security/address/check/ip/threat`,
+      {
+        method: "POST",
+        headers: {
+          Apikey: key,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(cleanIP),
+      },
+      10_000
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+
+    const isThreat = Boolean(json.IsThreat);
+    const result: CloudmersiveData = {
+      cleanResult: !isThreat,
+      isThreat,
+      threatType: json.ThreatType || (isThreat ? "Malicious IP" : "Clean"),
+      foundViruses: [],
+    };
+    setCache(cacheKey, result);
+    return result;
+  } catch (e) {
+    console.error("[Cloudmersive] IP threat check failed:", (e as Error).message);
+    return null;
+  }
+}
+
+// ============================================================
 // Merged IP Lookup (all engines in parallel)
 // ============================================================
 export async function mergedIPLookup(ip: string) {
-  const [vt, abuse, shodan, cip, abusix, otx, ip2loc, hostedDomains] = await Promise.all([
+  const [vt, abuse, shodan, cip, abusix, otx, ip2loc, hostedDomains, ipstack, cmIP] = await Promise.all([
     vtLookupIP(ip),
     abuseIPDBLookup(ip),
     shodanLookupIP(ip),
@@ -1309,6 +1681,8 @@ export async function mergedIPLookup(ip: string) {
     otxLookupIP(ip),
     ip2LocationLookup(ip),
     ip2WhoisHostedDomains(ip),
+    ipstackLookupIP(ip),
+    cloudmersiveScanIP(ip),
   ]);
 
   const sources: string[] = [];
@@ -1320,8 +1694,10 @@ export async function mergedIPLookup(ip: string) {
   if (otx) sources.push("AlienVault OTX");
   if (ip2loc) sources.push("IP2Location");
   if (hostedDomains && hostedDomains.totalDomains > 0) sources.push("IP2WHOIS");
+  if (ipstack) sources.push("IPStack");
+  if (cmIP) sources.push("Cloudmersive");
 
-  // Merge: prefer AbuseIPDB/IP2Location for geo, Shodan for ports, VT for reputation
+  // Merge: prefer AbuseIPDB/IP2Location/IPStack for geo, Shodan for ports, VT for reputation
   const abuseScore = abuse?.abuseConfidenceScore ?? 0;
   const vtMalicious = (vt?.lastAnalysisStats as Record<string, number>)?.malicious ?? 0;
   const vtTotal =
@@ -1343,6 +1719,16 @@ export async function mergedIPLookup(ip: string) {
   // IP2Location proxy score contribution
   const ip2locProxyScore = ip2loc?.isProxy ? 35 : 0;
 
+  // IPStack security threat score
+  const ipstackThreatScore = ipstack?.security?.threatLevel === "high" || ipstack?.security?.threatLevel === "critical"
+    ? 70
+    : ipstack?.security?.isProxy || ipstack?.security?.isTor
+      ? 35
+      : 0;
+
+  // Cloudmersive IP threat check
+  const cmThreatScore = cmIP?.isThreat ? 75 : 0;
+
   // Composite risk score — takes the maximum across all sources
   const riskScore = Math.min(
     100,
@@ -1353,17 +1739,19 @@ export async function mergedIPLookup(ip: string) {
       cipScore,
       abusixScore,
       otxScore,
-      ip2locProxyScore
+      ip2locProxyScore,
+      ipstackThreatScore,
+      cmThreatScore
     )
   );
 
-  const country = ip2loc?.countryName || abuse?.countryName || (cip?.country as string) || (otx?.country as string) || shodan?.country || vt?.country || "Unknown";
-  const countryCode = ip2loc?.countryCode || abuse?.countryCode || (cip?.countryCode as string) || shodan?.countryCode || "";
-  const city = ip2loc?.cityName || (cip?.city as string) || (otx?.city as string) || shodan?.city || "";
-  const region = ip2loc?.regionName || "";
-  const isp = ip2loc?.asName || abuse?.isp || (cip?.isp as string) || shodan?.isp || "";
-  const org = shodan?.org || (cip?.org as string) || ip2loc?.asName || vt?.asOwner || "";
-  const asn = ip2loc?.asn || (otx?.asn as string) || shodan?.asn || vt?.asn || "";
+  const country = ip2loc?.countryName || ipstack?.countryName || abuse?.countryName || (cip?.country as string) || (otx?.country as string) || shodan?.country || vt?.country || "Unknown";
+  const countryCode = ip2loc?.countryCode || ipstack?.countryCode || abuse?.countryCode || (cip?.countryCode as string) || shodan?.countryCode || "";
+  const city = ip2loc?.cityName || ipstack?.city || (cip?.city as string) || (otx?.city as string) || shodan?.city || "";
+  const region = ip2loc?.regionName || ipstack?.regionName || "";
+  const isp = ip2loc?.asName || ipstack?.isp || abuse?.isp || (cip?.isp as string) || shodan?.isp || "";
+  const org = shodan?.org || (cip?.org as string) || ip2loc?.asName || ipstack?.isp || vt?.asOwner || "";
+  const asn = ip2loc?.asn || ipstack?.asn || (otx?.asn as string) || shodan?.asn || vt?.asn || "";
 
   return {
     ip,
@@ -1371,19 +1759,19 @@ export async function mergedIPLookup(ip: string) {
     countryCode,
     city,
     region,
-    latitude: ip2loc?.latitude ?? undefined,
-    longitude: ip2loc?.longitude ?? undefined,
-    zipCode: ip2loc?.zipCode || "",
+    latitude: ip2loc?.latitude ?? ipstack?.latitude ?? undefined,
+    longitude: ip2loc?.longitude ?? ipstack?.longitude ?? undefined,
+    zipCode: ip2loc?.zipCode || ipstack?.zip || "",
     timeZone: ip2loc?.timeZone || "",
     isp,
     org,
     asn,
     hostname: (shodan?.hostnames as string[])?.[0] || (abuse?.hostnames as string[])?.[0] || "",
     reputation: riskScore,
-    isVPN: (cip?.isVPN as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("vpn") || false,
-    isTor: (cip?.isTor as boolean) || abuse?.isTor || false,
-    isProxy: (cip?.isProxy as boolean) || (ip2loc?.isProxy as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("proxy") || false,
-    isBot: (cip?.isScanner as boolean) || false,
+    isVPN: (cip?.isVPN as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("vpn") || ipstack?.security?.proxyType?.toLowerCase().includes("vpn") || false,
+    isTor: (cip?.isTor as boolean) || abuse?.isTor || ipstack?.security?.isTor || false,
+    isProxy: (cip?.isProxy as boolean) || (ip2loc?.isProxy as boolean) || (ipstack?.security?.isProxy as boolean) || (abuse?.usageType as string)?.toLowerCase().includes("proxy") || false,
+    isBot: (cip?.isScanner as boolean) || ipstack?.security?.isCrawler || false,
     isHosting: (cip?.isHosting as boolean) || false,
     isDarkweb: (cip?.isDarkweb as boolean) || false,
     abuseReports: abuse?.totalReports ?? 0,
@@ -1397,7 +1785,7 @@ export async function mergedIPLookup(ip: string) {
         ...((abuse?.hostnames as string[]) ?? []),
       ]),
     ],
-    threats: buildThreats(vt, abuse, shodan, cip, abusix, otx, ip2loc),
+    threats: buildThreats(vt, abuse, shodan, cip, abusix, otx, ip2loc, ipstack, cmIP),
     whois: parseWhoisString((vt?.whois as string) || ""),
     vtAnalysisStats: vt?.lastAnalysisStats ?? null,
     criminalIP: cip ? {
@@ -1432,6 +1820,23 @@ export async function mergedIPLookup(ip: string) {
       asName: ip2loc.asName,
       isProxy: ip2loc.isProxy,
     } : null,
+    ipstack: ipstack ? {
+      ip: ipstack.ip,
+      type: ipstack.type,
+      continentCode: ipstack.continentCode,
+      continentName: ipstack.continentName,
+      countryCode: ipstack.countryCode,
+      countryName: ipstack.countryName,
+      regionCode: ipstack.regionCode,
+      regionName: ipstack.regionName,
+      city: ipstack.city,
+      zip: ipstack.zip,
+      latitude: ipstack.latitude,
+      longitude: ipstack.longitude,
+      asn: ipstack.asn,
+      isp: ipstack.isp,
+      security: ipstack.security,
+    } : null,
     hostedDomains: hostedDomains ? {
       ip: hostedDomains.ip,
       totalDomains: hostedDomains.totalDomains,
@@ -1439,6 +1844,12 @@ export async function mergedIPLookup(ip: string) {
       perPage: hostedDomains.perPage,
       totalPages: hostedDomains.totalPages,
       domains: hostedDomains.domains,
+    } : null,
+    cloudmersive: cmIP ? {
+      cleanResult: cmIP.cleanResult,
+      isThreat: cmIP.isThreat,
+      threatType: cmIP.threatType,
+      foundViruses: cmIP.foundViruses,
     } : null,
     sources,
     riskScore,
@@ -1453,7 +1864,9 @@ function buildThreats(
   cip?: Record<string, unknown> | null,
   abusix?: Record<string, unknown> | null,
   otx?: Record<string, unknown> | null,
-  ip2loc?: IP2LocationData | Record<string, unknown> | null
+  ip2loc?: IP2LocationData | Record<string, unknown> | null,
+  ipstack?: IPStackData | null,
+  cmIP?: CloudmersiveData | null
 ) {
   const threats: { source: string; description: string; date: string; severity: string }[] = [];
 
@@ -1553,6 +1966,35 @@ function buildThreats(
     });
   }
 
+  // IPStack Security Alert
+  if (ipstack?.security) {
+    if (ipstack.security.threatLevel === "high" || ipstack.security.threatLevel === "critical") {
+      threats.push({
+        source: "IPStack Security",
+        description: `High security threat detected: ${ipstack.security.threatTypes?.join(", ") || ipstack.security.threatLevel}`,
+        date: new Date().toISOString().slice(0, 10),
+        severity: ipstack.security.threatLevel === "critical" ? "critical" : "high",
+      });
+    } else if (ipstack.security.isTor || ipstack.security.isProxy) {
+      threats.push({
+        source: "IPStack Security",
+        description: `Identified as active ${ipstack.security.isTor ? "Tor node" : "Proxy node"} (${ipstack.security.proxyType || "Anonymizer"})`,
+        date: new Date().toISOString().slice(0, 10),
+        severity: "medium",
+      });
+    }
+  }
+
+  // Cloudmersive IP Threat Alert
+  if (cmIP?.isThreat) {
+    threats.push({
+      source: "Cloudmersive",
+      description: `Flagged as malicious threat IP (${cmIP.threatType || "Known Malicious Host"})`,
+      date: new Date().toISOString().slice(0, 10),
+      severity: "high",
+    });
+  }
+
   // Add latest abuse reports as threats
   const reports = (abuse?.reports as { reportedAt: string; comment: string; categories: number[] }[]) ?? [];
   for (const report of reports.slice(0, 2)) {
@@ -1604,7 +2046,7 @@ function parseWhoisString(whois: string): Record<string, string> {
 // Merged Domain Lookup
 // ============================================================
 export async function mergedDomainLookup(domain: string) {
-  const [vt, shodanDns, cipDomain, otxDomain, alphaDomain, urlqueryDomain, ip2whois] = await Promise.all([
+  const [vt, shodanDns, cipDomain, otxDomain, alphaDomain, urlqueryDomain, ip2whois, urlscanDomain, phishstatsDomain] = await Promise.all([
     vtLookupDomain(domain),
     shodanResolveDomain(domain),
     criminalIPScanDomain(domain),
@@ -1612,6 +2054,8 @@ export async function mergedDomainLookup(domain: string) {
     alphaMountainLookupURI(domain),
     urlqueryLookup(domain),
     ip2WhoisLookup(domain),
+    urlscanLookup(domain),
+    phishstatsLookupDomain(domain),
   ]);
 
   // If Shodan resolved an IP, also look it up
@@ -1629,6 +2073,8 @@ export async function mergedDomainLookup(domain: string) {
   if (alphaDomain) sources.push("alphaMountain.ai");
   if (urlqueryDomain) sources.push("URLQuery");
   if (ip2whois) sources.push("IP2WHOIS");
+  if (urlscanDomain) sources.push("urlscan.io");
+  if (phishstatsDomain) sources.push("PhishStats");
 
   const vtMalicious = (vt?.lastAnalysisStats as Record<string, number>)?.malicious ?? 0;
   const vtTotal =
@@ -1647,6 +2093,10 @@ export async function mergedDomainLookup(domain: string) {
   const otxRisk = (otxDomain?.pulseCount as number) > 0 ? Math.min(100, (otxDomain?.pulseCount as number) * 15) : 0;
   const alphaRisk = typeof alphaDomain?.riskScore === "number" ? alphaDomain.riskScore : 0;
 
+  // urlscan.io & PhishStats risk
+  const urlscanRisk = urlscanDomain?.malicious ? Math.max(75, urlscanDomain.score) : 0;
+  const phishstatsRisk = phishstatsDomain?.score ? Math.min(100, Math.round(phishstatsDomain.score * 10)) : 0;
+
   // Newly Registered Domain (NRD) risk
   let nrdRisk = 0;
   if (typeof ip2whois?.domainAge === "number") {
@@ -1657,7 +2107,7 @@ export async function mergedDomainLookup(domain: string) {
     }
   }
 
-  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, otxRisk, alphaRisk, nrdRisk));
+  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, otxRisk, alphaRisk, nrdRisk, urlscanRisk, phishstatsRisk));
 
   // Parse DNS records from VT
   const dnsRecords = ((vt?.lastDnsRecords as Record<string, unknown>[]) ?? []).map(
@@ -1740,6 +2190,22 @@ export async function mergedDomainLookup(domain: string) {
       severity: alphaDomain.severity as string,
     });
   }
+  if (urlscanDomain?.malicious) {
+    domainThreats.push({
+      source: "urlscan.io",
+      description: `URLScan Sandbox: Flagged as malicious (verdict score: ${urlscanDomain.score})`,
+      date: urlscanDomain.date ? urlscanDomain.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
+      severity: "critical",
+    });
+  }
+  if (phishstatsDomain && phishstatsDomain.score >= 5) {
+    domainThreats.push({
+      source: "PhishStats",
+      description: `PhishStats Threat Score: ${phishstatsDomain.score}/10 (${phishstatsDomain.targetBrand ? `Target: ${phishstatsDomain.targetBrand}` : "Phishing Activity"})`,
+      date: phishstatsDomain.date ? phishstatsDomain.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
+      severity: phishstatsDomain.score >= 8 ? "critical" : "high",
+    });
+  }
   if (typeof ip2whois?.domainAge === "number") {
     if (ip2whois.domainAge < 30) {
       domainThreats.push({
@@ -1816,6 +2282,35 @@ export async function mergedDomainLookup(domain: string) {
       tech: ip2whois.tech,
       billing: ip2whois.billing,
       nameservers: ip2whois.nameservers,
+    } : null,
+    urlscan: urlscanDomain ? {
+      uuid: urlscanDomain.uuid,
+      url: urlscanDomain.url,
+      domain: urlscanDomain.domain,
+      ip: urlscanDomain.ip,
+      country: urlscanDomain.country,
+      asn: urlscanDomain.asn,
+      server: urlscanDomain.server,
+      screenshotUrl: urlscanDomain.screenshotUrl,
+      reportUrl: urlscanDomain.reportUrl,
+      malicious: urlscanDomain.malicious,
+      score: urlscanDomain.score,
+      categories: urlscanDomain.categories,
+      technologies: urlscanDomain.technologies,
+      status: urlscanDomain.status,
+      title: urlscanDomain.title,
+      date: urlscanDomain.date,
+    } : null,
+    phishstats: phishstatsDomain ? {
+      id: phishstatsDomain.id,
+      url: phishstatsDomain.url,
+      domain: phishstatsDomain.domain,
+      score: phishstatsDomain.score,
+      tags: phishstatsDomain.tags,
+      targetBrand: phishstatsDomain.targetBrand,
+      title: phishstatsDomain.title,
+      threatType: phishstatsDomain.threatType,
+      date: phishstatsDomain.date,
     } : null,
     threats: domainThreats,
     sources,

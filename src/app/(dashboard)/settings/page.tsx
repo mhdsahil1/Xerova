@@ -91,6 +91,15 @@ export default function SettingsPage() {
                   { name: "AlienVault OTX", key: "OTX_API_KEY", desc: "Global threat pulses, IOC validation, and adversary tracking" },
                   { name: "alphaMountain.ai / ThreatYeti", key: "ALPHA_MOUNTAIN_API", desc: "AI-driven URI reputation & category classification" },
                   { name: "URLQuery", key: "URL_QUERY_API_KEY", desc: "Web sandbox report search and malware scanning" },
+                  { name: "Yandex Safe Browsing", key: "YANDEX_API_KEY", desc: "Real-time threat matches for malware and social engineering" },
+                  { name: "IP2Location", key: "IP2LOCATION_API_KEY", desc: "High-precision IP geolocation, ASN, and proxy detection" },
+                  { name: "IP2WHOIS", key: "IP2WHOIS_API_KEY", desc: "Domain registration WHOIS, domain age, and reverse IP hosting" },
+                  { name: "IPStack", key: "IPSTACK_API_KEY", desc: "IP geolocation, connection telemetry, and security threat modules" },
+                  { name: "Mailboxlayer", key: "MAILBOXLAYER_API_KEY", desc: "Email syntax, disposable inbox filtering, and MX validation" },
+                  { name: "PhishStats", key: "PHISHSTATS_API_KEY", desc: "Real-time phishing threat feed and brand targeting index" },
+                  { name: "urlscan.io", key: "URLSCAN_IO_API_KEY", desc: "Automated URL sandbox, DOM analysis, and page screenshots" },
+                  { name: "CheckPhish.ai", key: "CHECKPHISH_API_KEY", desc: "Deep learning computer vision and brand impersonation scan" },
+                  { name: "Cloudmersive", key: "CLOUDMERSIVE_API_KEY", desc: "Anti-malware website virus scan and IP threat detection" },
                   { name: "Google Gemini AI", key: "GEMINI_API_KEY", desc: "Cybersecurity analyst assistant and natural language reasoning" },
                 ].map((integ) => (
                   <div key={integ.name} className="p-3 rounded-md bg-background/50 border border-border space-y-1">
@@ -110,7 +119,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="bg-status-info/10 border border-status-info/20 text-status-info p-3.5 rounded-md text-xs leading-relaxed">
-                ℹ️ XEROVA is currently running in managed deployment mode. All 9 threat intelligence and AI engines are active and queryable.
+                ℹ️ XEROVA is currently running in managed deployment mode. All 18 threat intelligence, sandbox, security verification, and AI engines are active and queryable.
               </div>
             </CardContent>
           </Card>

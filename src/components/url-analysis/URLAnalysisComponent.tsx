@@ -441,6 +441,66 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
                 </div>
               )}
 
+              {analysis.threatIntelligence.checkphish && (
+                <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-emerald-400 font-semibold">CheckPhish.ai</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground capitalize">
+                      {analysis.threatIntelligence.checkphish.disposition}
+                    </span>
+                    <span className="text-xs font-mono text-emerald-300">
+                      {analysis.threatIntelligence.checkphish.brand ? `Target: ${analysis.threatIntelligence.checkphish.brand}` : "AI Verified"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {analysis.threatIntelligence.urlscan && (
+                <div className="p-3.5 rounded-lg bg-orange-500/10 border border-orange-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-orange-400 font-semibold">urlscan.io Sandbox</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground">
+                      {analysis.threatIntelligence.urlscan.score}/100
+                    </span>
+                    <span className="text-xs font-mono text-orange-300">
+                      {analysis.threatIntelligence.urlscan.malicious ? "Malicious" : "Clean"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {analysis.threatIntelligence.phishstats && (
+                <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-rose-400 font-semibold">PhishStats</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground">
+                      {analysis.threatIntelligence.phishstats.score.toFixed(1)}/10
+                    </span>
+                    <span className="text-xs font-mono text-rose-300">
+                      {analysis.threatIntelligence.phishstats.targetBrand || analysis.threatIntelligence.phishstats.threatType || "Phish Score"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {analysis.threatIntelligence.cloudmersive && (
+                <div className="p-3.5 rounded-lg bg-teal-500/10 border border-teal-500/20 space-y-1">
+                  <span className="text-[11px] font-mono uppercase text-teal-400 font-semibold">Cloudmersive</span>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-lg font-bold font-mono text-foreground">
+                      {analysis.providerResults?.["Cloudmersive"]?.status === "threat"
+                        ? "Threat"
+                        : analysis.providerResults?.["Cloudmersive"]?.status === "error"
+                          ? "Error / Unreachable"
+                          : "Clean"}
+                    </span>
+                    <span className="text-xs font-mono text-teal-300">
+                      {analysis.threatIntelligence.cloudmersive.websiteThreatType || "Anti-Malware"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {analysis.threatIntelligence.urlquery && (
                 <div className="p-3.5 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-1">
                   <span className="text-[11px] font-mono uppercase text-blue-400 font-semibold">URLQuery Sandbox</span>

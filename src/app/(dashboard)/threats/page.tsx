@@ -1088,6 +1088,197 @@ function IPDomainResultView({
           </Card>
         )}
 
+        {/* IPStack Geolocation & Security Telemetry */}
+        {data.ipstack && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-sky-400" />
+                  IPStack Network & Security Modules
+                </span>
+                <Badge variant="secondary" className="text-[10px] font-mono">
+                  IPStack Verified
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Location</p>
+                <p className="text-xs font-semibold mt-1">
+                  {[data.ipstack.city, data.ipstack.regionName, data.ipstack.countryName].filter(Boolean).join(", ") || "Unknown"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">ASN / ISP</p>
+                <p className="text-xs font-mono font-semibold mt-1 truncate" title={data.ipstack.isp || data.ipstack.asn}>
+                  {data.ipstack.asn ? `${data.ipstack.asn} ` : ""}{data.ipstack.isp || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Proxy / Tor Detection</p>
+                <p className="text-xs font-mono font-semibold mt-1">
+                  {data.ipstack.security?.isProxy ? `Proxy (${data.ipstack.security.proxyType || "Active"})` : data.ipstack.security?.isTor ? "Tor Node" : "Clean Host"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Threat Level</p>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] uppercase font-mono mt-1 ${
+                    data.ipstack.security?.threatLevel === "high" || data.ipstack.security?.threatLevel === "critical"
+                      ? "text-destructive border-destructive/40 bg-destructive/10"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {data.ipstack.security?.threatLevel || "Low"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* urlscan.io Automated Sandbox Telemetry */}
+        {data.urlscan && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-orange-400" />
+                  urlscan.io Web Sandbox &amp; DOM Intelligence
+                </span>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-mono ${
+                      data.urlscan.malicious
+                        ? "text-destructive border-destructive/40 bg-destructive/10"
+                        : "text-status-success border-status-success/30"
+                    }`}
+                  >
+                    {data.urlscan.malicious ? "🚨 Malicious" : "Clean Sandbox Verdict"}
+                  </Badge>
+                  {data.urlscan.reportUrl && (
+                    <a
+                      href={data.urlscan.reportUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1 font-mono"
+                    >
+                      Full Report <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Verdict Score</p>
+                  <p className="text-xs font-mono font-semibold mt-1">{data.urlscan.score} / 100</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Server / ASN</p>
+                  <p className="text-xs font-mono font-semibold mt-1 truncate">{data.urlscan.server || data.urlscan.asn || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">IP Address</p>
+                  <p className="text-xs font-mono font-semibold mt-1">{data.urlscan.ip || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono">Page Title</p>
+                  <p className="text-xs font-semibold mt-1 truncate" title={data.urlscan.title}>{data.urlscan.title || "N/A"}</p>
+                </div>
+              </div>
+              {data.urlscan.technologies?.length > 0 && (
+                <div className="pt-2 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase font-mono mb-1.5">Detected Stack / Technologies</p>
+                  <div className="flex flex-wrap gap-1">
+                    {data.urlscan.technologies.slice(0, 8).map((tech: string, i: number) => (
+                      <span key={i} className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border border-border">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* PhishStats Threat Signals */}
+        {data.phishstats && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-rose-400" />
+                  PhishStats Real-Time Phishing Intelligence
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-mono ${
+                    data.phishstats.score >= 7
+                      ? "text-destructive border-destructive/40 bg-destructive/10"
+                      : data.phishstats.score >= 4
+                        ? "text-yellow-400 border-yellow-400/40 bg-yellow-400/10"
+                        : "text-muted-foreground"
+                  }`}
+                >
+                  Score: {data.phishstats.score.toFixed(1)} / 10.0
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Target Brand</p>
+                <p className="text-xs font-semibold mt-1 text-primary">{data.phishstats.targetBrand || "Generic Impersonation"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Threat Classification</p>
+                <p className="text-xs font-mono font-semibold mt-1">{data.phishstats.threatType || "Phishing"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Tags</p>
+                <p className="text-xs font-mono mt-1 text-muted-foreground truncate">{data.phishstats.tags?.join(", ") || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase font-mono">Indexed Date</p>
+                <p className="text-xs font-mono mt-1">{data.phishstats.date?.slice(0, 10) || "Recent"}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Cloudmersive Security Status */}
+        {data.cloudmersive && (
+          <Card className="bg-card border-border md:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-teal-400" />
+                  Cloudmersive Security &amp; Anti-Malware Verification
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-mono ${
+                    data.cloudmersive.cleanResult && !data.cloudmersive.isThreat
+                      ? "text-status-success border-status-success/30"
+                      : "text-destructive border-destructive/40 bg-destructive/10"
+                  }`}
+                >
+                  {data.cloudmersive.cleanResult && !data.cloudmersive.isThreat ? "Clean Verification" : "Threat Flagged"}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Threat Status: <span className="font-semibold text-foreground">{data.cloudmersive.threatType || data.cloudmersive.websiteThreatType || "None Detected"}</span>
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Threats */}
         <Card className="bg-card border-border md:col-span-2">
           <CardHeader>

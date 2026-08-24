@@ -53,6 +53,13 @@ export function sanitizeQuery(
       ? (requestedType as "ip" | "domain" | "hash" | "url" | "cve")
       : detectSearchType(query);
 
+  // For URL type: normalize if missing a scheme so new URL() can parse it
+  // e.g.  "mail.example.com/path"  →  "https://mail.example.com/path"
+  const normalizedQuery =
+    type === "url" && !/^https?:\/\//i.test(query)
+      ? `https://${query}`
+      : query;
+
   // Type-specific validation
   switch (type) {
     case "ip":
@@ -92,7 +99,8 @@ export function sanitizeQuery(
 
     case "url": {
       try {
-        const parsed = new URL(query);
+        // Use the normalized form (with https:// prepended if necessary)
+        const parsed = new URL(normalizedQuery);
         if (!["http:", "https:"].includes(parsed.protocol)) {
           throw new Error("Only HTTP and HTTPS URLs are allowed");
         }
@@ -118,7 +126,8 @@ export function sanitizeQuery(
       break;
   }
 
-  return { query, type };
+  // Return the normalized query for URL type so the analysis engine always receives a parseable URL
+  return { query: type === "url" ? normalizedQuery : query, type };
 }
 
 /**

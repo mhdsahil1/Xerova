@@ -99,6 +99,108 @@ export interface IP2WhoisData {
   nameservers?: string[];
 }
 
+export interface IPStackSecurity {
+  isProxy: boolean;
+  proxyType?: string;
+  isCrawler: boolean;
+  crawlerName?: string;
+  crawlerType?: string;
+  isTor: boolean;
+  threatLevel: string;
+  threatTypes: string[];
+}
+
+export interface IPStackData {
+  ip: string;
+  type: string;
+  continentCode: string;
+  continentName: string;
+  countryCode: string;
+  countryName: string;
+  regionCode: string;
+  regionName: string;
+  city: string;
+  zip: string;
+  latitude: number;
+  longitude: number;
+  asn?: string;
+  isp?: string;
+  security?: IPStackSecurity;
+}
+
+export interface PhishStatsData {
+  id?: string;
+  url: string;
+  domain?: string;
+  ip?: string;
+  country?: string;
+  countryCode?: string;
+  asn?: string;
+  score: number; // 0-10
+  tags: string[];
+  targetBrand?: string;
+  title?: string;
+  threatType?: string;
+  date?: string;
+}
+
+export interface URLScanData {
+  uuid: string;
+  url: string;
+  domain: string;
+  ip?: string;
+  country?: string;
+  asn?: string;
+  server?: string;
+  screenshotUrl?: string;
+  reportUrl?: string;
+  malicious: boolean;
+  score: number;
+  categories: string[];
+  technologies: string[];
+  status?: number;
+  title?: string;
+  date?: string;
+}
+
+export interface CheckPhishData {
+  jobId: string;
+  url: string;
+  status: "PENDING" | "DONE";
+  disposition: "phish" | "clean" | "suspicious" | "unknown";
+  brand?: string;
+  insights?: string;
+  scanTime?: string;
+  screenshotUrl?: string;
+  resolved: boolean;
+}
+
+export interface CloudmersiveData {
+  cleanResult: boolean;
+  websiteThreatType?: string;
+  foundViruses: Array<{ fileName: string; virusName: string }>;
+  isThreat?: boolean;
+  threatType?: string;
+}
+
+export type ProviderStatus =
+  | "threat"
+  | "clean"
+  | "error"
+  | "timeout"
+  | "unavailable"
+  | "unknown";
+
+export interface NormalizedProviderResult {
+  provider: string;
+  status: ProviderStatus;
+  evidence: string[];
+  scoreContribution: number;
+  error?: string;
+  relevance?: "exact" | "domain" | "related" | "historical";
+  details?: Record<string, unknown>;
+}
+
 export interface IPResult {
   ip: string;
   country: string;
@@ -124,7 +226,9 @@ export interface IPResult {
   ports?: number[];
   threats: ThreatReference[];
   ip2location?: IP2LocationData | null;
+  ipstack?: IPStackData | null;
   hostedDomains?: HostedDomainsData | null;
+  cloudmersive?: CloudmersiveData | null;
   sources?: string[];
   riskScore?: number;
   severity?: SeverityLevel;
@@ -144,6 +248,8 @@ export interface DomainResult {
   sslCert?: SSLCertInfo;
   threats: ThreatReference[];
   ip2whois?: IP2WhoisData | null;
+  urlscan?: URLScanData | null;
+  phishstats?: PhishStatsData | null;
   sources?: string[];
   riskScore?: number;
   severity?: SeverityLevel;

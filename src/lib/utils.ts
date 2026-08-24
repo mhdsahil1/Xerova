@@ -45,13 +45,30 @@ export function getRiskBgColor(score: number): string {
 export function detectSearchType(
   query: string
 ): "ip" | "domain" | "hash" | "url" | "cve" {
+  // 1. CVE identifiers
   if (/^CVE-\d{4}-\d{4,}$/i.test(query)) return "cve";
+
+  // 2. Bare IPv4 addresses (no path/port) — only classify as IP if it's truly a bare address
   if (/^(\d{1,3}\.){3}\d{1,3}$/.test(query)) return "ip";
+
+  // 3. IPv6 addresses
   if (/^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/.test(query)) return "ip";
+
+  // 4. Explicit http/https scheme — always a URL
   if (/^https?:\/\//i.test(query)) return "url";
+
+  // 5. File hashes (MD5 / SHA-1 / SHA-256) — test before URL-like so hex strings
+  //    without slashes don't accidentally match URL detection
   if (/^[a-fA-F0-9]{32}$/.test(query)) return "hash";
   if (/^[a-fA-F0-9]{40}$/.test(query)) return "hash";
   if (/^[a-fA-F0-9]{64}$/.test(query)) return "hash";
+
+  // 6. URL-like inputs: a host followed by a path, query string, or fragment.
+  //    Matches: example.com/path, host.com?q=1, host.com#section, host.com:8080/path
+  //    Does NOT match a bare domain like example.com (no trailing slash/? /#).
+  if (/^[^\s\/\?#]+[^\.\s](\/|\?|#)/.test(query)) return "url";
+
+  // 7. Anything else that still looks like a valid bare domain → domain
   return "domain";
 }
 

@@ -100,10 +100,25 @@ It provides real-time threat analysis for IP addresses, domains, URLs, file hash
 
 | Service | Purpose |
 |---------|---------|
-| VirusTotal | Malware & Reputation Intelligence |
-| AbuseIPDB | IP Abuse Reports |
-| Shodan | Internet-wide Host Intelligence |
-| NVD | CVE Database |
+| VirusTotal | Multi-engine malware, domain, URL & hash reputation |
+| AbuseIPDB | IP abuse confidence scoring and community reports |
+| Shodan | Internet-wide host telemetry, open ports, and banner analysis |
+| Criminal IP | Inbound/outbound risk, VPN/Tor/Proxy/Darkweb detection |
+| Abusix | Threat intelligence blocklists and exploit monitoring |
+| AlienVault OTX | Global threat pulses, IOC validation, and adversary tracking |
+| alphaMountain.ai | AI-driven URI reputation & category classification |
+| URLQuery | Web sandbox report search and malware scanning |
+| Yandex Safe Browsing | Real-time threat matches for malware and social engineering |
+| IP2Location | High-precision IP geolocation, ASN, and proxy detection |
+| IP2WHOIS | Domain registration WHOIS, domain age, and reverse IP hosting |
+| IPStack | IP geolocation, connection telemetry, and security threat modules |
+| Mailboxlayer | Email syntax, disposable inbox filtering, and MX validation |
+| PhishStats | Real-time phishing threat feed and brand targeting index |
+| urlscan.io | Automated URL sandbox, DOM analysis, and page screenshots |
+| CheckPhish.ai | Deep learning computer vision and brand impersonation scan |
+| Cloudmersive | Anti-malware website virus scan and IP threat detection |
+| NVD (NIST) | CVE National Vulnerability Database |
+| Google Gemini AI | Cybersecurity analyst assistant and natural language reasoning |
 
 ---
 
@@ -130,7 +145,21 @@ It provides real-time threat analysis for IP addresses, domains, URLs, file hash
 - VirusTotal API
 - AbuseIPDB API
 - Shodan API
+- Criminal IP API
+- Abusix API
+- AlienVault OTX API
+- alphaMountain.ai API
+- URLQuery API
+- Yandex Safe Browsing API
+- IP2Location & IP2WHOIS API
+- IPStack API
+- Mailboxlayer API
+- PhishStats API
+- urlscan.io API
+- CheckPhish.ai API
+- Cloudmersive Security API
 - NVD API
+- Google Gemini AI API
 
 ---
 
@@ -171,19 +200,31 @@ npm run dev
 
 ```env
 AUTH_SECRET=
-
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
 
 MONGODB_URI=
 
 VIRUSTOTAL_API_KEY=
-
 ABUSEIPDB_API_KEY=
-
 SHODAN_API_KEY=
+CRIMINAL_IP_API_KEY=
+ABUSIX_API_KEY=
+OTX_API_KEY=
+ALPHA_MOUNTAIN_API=
+URL_QUERY_API_KEY=
+YANDEX_API_KEY=
+IP2LOCATION_API_KEY=
+IP2WHOIS_API_KEY=
+IPSTACK_API_KEY=
+MAILBOXLAYER_API_KEY=
+PHISHSTATS_API_KEY=
+URLSCAN_IO_API_KEY=
+CHECKPHISH_API_KEY=
+CLOUDMERSIVE_API_KEY=
 
 OPENAI_API_KEY=
+GEMINI_API_KEY=
 ```
 
 ---

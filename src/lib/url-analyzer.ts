@@ -6,6 +6,8 @@
 // Layer 2: External Threat Intelligence Aggregation (VirusTotal, Criminal IP, AbuseIPDB, Abusix, Shodan)
 // → Evidence Aggregation → Unified Risk Score → Severity + Risk Factors
 
+import type { NormalizedProviderResult } from "@/types";
+
 export interface RiskFactor {
   source:
     | "Local URL Analysis"
@@ -18,7 +20,12 @@ export interface RiskFactor {
     | "alphaMountain.ai"
     | "URLQuery"
     | "Yandex Safe Browsing"
-    | "VXVault Threat Feed";
+    | "VXVault Threat Feed"
+    | "PhishStats"
+    | "urlscan.io"
+    | "CheckPhish.ai"
+    | "Cloudmersive"
+    | "IPStack";
   category: string;
   reason: string;
   severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -102,7 +109,8 @@ export interface URLAnalysisResult {
     } | null;
     otx?: {
       pulseCount: number;
-      pulses: Array<{ id: string; name: string; author: string; tags: string[] }>;
+      sourceType?: "url" | "domain";
+      pulses: Array<{ id: string; name: string; author: string; tags: string[]; created?: string; modified?: string }>;
     } | null;
     alphaMountain?: {
       threatScore: number;
@@ -122,6 +130,37 @@ export interface URLAnalysisResult {
     vxvault?: {
       listed: boolean;
       matchUrl?: string;
+    } | null;
+    phishstats?: {
+      score: number;
+      tags: string[];
+      targetBrand?: string;
+      threatType?: string;
+    } | null;
+    urlscan?: {
+      score: number;
+      malicious: boolean;
+      categories: string[];
+      technologies?: string[];
+      screenshotUrl?: string;
+      reportUrl?: string;
+    } | null;
+    checkphish?: {
+      disposition: "phish" | "clean" | "suspicious" | "unknown";
+      brand?: string;
+      insights?: string;
+      screenshotUrl?: string;
+    } | null;
+    cloudmersive?: {
+      cleanResult: boolean;
+      websiteThreatType?: string;
+      foundViruses: Array<{ fileName: string; virusName: string }>;
+    } | null;
+    ipstack?: {
+      countryName: string;
+      isProxy: boolean;
+      threatLevel?: string;
+      isTor?: boolean;
     } | null;
     abuseScore: number | null;
     isKnownMalicious: boolean;
@@ -147,14 +186,7 @@ export interface URLAnalysisResult {
 
   // Analysis Metadata
   timestamp?: string;
-  providerResults?: Record<
-    string,
-    {
-      status: "success" | "timeout" | "error" | "unconfigured";
-      evidence: boolean;
-      scoreContribution?: number;
-    }
-  >;
+  providerResults?: Record<string, NormalizedProviderResult>;
 }
 
 export interface URLParseResult {
@@ -308,6 +340,8 @@ export const TARGET_BRANDS: BrandTarget[] = [
   { name: "telegram", aliases: ["telegram"], legitimateDomains: ["telegram.org", "t.me"] },
   { name: "linkedin", aliases: ["linkedin", "linkedln"], legitimateDomains: ["linkedin.com"] },
   { name: "twitter", aliases: ["twitter"], legitimateDomains: ["twitter.com", "x.com"] },
+  { name: "americanexpress", aliases: ["americanexpress", "american-express", "amex"], legitimateDomains: ["americanexpress.com", "amex.com", "americanexpress.co.uk"] },
+  { name: "itau", aliases: ["itau", "bancoitau", "itaucard"], legitimateDomains: ["itau.com.br", "itau.com", "bancoitau.com.br"] },
 ];
 
 export const SUSPICIOUS_TLDS = [
@@ -638,6 +672,52 @@ export function performLocalURLAnalysis(parsed: URLParseResult): {
     });
   }
 
+  // Check for brand impersonation or embedded host structures in path
+  const lowerPath = parsed.path.toLowerCase();
+  for (const target of TARGET_BRANDS) {
+    const isLegitimate = target.legitimateDomains.some(
+      (legit) => parsed.domain === legit || parsed.domain.endsWith("." + legit)
+    );
+    if (!isLegitimate) {
+      const pathMatchesBrand = target.aliases.some((alias) =>
+        lowerPath.includes(alias)
+      );
+      if (pathMatchesBrand) {
+        pathQueryRisk += 18;
+        riskFactors.push({
+          source: "Local URL Analysis",
+          category: "Path Brand Spoofing",
+          reason: `URL path embeds target brand '${target.name}' on unrelated host '${parsed.domain}' (simulated domain or credential harvesting path)`,
+          severity: "HIGH",
+          scoreContribution: 18,
+        });
+        findings.push({
+          category: "Path Analysis",
+          severity: "HIGH",
+          description: `URL path embeds brand '${target.name.toUpperCase()}' (${parsed.path}) on unrelated domain '${parsed.domain}'. This is a known phishing evasion and credential harvesting tactic.`,
+        });
+        break;
+      }
+    }
+  }
+
+  // Check if path simulates a domain/FQDN hierarchy (e.g. /www.online.domain.com/...)
+  if (/\/(www\.|[a-zA-Z0-9-]+\.(com|net|org|co|io|app|info|xyz|online|biz))\//i.test(parsed.path)) {
+    pathQueryRisk += 10;
+    riskFactors.push({
+      source: "Local URL Analysis",
+      category: "Simulated Host in Path",
+      reason: `URL path simulates an embedded fully qualified domain name inside the path`,
+      severity: "HIGH",
+      scoreContribution: 10,
+    });
+    findings.push({
+      category: "Path Analysis",
+      severity: "HIGH",
+      description: `URL path contains simulated host/domain hierarchy (${parsed.path}).`,
+    });
+  }
+
   // IP + Login Form Combo Signal
   if (parsed.isIPBased && pathKeywords.length > 0) {
     pathQueryRisk += 8;
@@ -801,6 +881,454 @@ function checkBrandImpersonation(parsed: URLParseResult): {
   return { impersonatedBrand, isImpersonating, lookalikes };
 }
 
+export const CLOUDMERSIVE_ERROR_STATUSES = new Set([
+  "unabletoconnect",
+  "forcedabort",
+  "invalidinput",
+  "error",
+  "timeout",
+  "networkerror",
+  "econnreset",
+  "econnrefused",
+  "enotfound",
+  "etimedout",
+  "unreachable",
+  "blocked",
+]);
+
+export const CLOUDMERSIVE_THREAT_STATUSES = new Set([
+  "malware",
+  "phishing",
+  "unwantedsoftware",
+  "executables",
+  "viruses",
+  "trojan",
+  "ransomware",
+  "spyware",
+]);
+
+/**
+ * Structurally enforce the invariant that only status === "threat" contributes risk.
+ */
+export function aggregateProviderRisk(
+  provider: Pick<NormalizedProviderResult, "provider" | "status" | "scoreContribution">
+): number {
+  return provider.status === "threat" ? Math.max(0, provider.scoreContribution) : 0;
+}
+
+/**
+ * Normalize raw threat intelligence provider responses into uniform NormalizedProviderResult objects.
+ */
+export function normalizeProviderResults(
+  threatIntelligence: URLAnalysisResult["threatIntelligence"]
+): Record<string, NormalizedProviderResult> {
+  const normalized: Record<string, NormalizedProviderResult> = {};
+
+  // 1. VirusTotal
+  if (threatIntelligence.virusTotal) {
+    const vt = threatIntelligence.virusTotal;
+    if (vt.maliciousEngines > 0) {
+      const score = Math.min(50, vt.maliciousEngines * 10 + (vt.suspiciousEngines || 0) * 3);
+      normalized["VirusTotal"] = {
+        provider: "VirusTotal",
+        status: "threat",
+        evidence: [`Flagged as malicious by ${vt.maliciousEngines} security vendor${vt.maliciousEngines > 1 ? "s" : ""}`],
+        scoreContribution: score,
+        relevance: "exact",
+      };
+    } else if (vt.suspiciousEngines > 0) {
+      normalized["VirusTotal"] = {
+        provider: "VirusTotal",
+        status: "threat",
+        evidence: [`Flagged as suspicious by ${vt.suspiciousEngines} security vendor${vt.suspiciousEngines > 1 ? "s" : ""}`],
+        scoreContribution: 20,
+        relevance: "exact",
+      };
+    } else if (vt.reputation < -20) {
+      normalized["VirusTotal"] = {
+        provider: "VirusTotal",
+        status: "threat",
+        evidence: [`Poor reputation score (${vt.reputation})`],
+        scoreContribution: Math.min(40, Math.abs(vt.reputation)),
+        relevance: "exact",
+      };
+    } else {
+      normalized["VirusTotal"] = {
+        provider: "VirusTotal",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+        relevance: "exact",
+      };
+    }
+  }
+
+  // 2. Cloudmersive (Strict error vs threat classification)
+  if (threatIntelligence.cloudmersive) {
+    const cm = threatIntelligence.cloudmersive;
+    const rawType = (cm.websiteThreatType || "").trim();
+    const typeLower = rawType.toLowerCase();
+
+    if (CLOUDMERSIVE_ERROR_STATUSES.has(typeLower)) {
+      normalized["Cloudmersive"] = {
+        provider: "Cloudmersive",
+        status: "error",
+        error: rawType || "Unable to connect",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    } else if (cm.foundViruses && cm.foundViruses.length > 0) {
+      const virusList = cm.foundViruses.map((v) => v.virusName).filter(Boolean).join(", ");
+      normalized["Cloudmersive"] = {
+        provider: "Cloudmersive",
+        status: "threat",
+        evidence: [`Anti-virus scanner detected viruses: ${virusList || "Malware found"}`],
+        scoreContribution: 80,
+        relevance: "exact",
+      };
+    } else if (CLOUDMERSIVE_THREAT_STATUSES.has(typeLower)) {
+      normalized["Cloudmersive"] = {
+        provider: "Cloudmersive",
+        status: "threat",
+        evidence: [`Threat detection identified: ${rawType}`],
+        scoreContribution: 80,
+        relevance: "exact",
+      };
+    } else if (cm.cleanResult === true || typeLower === "none" || typeLower === "") {
+      normalized["Cloudmersive"] = {
+        provider: "Cloudmersive",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+        relevance: "exact",
+      };
+    } else {
+      normalized["Cloudmersive"] = {
+        provider: "Cloudmersive",
+        status: "unknown",
+        error: rawType,
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 3. AlienVault OTX (Contextual URL vs domain vs historical scoring)
+  if (threatIntelligence.otx) {
+    const otx = threatIntelligence.otx;
+    if (otx.pulseCount > 0) {
+      const isExactURL = otx.sourceType === "url";
+      const pulses = otx.pulses || [];
+
+      // Check recency: are pulses created in last 2 years?
+      const now = new Date().getTime();
+      const twoYearsMs = 2 * 365 * 24 * 60 * 60 * 1000;
+      let recentCount = 0;
+      let historicalCount = 0;
+      let hasMalwareTag = false;
+
+      for (const p of pulses) {
+        if (p.created) {
+          const createdTime = new Date(p.created).getTime();
+          if (!isNaN(createdTime) && now - createdTime > twoYearsMs) {
+            historicalCount++;
+          } else {
+            recentCount++;
+          }
+        } else {
+          recentCount++;
+        }
+        if (p.tags?.some((t) => /malware|phish|trojan|c2|ransomware/i.test(t))) {
+          hasMalwareTag = true;
+        }
+      }
+
+      let score = 0;
+      let relevance: "exact" | "domain" | "related" | "historical" = "domain";
+
+      if (isExactURL) {
+        relevance = "exact";
+        score = Math.min(75, Math.max(25, otx.pulseCount * 25));
+      } else if (historicalCount > 0 && recentCount === 0 && !hasMalwareTag) {
+        relevance = "historical";
+        score = Math.min(25, otx.pulseCount * 5);
+      } else {
+        relevance = "domain";
+        score = Math.min(50, Math.max(15, (recentCount * 15) + (historicalCount * 5)));
+        if (hasMalwareTag) score = Math.min(65, score + 15);
+      }
+
+      normalized["AlienVault OTX"] = {
+        provider: "AlienVault OTX",
+        status: "threat",
+        evidence: [`Flagged in ${otx.pulseCount} threat pulse${otx.pulseCount > 1 ? "s" : ""} (${relevance} match)`],
+        scoreContribution: score,
+        relevance,
+      };
+    } else {
+      normalized["AlienVault OTX"] = {
+        provider: "AlienVault OTX",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 4. Criminal IP
+  if (threatIntelligence.criminalIP) {
+    const cip = threatIntelligence.criminalIP;
+    const phishing = cip.phishingScore ?? 0;
+    const malware = cip.malwareScore ?? 0;
+    const cipMax = Math.max(phishing, malware);
+    if (cipMax > 0) {
+      normalized["Criminal IP"] = {
+        provider: "Criminal IP",
+        status: "threat",
+        evidence: [`Risk assessment: ${phishing > 0 ? `Phishing ${phishing}%` : `Malware ${malware}%`}`],
+        scoreContribution: cipMax,
+        relevance: "exact",
+      };
+    } else {
+      normalized["Criminal IP"] = {
+        provider: "Criminal IP",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 5. Abusix
+  if (threatIntelligence.abusix) {
+    const ab = threatIntelligence.abusix;
+    if (ab.listed) {
+      normalized["Abusix"] = {
+        provider: "Abusix",
+        status: "threat",
+        evidence: [`Listed on Abusix threat intelligence blocklist (${ab.threatLevel})`],
+        scoreContribution: 75,
+        relevance: "exact",
+      };
+    } else {
+      normalized["Abusix"] = {
+        provider: "Abusix",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 6. AbuseIPDB
+  if (threatIntelligence.abuseScore !== null && threatIntelligence.abuseScore !== undefined) {
+    const score = threatIntelligence.abuseScore;
+    if (score >= 25) {
+      normalized["AbuseIPDB"] = {
+        provider: "AbuseIPDB",
+        status: "threat",
+        evidence: [`Abuse confidence score: ${score}%`],
+        scoreContribution: score,
+        relevance: "exact",
+      };
+    } else {
+      normalized["AbuseIPDB"] = {
+        provider: "AbuseIPDB",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 7. CheckPhish.ai
+  if (threatIntelligence.checkphish) {
+    const cp = threatIntelligence.checkphish;
+    if (cp.disposition === "phish") {
+      normalized["CheckPhish.ai"] = {
+        provider: "CheckPhish.ai",
+        status: "threat",
+        evidence: [`AI model classified URL as active Phishing${cp.brand ? ` (Target: ${cp.brand})` : ""}`],
+        scoreContribution: 85,
+        relevance: "exact",
+      };
+    } else if (cp.disposition === "suspicious") {
+      normalized["CheckPhish.ai"] = {
+        provider: "CheckPhish.ai",
+        status: "threat",
+        evidence: [`AI flagged URL as suspicious`],
+        scoreContribution: 60,
+        relevance: "exact",
+      };
+    } else if (cp.disposition === "clean") {
+      normalized["CheckPhish.ai"] = {
+        provider: "CheckPhish.ai",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    } else {
+      normalized["CheckPhish.ai"] = {
+        provider: "CheckPhish.ai",
+        status: "unknown",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 8. urlscan.io
+  if (threatIntelligence.urlscan) {
+    const us = threatIntelligence.urlscan;
+    if (us.malicious || us.score >= 50) {
+      const score = Math.max(75, us.score);
+      normalized["urlscan.io"] = {
+        provider: "urlscan.io",
+        status: "threat",
+        evidence: [`Automated sandbox flagged target as malicious (Score: ${us.score}/100)`],
+        scoreContribution: score,
+        relevance: "exact",
+      };
+    } else {
+      normalized["urlscan.io"] = {
+        provider: "urlscan.io",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 9. PhishStats
+  if (threatIntelligence.phishstats) {
+    const ps = threatIntelligence.phishstats;
+    if (ps.score >= 4) {
+      const score = Math.min(100, Math.round(ps.score * 10));
+      normalized["PhishStats"] = {
+        provider: "PhishStats",
+        status: "threat",
+        evidence: [`Phishing threat rating: ${ps.score.toFixed(1)}/10.0${ps.targetBrand ? ` targeting ${ps.targetBrand}` : ""}`],
+        scoreContribution: score,
+        relevance: "exact",
+      };
+    } else {
+      normalized["PhishStats"] = {
+        provider: "PhishStats",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 10. alphaMountain.ai
+  if (threatIntelligence.alphaMountain) {
+    const am = threatIntelligence.alphaMountain;
+    if (am.riskScore >= 25) {
+      normalized["alphaMountain.ai"] = {
+        provider: "alphaMountain.ai",
+        status: "threat",
+        evidence: [`AI threat rating: ${am.threatScore.toFixed(2)}/5.0 (${am.riskScore}% risk score)`],
+        scoreContribution: am.riskScore,
+        relevance: "exact",
+      };
+    } else {
+      normalized["alphaMountain.ai"] = {
+        provider: "alphaMountain.ai",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 11. Yandex Safe Browsing
+  if (threatIntelligence.yandex) {
+    const yx = threatIntelligence.yandex;
+    if (!yx.isSafe && yx.matches.length > 0) {
+      const types = yx.matches.map((m) => m.threatType).join(", ");
+      normalized["Yandex Safe Browsing"] = {
+        provider: "Yandex Safe Browsing",
+        status: "threat",
+        evidence: [`Flagged as unsafe by Yandex Safe Browsing: ${types}`],
+        scoreContribution: 80,
+        relevance: "exact",
+      };
+    } else {
+      normalized["Yandex Safe Browsing"] = {
+        provider: "Yandex Safe Browsing",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 12. VXVault Live Malware Feed
+  if (threatIntelligence.vxvault) {
+    const vx = threatIntelligence.vxvault;
+    if (vx.listed) {
+      normalized["VXVault Threat Feed"] = {
+        provider: "VXVault Threat Feed",
+        status: "threat",
+        evidence: [`Actively listed on VXVault malware distribution feed${vx.matchUrl ? ` (${vx.matchUrl})` : ""}`],
+        scoreContribution: 85,
+        relevance: "exact",
+      };
+    } else {
+      normalized["VXVault Threat Feed"] = {
+        provider: "VXVault Threat Feed",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 13. IPStack
+  if (threatIntelligence.ipstack) {
+    const ips = threatIntelligence.ipstack;
+    const isHigh = ips.threatLevel === "high" || ips.threatLevel === "critical";
+    if (isHigh) {
+      normalized["IPStack"] = {
+        provider: "IPStack",
+        status: "threat",
+        evidence: [`Flagged infrastructure with high threat level (${ips.threatLevel})`],
+        scoreContribution: 65,
+        relevance: "exact",
+      };
+    } else if (ips.isTor || ips.isProxy) {
+      normalized["IPStack"] = {
+        provider: "IPStack",
+        status: "threat",
+        evidence: [`Host IP identified as active ${ips.isTor ? "Tor node" : "Proxy/Anonymizer"}`],
+        scoreContribution: 35,
+        relevance: "exact",
+      };
+    } else {
+      normalized["IPStack"] = {
+        provider: "IPStack",
+        status: "clean",
+        evidence: [],
+        scoreContribution: 0,
+      };
+    }
+  }
+
+  // 14. URLQuery
+  if (threatIntelligence.urlquery) {
+    const uq = threatIntelligence.urlquery;
+    normalized["URLQuery"] = {
+      provider: "URLQuery",
+      status: "clean",
+      evidence: uq.totalHits > 0 ? [`Found in ${uq.totalHits} previous scan report(s)`] : [],
+      scoreContribution: 0,
+    };
+  }
+
+  return normalized;
+}
+
 // ---- Unified Score Calculation ----
 export function calculateUnifiedRiskScore(
   localResult: ReturnType<typeof performLocalURLAnalysis>,
@@ -813,165 +1341,30 @@ export function calculateUnifiedRiskScore(
   sources: string[];
   allRiskFactors: RiskFactor[];
   breakdown: URLAnalysisResult["riskBreakdown"];
+  providerResults: Record<string, NormalizedProviderResult>;
 } {
   const sources: string[] = ["Local URL Analysis"];
   const allRiskFactors: RiskFactor[] = [...localResult.riskFactors];
+  const providerResults = normalizeProviderResults(threatIntelligence);
 
   let threatIntelRisk = 0;
 
-  // 1. VirusTotal Evidence & Attribution
-  if (threatIntelligence.virusTotal) {
-    sources.push("VirusTotal");
-    const { maliciousEngines, suspiciousEngines, reputation } = threatIntelligence.virusTotal;
+  for (const [providerName, pResult] of Object.entries(providerResults)) {
+    sources.push(providerName);
 
-    if (maliciousEngines > 0) {
-      const vtScore = Math.min(50, maliciousEngines * 10 + (suspiciousEngines || 0) * 3);
-      threatIntelRisk = Math.max(threatIntelRisk, vtScore);
-      allRiskFactors.push({
-        source: "VirusTotal",
-        category: "Vendor Detection",
-        reason: `Flagged as malicious by ${maliciousEngines} security engine${maliciousEngines > 1 ? "s" : ""}`,
-        severity: maliciousEngines >= 5 ? "CRITICAL" : "HIGH",
-        scoreContribution: vtScore,
-      });
-    } else if (suspiciousEngines > 0) {
-      threatIntelRisk = Math.max(threatIntelRisk, 20);
-      allRiskFactors.push({
-        source: "VirusTotal",
-        category: "Vendor Detection",
-        reason: `Flagged as suspicious by ${suspiciousEngines} security engine${suspiciousEngines > 1 ? "s" : ""}`,
-        severity: "MEDIUM",
-        scoreContribution: 20,
-      });
-    }
+    // STRUCTURAL INVARIANT:
+    // Only accumulate risk points if status is STRICTLY "threat".
+    // Error, clean, timeout, unavailable, or unknown unconditionally contribute 0.
+    const contribution = aggregateProviderRisk(pResult);
 
-    if (reputation < -20) {
-      threatIntelRisk = Math.max(threatIntelRisk, Math.min(40, Math.abs(reputation)));
-    }
-  }
-
-  // 2. Criminal IP Evidence & Attribution
-  if (threatIntelligence.criminalIP) {
-    sources.push("Criminal IP");
-    const phishing = threatIntelligence.criminalIP.phishingScore ?? 0;
-    const malware = threatIntelligence.criminalIP.malwareScore ?? 0;
-    const cipMax = Math.max(phishing, malware);
-    if (cipMax > 0) {
-      threatIntelRisk = Math.max(threatIntelRisk, cipMax);
+    if (contribution > 0) {
+      threatIntelRisk = Math.max(threatIntelRisk, contribution);
       allRiskFactors.push({
-        source: "Criminal IP",
-        category: "Threat Intelligence",
-        reason: `Criminal IP risk assessment: ${phishing > 0 ? `Phishing score ${phishing}%` : `Malware score ${malware}%`}`,
-        severity: cipMax >= 70 ? "CRITICAL" : cipMax >= 40 ? "HIGH" : "MEDIUM",
-        scoreContribution: cipMax,
-      });
-    }
-  }
-
-  // 3. Abusix Evidence & Attribution
-  if (threatIntelligence.abusix) {
-    sources.push("Abusix");
-    if (threatIntelligence.abusix.listed) {
-      threatIntelRisk = Math.max(threatIntelRisk, 75);
-      allRiskFactors.push({
-        source: "Abusix",
-        category: "Blocklist",
-        reason: `Domain/IP actively listed on Abusix threat intelligence blocklist (${threatIntelligence.abusix.threatLevel})`,
-        severity: "CRITICAL",
-        scoreContribution: 75,
-      });
-    }
-  }
-
-  // 4. AbuseIPDB Evidence & Attribution
-  if (threatIntelligence.abuseScore !== null && threatIntelligence.abuseScore !== undefined) {
-    sources.push("AbuseIPDB");
-    const score = threatIntelligence.abuseScore;
-    threatIntelRisk = Math.max(threatIntelRisk, score);
-    if (score >= 25) {
-      allRiskFactors.push({
-        source: "AbuseIPDB",
-        category: "Reputation",
-        reason: `AbuseIPDB confidence of abuse: ${score}%`,
-        severity: score >= 80 ? "CRITICAL" : score >= 50 ? "HIGH" : "MEDIUM",
-        scoreContribution: score,
-      });
-    }
-  }
-
-  // 5. AlienVault OTX Evidence & Attribution
-  if (threatIntelligence.otx) {
-    sources.push("AlienVault OTX");
-    if (threatIntelligence.otx.pulseCount > 0) {
-      const otxScore = Math.min(80, threatIntelligence.otx.pulseCount * 20);
-      threatIntelRisk = Math.max(threatIntelRisk, otxScore);
-      allRiskFactors.push({
-        source: "AlienVault OTX",
-        category: "Threat Pulses",
-        reason: `Flagged in ${threatIntelligence.otx.pulseCount} AlienVault OTX threat pulse${threatIntelligence.otx.pulseCount > 1 ? "s" : ""}`,
-        severity: threatIntelligence.otx.pulseCount >= 5 ? "CRITICAL" : threatIntelligence.otx.pulseCount >= 2 ? "HIGH" : "MEDIUM",
-        scoreContribution: otxScore,
-      });
-    }
-  }
-
-  // 6. alphaMountain.ai Evidence & Attribution
-  if (threatIntelligence.alphaMountain) {
-    sources.push("alphaMountain.ai");
-    const alphaScore = threatIntelligence.alphaMountain.riskScore;
-    threatIntelRisk = Math.max(threatIntelRisk, alphaScore);
-    if (alphaScore >= 25) {
-      allRiskFactors.push({
-        source: "alphaMountain.ai",
-        category: "AI Threat Rating",
-        reason: `alphaMountain AI risk rating: ${threatIntelligence.alphaMountain.threatScore.toFixed(2)}/5.0 (${alphaScore}% risk score)`,
-        severity: alphaScore >= 75 ? "CRITICAL" : alphaScore >= 50 ? "HIGH" : "MEDIUM",
-        scoreContribution: alphaScore,
-      });
-    }
-  }
-
-  // 7. URLQuery Evidence & Attribution
-  if (threatIntelligence.urlquery) {
-    sources.push("URLQuery");
-    if (threatIntelligence.urlquery.totalHits > 0) {
-      allRiskFactors.push({
-        source: "URLQuery",
-        category: "Sandbox History",
-        reason: `Found in ${threatIntelligence.urlquery.totalHits} prior URLQuery security scan report${threatIntelligence.urlquery.totalHits > 1 ? "s" : ""}`,
-        severity: "LOW",
-        scoreContribution: 10,
-      });
-    }
-  }
-
-  // 8. Yandex Safe Browsing Evidence & Attribution
-  if (threatIntelligence.yandex) {
-    sources.push("Yandex Safe Browsing");
-    if (!threatIntelligence.yandex.isSafe && threatIntelligence.yandex.matches.length > 0) {
-      const threatTypes = threatIntelligence.yandex.matches.map((m) => m.threatType).join(", ");
-      threatIntelRisk = Math.max(threatIntelRisk, 80);
-      allRiskFactors.push({
-        source: "Yandex Safe Browsing",
-        category: "Safe Browsing",
-        reason: `Flagged as unsafe by Yandex Safe Browsing API: ${threatTypes}`,
-        severity: "CRITICAL",
-        scoreContribution: 80,
-      });
-    }
-  }
-
-  // 9. VXVault Live Malware Feed Evidence & Attribution
-  if (threatIntelligence.vxvault) {
-    sources.push("VXVault Threat Feed");
-    if (threatIntelligence.vxvault.listed) {
-      threatIntelRisk = Math.max(threatIntelRisk, 85);
-      allRiskFactors.push({
-        source: "VXVault Threat Feed",
-        category: "Malware Distribution",
-        reason: `Actively listed on VXVault live malware distribution feed${threatIntelligence.vxvault.matchUrl ? ` (${threatIntelligence.vxvault.matchUrl})` : ""}`,
-        severity: "CRITICAL",
-        scoreContribution: 85,
+        source: providerName as RiskFactor["source"],
+        category: pResult.relevance === "historical" ? "Historical Threat Pulse" : "Threat Intelligence",
+        reason: pResult.evidence[0] || `${providerName} detected threat (Score: ${contribution})`,
+        severity: contribution >= 75 ? "CRITICAL" : contribution >= 50 ? "HIGH" : "MEDIUM",
+        scoreContribution: contribution,
       });
     }
   }
@@ -1030,6 +1423,7 @@ export function calculateUnifiedRiskScore(
       threatIntelligenceRisk: Math.round(threatIntelRisk),
       totalRisk: totalScore,
     },
+    providerResults,
   };
 }
 
