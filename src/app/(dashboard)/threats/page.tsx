@@ -40,6 +40,7 @@ import { IOCExtractionPanel } from "@/components/shared/IOCExtractionPanel";
 import { CreateReportDialog } from "@/components/reports/CreateReportDialog";
 import type { ExtractedIOC } from "@/lib/ioc-extractor";
 import { KineticTextLoader } from "@/components/ui/kinetic-text-loader";
+import { URLAnalysisComponent } from "@/components/url-analysis/URLAnalysisComponent";
 
 // --- API Error Handling ---
 function ApiErrorAlert({ error }: { error: string }) {
@@ -1438,6 +1439,10 @@ function HashResultView({ data }: { data: any }) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function URLResultView({ data }: { data: any }) {
+  if (data?.providerResults || data?.riskBreakdown || data?.structural) {
+    return <URLAnalysisComponent analysis={data} />;
+  }
+
   const riskFactors = data.riskFactors || [];
   const findings = data.findings || [];
   const structural = data.structural || {};

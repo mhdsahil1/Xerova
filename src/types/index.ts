@@ -183,6 +183,20 @@ export interface CloudmersiveData {
   threatType?: string;
 }
 
+export type TargetClassification = "url" | "domain" | "ip";
+
+export interface AnalysisCoverage {
+  totalRelevant: number;
+  responded: number;
+  threats: number;
+  clean: number;
+  errors: number;
+  timeouts: number;
+  unavailable: number;
+  unknown: number;
+  percentage: number;
+}
+
 export type ProviderStatus =
   | "threat"
   | "clean"

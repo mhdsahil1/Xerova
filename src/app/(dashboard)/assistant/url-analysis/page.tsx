@@ -1,13 +1,12 @@
 // ============================================
-// URL Analysis Dashboard Page
+// XEROVA — URL Analysis Dashboard Page
 // ============================================
 
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Globe, Shield, Sparkles } from "lucide-react";
 import { URLAnalysisComponent } from "@/components/url-analysis/URLAnalysisComponent";
-
 import type { URLAnalysisResult } from "@/lib/url-analyzer";
 
 export default function URLAnalysisPage() {
@@ -24,7 +23,7 @@ export default function URLAnalysisPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!url.trim()) {
       setError("Please enter a URL");
       return;
@@ -61,7 +60,7 @@ export default function URLAnalysisPage() {
 
       const data = await response.json();
       setAnalysis(data.data);
-      setRecentAnalyses(prev => [data.data, ...prev.slice(0, 4)]);
+      setRecentAnalyses((prev) => [data.data, ...prev.slice(0, 4)]);
       setUrl("");
     } catch (err) {
       setError((err as Error).message || "Failed to analyze URL");
@@ -71,34 +70,39 @@ export default function URLAnalysisPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-6">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-slate-900">🔗 URL Analysis</h1>
-          <p className="text-lg text-slate-600">
-            Advanced malicious URL & website detection. Analyze URL structure, domain characteristics, and threat intelligence.
+          <div className="flex items-center gap-2">
+            <Globe className="w-6 h-6 text-primary" />
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              Deep URL Threat Intelligence
+            </h1>
+          </div>
+          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+            Multi-engine malicious URL, domain, and web infrastructure scanner. Inspect local structural heuristics, brand impersonation vectors, and independent threat intelligence engines.
           </p>
         </div>
 
         {/* Search Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
               <Search className="w-5 h-5" />
             </div>
             <input
               type="text"
               value={url}
               onChange={handleInputChange}
-              placeholder="Enter a URL to analyze (e.g., https://example.com)"
-              className="w-full pl-12 pr-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="Enter a target URL to analyze (e.g., https://secure-login.paypal-verification.com)"
+              className="w-full pl-12 pr-4 py-3.5 bg-card border border-border rounded-xl focus:outline-none focus:border-primary text-foreground font-mono text-sm placeholder:text-muted-foreground/60 transition-all shadow-sm"
               disabled={loading}
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3.5 text-destructive text-xs font-mono">
               {error}
             </div>
           )}
@@ -106,89 +110,72 @@ export default function URLAnalysisPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-md cursor-pointer disabled:cursor-not-allowed"
           >
-            {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-            {loading ? "Analyzing URL..." : "Analyze URL"}
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading ? "Evaluating Threat Intelligence Engines..." : "Analyze URL"}
           </button>
         </form>
 
         {/* Main Analysis Result */}
         {analysis && (
-          <div>
+          <div className="pt-2">
             <URLAnalysisComponent analysis={analysis} />
           </div>
         )}
 
         {/* Empty State */}
         {!analysis && !loading && (
-          <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg p-12 text-center">
-            <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-600 mb-2">No analysis yet</h3>
-            <p className="text-slate-500">Enter a URL above to get started with comprehensive security analysis</p>
+          <div className="bg-card border border-dashed border-border/80 rounded-2xl p-12 text-center space-y-3">
+            <Globe className="w-12 h-12 text-muted-foreground/40 mx-auto" />
+            <h3 className="text-base font-bold text-foreground">No URL Analyzed Yet</h3>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Enter any URL or domain above to run local heuristic inspection and query active threat intelligence engines with transparent evidence attribution.
+            </p>
           </div>
         )}
 
         {/* Recent Analyses */}
         {recentAnalyses.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-slate-900">Recent Analyses</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 pt-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground font-mono">
+              Recent In-Session Analyses
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {recentAnalyses.map((recent, idx) => (
                 <button
                   key={idx}
                   onClick={() => setAnalysis(recent)}
-                  className="text-left bg-white border border-slate-200 rounded-lg p-4 hover:border-slate-400 transition-colors group"
+                  className="text-left bg-card border border-border/70 rounded-xl p-4 hover:border-primary/50 transition-all group flex flex-col justify-between space-y-2 cursor-pointer"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-600 truncate">{recent.url}</p>
-                      <p className="text-xs text-slate-500 mt-1">{recent.structural.domain}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-mono font-bold text-foreground truncate">{recent.url}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{recent.structural.domain}</p>
                     </div>
-                    <span className={`ml-2 px-3 py-1 rounded text-xs font-semibold whitespace-nowrap ${
-                      recent.verdict === "SAFE" ? "bg-green-100 text-green-700" :
-                      recent.verdict === "SUSPICIOUS" ? "bg-yellow-100 text-yellow-700" :
-                      "bg-red-100 text-red-700"
-                    }`}>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                        recent.verdict === "SAFE"
+                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                          : recent.verdict === "SUSPICIOUS"
+                            ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                            : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
+                      }`}
+                    >
                       {recent.verdict}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600">Risk: {recent.riskScore}/100</span>
-                    <span className="text-xs text-blue-600 group-hover:text-blue-700">View →</span>
+                  <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-border/40">
+                    <span className="text-muted-foreground">
+                      Risk: <strong className="text-foreground">{recent.riskScore}/100</strong> ({recent.threatLevel})
+                    </span>
+                    <span className="text-primary group-hover:underline text-[11px]">View Analysis →</span>
                   </div>
                 </button>
               ))}
             </div>
           </div>
         )}
-
-        {/* Features Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <div className="text-3xl mb-2">🔍</div>
-            <h3 className="font-bold text-slate-900 mb-2">Structural Analysis</h3>
-            <p className="text-sm text-slate-600">
-              Detects HTTP/HTTPS, URL length, subdomains, IP addresses, suspicious ports, URL encoding, and obfuscation.
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <div className="text-3xl mb-2">🌐</div>
-            <h3 className="font-bold text-slate-900 mb-2">Domain Analysis</h3>
-            <p className="text-sm text-slate-600">
-              Identifies Punycode, suspicious TLDs, excessive hyphens, lookalike domains, and brand impersonation patterns.
-            </p>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-lg p-6">
-            <div className="text-3xl mb-2">🛡️</div>
-            <h3 className="font-bold text-slate-900 mb-2">Threat Intelligence</h3>
-            <p className="text-sm text-slate-600">
-              Integrates with VirusTotal, AbuseIPDB, and other threat intelligence sources for comprehensive analysis.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

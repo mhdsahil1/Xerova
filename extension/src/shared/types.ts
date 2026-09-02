@@ -144,6 +144,38 @@ export interface RiskBreakdown {
   totalRisk: number;
 }
 
+export type TargetClassification = "url" | "domain" | "ip";
+
+export interface AnalysisCoverage {
+  totalRelevant: number;
+  responded: number;
+  threats: number;
+  clean: number;
+  errors: number;
+  timeouts: number;
+  unavailable: number;
+  unknown: number;
+  percentage: number;
+}
+
+export type ProviderStatus =
+  | "threat"
+  | "clean"
+  | "error"
+  | "timeout"
+  | "unavailable"
+  | "unknown";
+
+export interface NormalizedProviderResult {
+  provider: string;
+  status: ProviderStatus;
+  evidence: string[];
+  scoreContribution: number;
+  error?: string;
+  relevance?: "exact" | "domain" | "related" | "historical";
+  details?: Record<string, unknown>;
+}
+
 // --- Full URL Analysis Result ---
 export interface URLAnalysisResult {
   url: string;
@@ -160,14 +192,9 @@ export interface URLAnalysisResult {
   riskBreakdown: RiskBreakdown;
   findings: Finding[];
   timestamp?: string;
-  providerResults?: Record<
-    string,
-    {
-      status: "success" | "timeout" | "error" | "unconfigured";
-      evidence: boolean;
-      scoreContribution?: number;
-    }
-  >;
+  targetType?: TargetClassification;
+  coverage?: AnalysisCoverage;
+  providerResults?: Record<string, NormalizedProviderResult>;
 }
 
 // --- API Response Wrapper ---
