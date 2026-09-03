@@ -25,6 +25,7 @@ export interface RiskFactor {
     | "alphaMountain.ai"
     | "URLQuery"
     | "Yandex Safe Browsing"
+    | "Google Safe Browsing"
     | "VXVault Threat Feed"
     | "PhishStats"
     | "urlscan.io"
@@ -162,6 +163,11 @@ export interface URLAnalysisResult {
       cleanResult: boolean;
       websiteThreatType?: string;
       foundViruses: Array<{ fileName: string; virusName: string }>;
+    } | null;
+    googleSafeBrowsing?: {
+      isThreat: boolean;
+      threatTypes: string[];
+      platformTypes: string[];
     } | null;
     ipstack?: {
       countryName: string;
@@ -1075,81 +1081,7 @@ export function normalizeProviderResults(
     }
   }
 
-  // 3. AlienVault OTX
-  if (!normalized["AlienVault OTX"] && threatIntelligence.otx) {
-    const otx = threatIntelligence.otx;
-    if (otx.pulseCount > 0) {
-      const isExactURL = otx.sourceType === "url";
-      const pulses = otx.pulses || [];
 
-      const now = new Date().getTime();
-      const twoYearsMs = 2 * 365 * 24 * 60 * 60 * 1000;
-      let recentCount = 0;
-      let historicalCount = 0;
-      let hasMalwareTag = false;
-      const collectedTags = new Set<string>();
-
-      for (const p of pulses) {
-        (p.tags || []).forEach((t) => collectedTags.add(t));
-        if (p.created) {
-          const createdTime = new Date(p.created).getTime();
-          if (!isNaN(createdTime) && now - createdTime > twoYearsMs) {
-            historicalCount++;
-          } else {
-            recentCount++;
-          }
-        } else {
-          recentCount++;
-        }
-        if (p.tags?.some((t) => /malware|phish|trojan|c2|ransomware/i.test(t))) {
-          hasMalwareTag = true;
-        }
-      }
-
-      let score = 0;
-      let relevance: "exact" | "domain" | "related" | "historical" = "domain";
-
-      if (isExactURL) {
-        relevance = "exact";
-        score = Math.min(75, Math.max(25, otx.pulseCount * 25));
-      } else if (historicalCount > 0 && recentCount === 0 && !hasMalwareTag) {
-        relevance = "historical";
-        score = Math.min(25, otx.pulseCount * 5);
-      } else {
-        relevance = "domain";
-        score = Math.min(50, Math.max(15, recentCount * 15 + historicalCount * 5));
-        if (hasMalwareTag) score = Math.min(65, score + 15);
-      }
-
-      const tagSnippet = Array.from(collectedTags).slice(0, 4).join(", ");
-
-      normalized["AlienVault OTX"] = {
-        provider: "AlienVault OTX",
-        status: "threat",
-        evidence: [
-          `Flagged in ${otx.pulseCount} threat pulse${otx.pulseCount > 1 ? "s" : ""} (${relevance} match)`,
-          ...(tagSnippet ? [`Associated tags: ${tagSnippet}`] : []),
-        ],
-        scoreContribution: score,
-        relevance,
-        details: {
-          pulseCount: otx.pulseCount,
-          sourceType: otx.sourceType,
-          recentCount,
-          historicalCount,
-          pulsesSample: pulses.slice(0, 3).map((p) => ({ id: p.id, name: p.name, author: p.author })),
-        },
-      };
-    } else {
-      normalized["AlienVault OTX"] = {
-        provider: "AlienVault OTX",
-        status: "clean",
-        evidence: ["No threat pulses or IOC records associated with target"],
-        scoreContribution: 0,
-        details: { pulseCount: 0 },
-      };
-    }
-  }
 
   // 4. Criminal IP
   if (!normalized["Criminal IP"] && threatIntelligence.criminalIP) {
@@ -1419,6 +1351,30 @@ export function normalizeProviderResults(
     }
   }
 
+  // 12. Google Safe Browsing
+  if (!normalized["Google Safe Browsing"] && threatIntelligence.googleSafeBrowsing) {
+    const gsb = threatIntelligence.googleSafeBrowsing;
+    if (gsb.isThreat && gsb.threatTypes && gsb.threatTypes.length > 0) {
+      const types = gsb.threatTypes.join(", ");
+      normalized["Google Safe Browsing"] = {
+        provider: "Google Safe Browsing",
+        status: "threat",
+        evidence: [`Flagged on Google Safe Browsing lists: ${types}`],
+        scoreContribution: 85,
+        relevance: "exact",
+        details: { isSafe: false, isThreat: true, threatTypes: gsb.threatTypes, platformTypes: gsb.platformTypes },
+      };
+    } else {
+      normalized["Google Safe Browsing"] = {
+        provider: "Google Safe Browsing",
+        status: "clean",
+        evidence: ["Target not listed on Google Safe Browsing lists"],
+        scoreContribution: 0,
+        details: { isSafe: true, isThreat: false, threatTypes: [] },
+      };
+    }
+  }
+
   // 12. VXVault Live Malware Feed
   if (!normalized["VXVault Threat Feed"] && threatIntelligence.vxvault) {
     const vx = threatIntelligence.vxvault;
@@ -1516,9 +1472,10 @@ export function calculateUnifiedRiskScore(
   providerResults: Record<string, NormalizedProviderResult>;
   coverage: AnalysisCoverage;
 } {
-  const sources: string[] = ["Local URL Analysis"];
-  const allRiskFactors: RiskFactor[] = [...localResult.riskFactors];
+  const sources: string[] = [];
+  const allRiskFactors: RiskFactor[] = [];
   const providerResults = normalizeProviderResults(threatIntelligence, explicitProviderResults);
+  delete providerResults["AlienVault OTX"];
 
   let threatIntelRisk = 0;
   let threatsCount = 0;
@@ -1529,6 +1486,7 @@ export function calculateUnifiedRiskScore(
   let unknownCount = 0;
 
   for (const [providerName, pResult] of Object.entries(providerResults)) {
+    if (providerName === "AlienVault OTX" || providerName === "Local URL Analysis") continue;
     sources.push(providerName);
 
     // Track status counts for coverage
@@ -1585,17 +1543,8 @@ export function calculateUnifiedRiskScore(
     percentage: coveragePercentage,
   };
 
-  // Composite Unified Risk Score:
-  let totalScore = localResult.localScore;
-  if (threatIntelRisk > 0) {
-    const corroborationBonus = localResult.localScore >= 30 ? 10 : 0;
-    totalScore = Math.min(100, Math.max(localResult.localScore, threatIntelRisk) + corroborationBonus);
-  }
-
-  // Safety floor: If clear brand impersonation exists, risk score is at least 75 (CRITICAL)
-  if (localResult.domainCharacteristics.brandImpersonationDetected) {
-    totalScore = Math.max(totalScore, 75);
-  }
+  // Composite Unified Risk Score (derived purely from threat intelligence engines):
+  const totalScore = Math.min(100, Math.round(threatIntelRisk));
 
   // Verdict & Threat Level
   let verdict: "SAFE" | "SUSPICIOUS" | "MALICIOUS" = "SAFE";
@@ -1632,10 +1581,10 @@ export function calculateUnifiedRiskScore(
     sources,
     allRiskFactors,
     breakdown: {
-      localHeuristicRisk: localResult.localScore,
-      urlStructuralRisk: localResult.breakdown.urlStructuralRisk,
-      domainCharacteristicRisk: localResult.breakdown.domainCharacteristicRisk,
-      pathQueryRisk: localResult.breakdown.pathQueryRisk,
+      localHeuristicRisk: 0,
+      urlStructuralRisk: 0,
+      domainCharacteristicRisk: 0,
+      pathQueryRisk: 0,
       threatIntelligenceRisk: Math.round(threatIntelRisk),
       totalRisk: totalScore,
     },

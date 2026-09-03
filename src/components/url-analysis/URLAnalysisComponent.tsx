@@ -52,16 +52,15 @@ interface URLAnalysisComponentProps {
 
 const PROVIDER_METADATA: Record<string, { subtitle: string }> = {
   VirusTotal: { subtitle: "Multi-engine malware & URL reputation" },
-  "AlienVault OTX": { subtitle: "Open Threat Exchange & threat pulses" },
   "Criminal IP": { subtitle: "AI-based threat intelligence & domain scoring" },
   AbuseIPDB: { subtitle: "IP reputation & community abuse reports" },
   Abusix: { subtitle: "Network security & real-time blocklists" },
-  "alphaMountain.ai": { subtitle: "AI domain rating & risk categorizations" },
   "CheckPhish.ai": { subtitle: "Deep learning neural phishing scanner" },
   "urlscan.io": { subtitle: "Automated web sandbox & DOM inspection" },
   PhishStats: { subtitle: "Real-time phishing threat feed & index" },
   Cloudmersive: { subtitle: "Website anti-virus & web threat scanner" },
   "Yandex Safe Browsing": { subtitle: "Search safety index & malware detection" },
+  "Google Safe Browsing": { subtitle: "Google global threat & phishing index" },
   "VXVault Threat Feed": { subtitle: "Community live malware distribution database" },
   URLQuery: { subtitle: "Historical sandbox submissions & reports" },
   IPStack: { subtitle: "Infrastructure threat level & proxy detection" },
@@ -133,11 +132,33 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
     return "text-red-500";
   };
 
-  // Extract all provider results
+  // Extract all provider results (strictly excluding AlienVault OTX, Local URL Analysis, and alphaMountain.ai placeholder)
   const allProviders = useMemo(() => {
     if (!analysis.providerResults) return [];
-    return Object.values(analysis.providerResults);
+    return Object.values(analysis.providerResults).filter(
+      (p) =>
+        p.provider !== "AlienVault OTX" &&
+        p.provider !== "Local URL Analysis" &&
+        p.provider !== "alphaMountain.ai"
+    );
   }, [analysis.providerResults]);
+
+  // Filtered risk factors without Local URL Analysis or AlienVault OTX
+  const filteredRiskFactors = useMemo(() => {
+    return (analysis.riskFactors || []).filter(
+      (rf) => rf.source !== "Local URL Analysis" && rf.source !== "AlienVault OTX"
+    );
+  }, [analysis.riskFactors]);
+
+  // Filtered findings without local heuristics or AlienVault
+  const filteredFindings = useMemo(() => {
+    return (analysis.findings || []).filter(
+      (f) =>
+        !f.description?.toLowerCase().includes("alienvault") &&
+        !f.category?.toLowerCase().includes("local") &&
+        !f.category?.toLowerCase().includes("parsing")
+    );
+  }, [analysis.findings]);
 
   // Status-specific lists
   const threatProviders = useMemo(
@@ -445,7 +466,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
             </h2>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            XEROVA combines local heuristic analysis with positive threat intelligence signals from relevant providers.
+            XEROVA evaluates positive threat intelligence signals from relevant security engines.
             Only providers with <strong className="text-foreground font-mono">status = THREAT</strong> contribute positive risk points.
             Clean, error, timeout, unavailable, and unknown results strictly contribute 0 points.
           </p>
@@ -453,24 +474,6 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
 
         {/* Attribution Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {/* Local Heuristic Baseline */}
-          <div className="p-3 rounded-xl bg-background/70 border border-cyan-500/30 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Cpu className="w-4 h-4 text-cyan-400 shrink-0" />
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-foreground truncate">
-                  Local URL Heuristics
-                </div>
-                <div className="text-[10px] text-muted-foreground font-mono">
-                  Structural, Brand & Entropy
-                </div>
-              </div>
-            </div>
-            <span className="text-xs font-mono font-bold text-cyan-400 shrink-0 px-2 py-0.5 rounded bg-cyan-500/10">
-              +{localScore} pts
-            </span>
-          </div>
-
           {/* Active Threat Providers */}
           {threatProviders.map((provider, i) => (
             <div
@@ -531,8 +534,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Info className="w-4 h-4 text-primary shrink-0" />
             <span>
-              Raw Evidence Risk: <strong className="text-foreground font-bold">{Math.max(localScore, rawThreatScore)} pts</strong>
-              {threatProviders.length > 0 && localScore >= 30 ? " (+10 pts corroboration bonus)" : ""}
+              Raw Threat Evidence Risk: <strong className="text-foreground font-bold">{rawThreatScore} pts</strong>
             </span>
           </div>
           <div className="text-right font-bold text-foreground">
@@ -544,7 +546,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
       {/* ============================================================ */}
       {/* 3. IDENTIFIED RISK FACTORS                                   */}
       {/* ============================================================ */}
-      {analysis.riskFactors && analysis.riskFactors.length > 0 && (
+      {filteredRiskFactors.length > 0 && (
         <div className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-sm">
           <button
             onClick={() => toggleSection("riskFactors")}
@@ -553,7 +555,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
             <div className="flex items-center gap-2.5">
               <ShieldAlert className="w-4 h-4 text-amber-400" />
               <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-                Identified Risk Factors ({analysis.riskFactors.length})
+                Identified Risk Factors ({filteredRiskFactors.length})
               </h2>
             </div>
             <span className="text-xs text-muted-foreground font-mono">
@@ -563,7 +565,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
 
           {expandedSections.riskFactors && (
             <div className="p-4 space-y-2.5 border-t border-border/60">
-              {analysis.riskFactors.map((rf, idx) => (
+              {filteredRiskFactors.map((rf, idx) => (
                 <div
                   key={idx}
                   className="flex items-start justify-between p-3 rounded-xl bg-background/60 border border-border/50 gap-3"
@@ -750,7 +752,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
           <div className="flex items-center gap-2.5">
             <TrendingUp className="w-4 h-4 text-cyan-400" />
             <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              XEROVA Structural & Heuristic Telemetry
+              Target Structural & Host Telemetry
             </h2>
           </div>
           <span className="text-xs text-muted-foreground font-mono">
@@ -822,16 +824,6 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
                 </div>
               </div>
             </div>
-
-            {analysis.domainCharacteristics.brandImpersonationDetected && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                <span>
-                  <strong>Target Brand Impersonation:</strong> Domain contains unauthorized keyword match for{" "}
-                  <strong>{analysis.domainCharacteristics.impersonatedBrand?.toUpperCase()}</strong> on a non-official host.
-                </span>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -839,7 +831,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
       {/* ============================================================ */}
       {/* 6. DETAILED TELEMETRY FINDINGS                               */}
       {/* ============================================================ */}
-      {analysis.findings && analysis.findings.length > 0 && (
+      {filteredFindings.length > 0 && (
         <div className="bg-card border border-border/80 rounded-2xl overflow-hidden shadow-sm">
           <button
             onClick={() => toggleSection("findings")}
@@ -848,7 +840,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-cyan-400" />
               <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-                Detailed Telemetry Findings ({analysis.findings.length})
+                Detailed Telemetry Findings ({filteredFindings.length})
               </h2>
             </div>
             <span className="text-xs text-muted-foreground font-mono">
@@ -858,7 +850,7 @@ export function URLAnalysisComponent({ analysis }: URLAnalysisComponentProps) {
 
           {expandedSections.findings && (
             <div className="p-4 space-y-2.5 border-t border-border/60">
-              {analysis.findings.map((finding, idx) => (
+              {filteredFindings.map((finding, idx) => (
                 <div
                   key={idx}
                   className={`border-l-4 pl-4 py-3 rounded-r-xl border ${
@@ -1214,33 +1206,7 @@ function CuratedDetailsRenderer({
     );
   }
 
-  if (provider === "AlienVault OTX") {
-    const pulses = (details.pulsesSample as Array<{ id: string; name: string; author: string }>) || [];
-    return (
-      <div className="space-y-1.5 text-[11px]">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Pulse Count:</span>
-          <span className="font-semibold text-foreground">{String(details.pulseCount ?? 0)}</span>
-        </div>
-        {Boolean(details.sourceType) && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Match Type:</span>
-            <span className="font-semibold uppercase text-primary">{String(details.sourceType)}</span>
-          </div>
-        )}
-        {pulses.length > 0 && (
-          <div className="pt-1 space-y-1">
-            <span className="text-muted-foreground text-[10px] uppercase">Sample Pulses:</span>
-            {pulses.map((p, idx) => (
-              <div key={idx} className="p-1.5 rounded bg-muted/40 text-[10px] text-foreground">
-                <strong>{p.name}</strong> <span className="text-muted-foreground">(by {p.author})</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+
 
   if (provider === "urlscan.io") {
     const techs = (details.technologies as string[]) || [];
@@ -1342,6 +1308,37 @@ function CuratedDetailsRenderer({
           <div className="flex justify-between">
             <span className="text-muted-foreground">Technologies:</span>
             <span className="font-semibold text-foreground truncate max-w-[60%]">{techs.join(", ")}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (provider === "Google Safe Browsing") {
+    const types = (details.threatTypes as string[]) || [];
+    const platforms = (details.platformTypes as string[]) || [];
+    return (
+      <div className="space-y-1.5 text-[11px]">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Status:</span>
+          <span className={`font-semibold ${details.isThreat ? "text-rose-400" : "text-emerald-400"}`}>
+            {details.isThreat ? "Listed Threat" : "Clean Index"}
+          </span>
+        </div>
+        {types.length > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Threat Types:</span>
+            <span className="font-semibold text-rose-400 font-mono text-[10px] truncate max-w-[60%]">
+              {types.join(", ")}
+            </span>
+          </div>
+        )}
+        {platforms.length > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Platforms:</span>
+            <span className="font-semibold text-foreground font-mono text-[10px] truncate max-w-[60%]">
+              {platforms.join(", ")}
+            </span>
           </div>
         )}
       </div>

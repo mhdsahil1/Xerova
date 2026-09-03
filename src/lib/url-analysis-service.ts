@@ -30,6 +30,8 @@ import {
   getUrlQueryKey,
   yandexSafeBrowsingLookup,
   getYandexKey,
+  googleSafeBrowsingLookup,
+  getGoogleSafeBrowsingKey,
   vxvaultLookupURL,
   ip2LocationLookup,
   ip2WhoisLookup,
@@ -101,16 +103,8 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
       riskScore: 50,
       threatLevel: "MEDIUM",
       severity: "medium",
-      sources: ["Local URL Analysis"],
-      riskFactors: [
-        {
-          source: "Local URL Analysis",
-          category: "Parsing",
-          reason: `Invalid or malformed URL structure: ${parsed.error}`,
-          severity: "MEDIUM",
-          scoreContribution: 50,
-        },
-      ],
+      sources: [],
+      riskFactors: [],
       targetType: "url",
       coverage: emptyCoverage,
       structural: {
@@ -163,12 +157,12 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
         suspiciousReports: 0,
       },
       riskBreakdown: {
-        localHeuristicRisk: 50,
-        urlStructuralRisk: 50,
+        localHeuristicRisk: 0,
+        urlStructuralRisk: 0,
         domainCharacteristicRisk: 0,
         pathQueryRisk: 0,
         threatIntelligenceRisk: 0,
-        totalRisk: 50,
+        totalRisk: 0,
       },
       findings: [
         {
@@ -201,8 +195,12 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     providerResults
   );
 
-  // Compile combined findings
-  const allFindings = [...localAnalysis.findings];
+  // Compile combined findings (external threat intelligence engines only)
+  const allFindings: Array<{
+    category: string;
+    severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    description: string;
+  }> = [];
   const pResults = scoring.providerResults;
 
   if (pResults["VirusTotal"]?.status === "threat") {
@@ -245,15 +243,6 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
       category: "Threat Intelligence",
       severity: (threatIntelData.abuseScore || 0) > 60 ? "HIGH" : "MEDIUM",
       description: `AbuseIPDB: Abuse confidence score ${threatIntelData.abuseScore}%.`,
-    });
-  }
-
-  if (pResults["AlienVault OTX"]?.status === "threat") {
-    const otxResult = pResults["AlienVault OTX"];
-    allFindings.push({
-      category: "Threat Intelligence",
-      severity: otxResult.scoreContribution >= 50 ? "CRITICAL" : "HIGH",
-      description: `AlienVault OTX: Indicator flagged in ${threatIntelData.otx?.pulseCount} threat pulse(s) (${otxResult.relevance} match).`,
     });
   }
 
@@ -322,6 +311,14 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     });
   }
 
+  if (pResults["Google Safe Browsing"]?.status === "threat") {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: "CRITICAL",
+      description: `Google Safe Browsing: Listed on Google threat index (${threatIntelData.googleSafeBrowsing?.threatTypes.join(", ") || "Threat match"}).`,
+    });
+  }
+
   if (pResults["IPStack"]?.status === "threat") {
     allFindings.push({
       category: "Network Intelligence",
@@ -384,6 +381,7 @@ interface ThreatIntelData {
   urlscan: URLAnalysisResult["threatIntelligence"]["urlscan"];
   phishstats: URLAnalysisResult["threatIntelligence"]["phishstats"];
   cloudmersive: URLAnalysisResult["threatIntelligence"]["cloudmersive"];
+  googleSafeBrowsing?: URLAnalysisResult["threatIntelligence"]["googleSafeBrowsing"];
   ipstack?: URLAnalysisResult["threatIntelligence"]["ipstack"];
   ip2whois?: { domainAge: number | null; registrar: string; createDate: string } | null;
   ip2location?: { countryName: string; cityName: string; isProxy: boolean } | null;
@@ -413,6 +411,7 @@ async function fetchThreatIntelligence(
     urlscan: null,
     phishstats: null,
     cloudmersive: null,
+    googleSafeBrowsing: null,
     ipstack: null,
     ip2whois: null,
     ip2location: null,
@@ -656,95 +655,6 @@ async function fetchThreatIntelligence(
   }
 
   // ============================================================
-  // 2. AlienVault OTX
-  // Relevance: URL, Domain, IP
-  // ============================================================
-  if (!getOTXKey()) {
-    markUnavailable("AlienVault OTX", "OTX_API_KEY is not configured");
-  } else {
-    queries.push(
-      (async () => {
-        try {
-          const otxData = await withTimeout(otxLookupURL(urlString));
-          const otxDomain =
-            (!otxData || (otxData.pulseCount as number) === 0) && parsed.domain
-              ? await withTimeout(otxLookupDomain(parsed.domain))
-              : null;
-          const isUrlMatch = Boolean(otxData && (otxData.pulseCount as number) > 0);
-          const finalOtx = isUrlMatch ? otxData : otxDomain;
-
-          if (finalOtx && typeof finalOtx.pulseCount === "number") {
-            const pulses = ((finalOtx.pulses as Array<Record<string, unknown>>) || []).map((p) => ({
-              id: (p.id as string) || "",
-              name: (p.name as string) || "",
-              author: (p.author as string) || "",
-              tags: (p.tags as string[]) || [],
-              created: (p.created as string) || "",
-              modified: (p.modified as string) || "",
-            }));
-
-            data.otx = {
-              pulseCount: finalOtx.pulseCount as number,
-              sourceType: isUrlMatch ? "url" : "domain",
-              pulses,
-            };
-
-            if (finalOtx.pulseCount > 0) {
-              const relevance: "exact" | "domain" = isUrlMatch ? "exact" : "domain";
-              const score = isUrlMatch
-                ? Math.min(75, Math.max(25, (finalOtx.pulseCount as number) * 25))
-                : Math.min(50, Math.max(15, (finalOtx.pulseCount as number) * 15));
-
-              const collectedTags = new Set<string>();
-              pulses.forEach((p) => (p.tags || []).forEach((t) => collectedTags.add(t)));
-              const tagSnippet = Array.from(collectedTags).slice(0, 4).join(", ");
-
-              providerResults["AlienVault OTX"] = {
-                provider: "AlienVault OTX",
-                status: "threat",
-                evidence: [
-                  `Flagged in ${finalOtx.pulseCount} threat pulse${(finalOtx.pulseCount as number) > 1 ? "s" : ""} (${relevance} match)`,
-                  ...(tagSnippet ? [`Associated tags: ${tagSnippet}`] : []),
-                ],
-                scoreContribution: score,
-                relevance,
-                details: {
-                  pulseCount: finalOtx.pulseCount,
-                  sourceType: relevance,
-                  pulsesSample: pulses.slice(0, 3).map((p) => ({ id: p.id, name: p.name, author: p.author })),
-                },
-              };
-
-              if (isUrlMatch) {
-                data.isKnownMalicious = true;
-                data.suspiciousReports += finalOtx.pulseCount as number;
-              }
-            } else {
-              providerResults["AlienVault OTX"] = {
-                provider: "AlienVault OTX",
-                status: "clean",
-                evidence: ["No threat pulses or IOC records associated with target"],
-                scoreContribution: 0,
-                details: { pulseCount: 0 },
-              };
-            }
-          } else {
-            providerResults["AlienVault OTX"] = {
-              provider: "AlienVault OTX",
-              status: "clean",
-              evidence: ["No threat pulses or IOC records associated with target"],
-              scoreContribution: 0,
-              details: { pulseCount: 0 },
-            };
-          }
-        } catch (err) {
-          recordFailure("AlienVault OTX", err);
-        }
-      })()
-    );
-  }
-
-  // ============================================================
   // 3. Criminal IP
   // Relevance: Domain, IP
   // ============================================================
@@ -962,61 +872,50 @@ async function fetchThreatIntelligence(
 
   // ============================================================
   // 6. alphaMountain.ai
-  // Relevance: URL, Domain
+  // Relevance: URL, Domain (only if configured and enabled)
   // ============================================================
-  if (targetType === "url" || targetType === "domain") {
-    if (!isAlphaMountainEnabled() || !getAlphaKey()) {
-      markUnavailable("alphaMountain.ai", "alphaMountain API key is not configured or disabled");
-    } else {
-      queries.push(
-        (async () => {
-          try {
-            const target = parsed.domain || urlString;
-            const alphaData = await withTimeout(alphaMountainLookupURI(target));
-            if (alphaData) {
-              const riskScore = (alphaData.riskScore as number) || 0;
-              const threatScore = (alphaData.threatScore as number) || 0;
-              data.alphaMountain = {
+  if ((targetType === "url" || targetType === "domain") && isAlphaMountainEnabled() && getAlphaKey()) {
+    queries.push(
+      (async () => {
+        try {
+          const target = parsed.domain || urlString;
+          const alphaData = await withTimeout(alphaMountainLookupURI(target));
+          if (alphaData) {
+            const riskScore = (alphaData.riskScore as number) || 0;
+            const threatScore = (alphaData.threatScore as number) || 0;
+            data.alphaMountain = {
+              threatScore,
+              riskScore,
+              categories: (alphaData.categories as number[]) || [],
+              confidence: (alphaData.confidence as number) || 0,
+              source: alphaData.source as string,
+            };
+
+            const isThreat = riskScore >= 25;
+            providerResults["alphaMountain.ai"] = {
+              provider: "alphaMountain.ai",
+              status: isThreat ? "threat" : "clean",
+              evidence: isThreat
+                ? [`AI threat rating: ${threatScore.toFixed(2)}/5.0 (${riskScore}% risk score)`]
+                : [`Low AI risk score (${riskScore}%, rating: ${threatScore.toFixed(2)}/5.0)`],
+              scoreContribution: isThreat ? riskScore : 0,
+              relevance: targetType === "url" ? "exact" : "domain",
+              details: {
                 threatScore,
                 riskScore,
-                categories: (alphaData.categories as number[]) || [],
-                confidence: (alphaData.confidence as number) || 0,
-                source: alphaData.source as string,
-              };
+                confidence: alphaData.confidence,
+              },
+            };
 
-              const isThreat = riskScore >= 25;
-              providerResults["alphaMountain.ai"] = {
-                provider: "alphaMountain.ai",
-                status: isThreat ? "threat" : "clean",
-                evidence: isThreat
-                  ? [`AI threat rating: ${threatScore.toFixed(2)}/5.0 (${riskScore}% risk score)`]
-                  : [`Low AI risk score (${riskScore}%, rating: ${threatScore.toFixed(2)}/5.0)`],
-                scoreContribution: isThreat ? riskScore : 0,
-                relevance: targetType === "url" ? "exact" : "domain",
-                details: {
-                  threatScore,
-                  riskScore,
-                  confidence: alphaData.confidence,
-                },
-              };
-
-              if (riskScore >= 50) {
-                data.isKnownMalicious = true;
-              }
-            } else {
-              providerResults["alphaMountain.ai"] = {
-                provider: "alphaMountain.ai",
-                status: "clean",
-                evidence: ["No threat score identified"],
-                scoreContribution: 0,
-              };
+            if (riskScore >= 50) {
+              data.isKnownMalicious = true;
             }
-          } catch (err) {
-            recordFailure("alphaMountain.ai", err);
           }
-        })()
-      );
-    }
+        } catch (err) {
+          recordFailure("alphaMountain.ai", err);
+        }
+      })()
+    );
   }
 
   // ============================================================
@@ -1371,7 +1270,55 @@ async function fetchThreatIntelligence(
   }
 
   // ============================================================
-  // 12. VXVault Live Malware Feed
+  // 12. Google Safe Browsing
+  // Relevance: URL, Domain
+  // ============================================================
+  if (targetType === "url" || targetType === "domain") {
+    if (!getGoogleSafeBrowsingKey()) {
+      markUnavailable("Google Safe Browsing", "GOOGLE_SAFE_BROWSING_API_KEY is not configured");
+    } else {
+      queries.push(
+        (async () => {
+          try {
+            const gsbData = await withTimeout(googleSafeBrowsingLookup(urlString));
+            if (gsbData) {
+              data.googleSafeBrowsing = gsbData;
+              const isThreat = gsbData.isThreat && gsbData.threatTypes.length > 0;
+              const types = gsbData.threatTypes.join(", ");
+
+              providerResults["Google Safe Browsing"] = {
+                provider: "Google Safe Browsing",
+                status: isThreat ? "threat" : "clean",
+                evidence: isThreat
+                  ? [`Flagged as unsafe on Google Safe Browsing: ${types}`]
+                  : ["No malware, social engineering, or harmful matches on Google Safe Browsing"],
+                scoreContribution: isThreat ? 85 : 0,
+                relevance: "exact",
+                details: { isSafe: gsbData.isSafe, isThreat: gsbData.isThreat, threatTypes: gsbData.threatTypes, platformTypes: gsbData.platformTypes },
+              };
+
+              if (isThreat) {
+                data.isKnownMalicious = true;
+                data.suspiciousReports += 5;
+              }
+            } else {
+              providerResults["Google Safe Browsing"] = {
+                provider: "Google Safe Browsing",
+                status: "clean",
+                evidence: ["Clean reputation on Google Safe Browsing lists"],
+                scoreContribution: 0,
+              };
+            }
+          } catch (err) {
+            recordFailure("Google Safe Browsing", err);
+          }
+        })()
+      );
+    }
+  }
+
+  // ============================================================
+  // 13. VXVault Live Malware Feed
   // Relevance: URL (Public Live Feed)
   // ============================================================
   if (targetType === "url") {
@@ -1658,10 +1605,13 @@ export async function generateURLAnalysisReport(
   }
   lines.push("");
 
-  // Risk Factors
-  if (analysis.riskFactors.length > 0) {
+  // Risk Factors (excluding local heuristics & AlienVault OTX)
+  const validRiskFactors = analysis.riskFactors.filter(
+    (rf) => rf.source !== "Local URL Analysis" && rf.source !== "AlienVault OTX"
+  );
+  if (validRiskFactors.length > 0) {
     lines.push("⚠️ KEY RISK FACTORS IDENTIFIED:");
-    analysis.riskFactors.forEach((rf, i) => {
+    validRiskFactors.forEach((rf, i) => {
       const sevEmoji = {
         CRITICAL: "🚨",
         HIGH: "🔴",
@@ -1675,9 +1625,9 @@ export async function generateURLAnalysisReport(
 
   // "Why This Score?" Attribution
   lines.push("🔍 WHY THIS SCORE? (SCORE ATTRIBUTION):");
-  lines.push(`  • XEROVA Local Analysis: +${analysis.riskBreakdown.localHeuristicRisk} pts`);
   if (analysis.providerResults) {
     Object.entries(analysis.providerResults).forEach(([pName, pRes]) => {
+      if (pName === "AlienVault OTX" || pName === "Local URL Analysis") return;
       const statusTag = pRes.status.toUpperCase();
       const pts = pRes.status === "threat" ? `+${pRes.scoreContribution} pts` : `+0 pts (${statusTag})`;
       lines.push(`  • ${pName.padEnd(24)} ${pts}`);

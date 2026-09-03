@@ -88,7 +88,7 @@ export default function SettingsPage() {
                   { name: "Shodan", key: "SHODAN_API_KEY", desc: "Port telemetry, banner analysis, and CVE detection" },
                   { name: "Criminal IP", key: "CRIMINAL_IP_API_KEY", desc: "Inbound/outbound risk, VPN/Tor/Proxy detection" },
                   { name: "Abusix", key: "ABUSIX_API_KEY", desc: "Threat intelligence blocklists and exploit monitoring" },
-                  { name: "AlienVault OTX", key: "OTX_API_KEY", desc: "Global threat pulses, IOC validation, and adversary tracking" },
+                  { name: "Google Safe Browsing", key: "GOOGLE_SAFE_BROWSING_API_KEY", desc: "Real-time Google threat matches for malware, phishing, and unwanted software" },
                   { name: "alphaMountain.ai / ThreatYeti", key: "ALPHA_MOUNTAIN_API", desc: "AI-driven URI reputation & category classification" },
                   { name: "URLQuery", key: "URL_QUERY_API_KEY", desc: "Web sandbox report search and malware scanning" },
                   { name: "Yandex Safe Browsing", key: "YANDEX_API_KEY", desc: "Real-time threat matches for malware and social engineering" },

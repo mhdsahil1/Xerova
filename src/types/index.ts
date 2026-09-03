@@ -183,6 +183,19 @@ export interface CloudmersiveData {
   threatType?: string;
 }
 
+export interface GoogleSafeBrowsingData {
+  isSafe: boolean;
+  isThreat: boolean;
+  threatTypes: string[];
+  platformTypes: string[];
+  matches?: Array<{
+    threatType: string;
+    platformType: string;
+    threatEntryType: string;
+    url?: string;
+  }>;
+}
+
 export type TargetClassification = "url" | "domain" | "ip";
 
 export interface AnalysisCoverage {
@@ -264,6 +277,7 @@ export interface DomainResult {
   ip2whois?: IP2WhoisData | null;
   urlscan?: URLScanData | null;
   phishstats?: PhishStatsData | null;
+  googleSafeBrowsing?: GoogleSafeBrowsingData | null;
   sources?: string[];
   riskScore?: number;
   severity?: SeverityLevel;

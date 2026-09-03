@@ -821,67 +821,6 @@ function IPDomainResultView({
           </Card>
         )}
 
-        {/* AlienVault OTX Validation & Whitelists */}
-        {data.otx?.validation && data.otx.validation.length > 0 && (
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                OTX Domain Validation
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {data.otx.validation.map((v: any, idx: number) => (
-                <div key={idx} className="flex items-center justify-between text-xs p-2 rounded bg-card">
-                  <span className="font-medium text-foreground">{v.name || v.source}</span>
-                  <span className="text-muted-foreground text-[11px] truncate max-w-[200px]">{v.message}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* AlienVault OTX Pulses */}
-        {data.otx?.pulses && data.otx.pulses.length > 0 && (
-          <Card className="bg-card border-border md:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4 text-cyber-cyan" />
-                  AlienVault OTX Threat Pulses ({data.otx.pulseCount})
-                </span>
-                <Badge variant="secondary" className="text-[10px] font-mono">
-                  OTX Verified
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {data.otx.pulses.map((pulse: any, idx: number) => (
-                <div
-                  key={idx}
-                  className="p-3 rounded-lg bg-card border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{pulse.name}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">{pulse.description || `Author: ${pulse.author}`}</p>
-                    {pulse.tags && pulse.tags.length > 0 && (
-                      <div className="flex gap-1 flex-wrap pt-1">
-                        {pulse.tags.slice(0, 4).map((t: string, ti: number) => (
-                          <span key={ti} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-background/60 text-muted-foreground border border-border">
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground font-mono shrink-0">
-                    {pulse.created?.slice(0, 10)}
-                  </span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
 
         {/* IP2Location Geolocation & Network Telemetry */}
         {data.ip2location && (
@@ -1409,12 +1348,6 @@ function HashResultView({ data }: { data: any }) {
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">File Type</p>
                 <p className="text-xs font-mono">{data.fileType}</p>
-              </div>
-            )}
-            {data.otx?.pulseCount > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">AlienVault OTX Pulses</p>
-                <p className="text-xs font-mono font-semibold text-primary">{data.otx.pulseCount} threat pulse(s)</p>
               </div>
             )}
           </div>

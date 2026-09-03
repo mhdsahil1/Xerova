@@ -42,6 +42,8 @@ next-env.d.ts
 # local tools / generated files
 .freebuff/
 test-db.mjs
+test_threat_intelligence_explainability.mjs
+verify_integrations.mjs
 
 .agents/
 .claude/

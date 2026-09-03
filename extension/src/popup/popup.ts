@@ -213,10 +213,13 @@ function renderResult(result: URLAnalysisResult) {
   }
 
   // --- Sources ---
-  if (result.sources && result.sources.length > 0) {
+  const validSources = (result.sources || []).filter(
+    (s) => s !== "Local URL Analysis" && s !== "AlienVault OTX" && s !== "alphaMountain.ai"
+  );
+  if (validSources.length > 0) {
     sourcesSection.classList.remove("hidden");
     sourcesList.innerHTML = "";
-    for (const source of result.sources) {
+    for (const source of validSources) {
       const badge = document.createElement("span");
       badge.className = "source-badge";
       badge.textContent = source;
@@ -236,8 +239,16 @@ function getTopRiskFactors(
 ): Array<{ text: string; severity: string; source: string }> {
   const items: Array<{ text: string; severity: string; source: string }> = [];
 
+  // Filter out Local URL Analysis, AlienVault OTX, and alphaMountain
+  const validRFs = (riskFactors || []).filter(
+    (rf) =>
+      rf.source !== "Local URL Analysis" &&
+      rf.source !== "AlienVault OTX" &&
+      rf.source !== "alphaMountain.ai"
+  );
+
   // Add risk factors
-  for (const rf of riskFactors.slice(0, 6)) {
+  for (const rf of validRFs.slice(0, 6)) {
     items.push({
       text: rf.reason,
       severity: rf.severity,
@@ -245,9 +256,17 @@ function getTopRiskFactors(
     });
   }
 
+  // Filter out local heuristic and AlienVault findings
+  const validFindings = (findings || []).filter(
+    (f) =>
+      !f.description?.toLowerCase().includes("alienvault") &&
+      !f.category?.toLowerCase().includes("local") &&
+      !f.category?.toLowerCase().includes("parsing")
+  );
+
   // Add findings if we haven't hit limit
   if (items.length < 6) {
-    for (const finding of findings.slice(0, 6 - items.length)) {
+    for (const finding of validFindings.slice(0, 6 - items.length)) {
       // Avoid duplicates
       const isDupe = items.some(
         (i) => i.text.toLowerCase() === finding.description.toLowerCase()
