@@ -50,6 +50,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Invalid email or password");
         }
 
+        // Reject unverified credential accounts
+        if (user.provider !== "google" && user.emailVerified !== true) {
+          throw new Error("Please verify your email before logging in.");
+        }
+
         return {
           id: user._id.toString(),
           name: user.name,
@@ -72,7 +77,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email,
             image: user.image,
             provider: "google",
+            emailVerified: true,
           });
+        } else if (!existingUser.emailVerified) {
+          existingUser.emailVerified = true;
+          await existingUser.save();
         }
       }
       return true;

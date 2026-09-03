@@ -6,6 +6,9 @@ export interface IUserDocument extends Document {
   password?: string;
   image?: string;
   provider: "credentials" | "google";
+  emailVerified: boolean;
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
   role: "analyst" | "admin";
   apiKeys?: {
     virusTotal?: string;
@@ -50,6 +53,20 @@ const UserSchema = new Schema<IUserDocument>(
       enum: ["credentials", "google"],
       default: "credentials",
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
     role: {
       type: String,
       enum: ["analyst", "admin"],
@@ -77,8 +94,8 @@ const UserSchema = new Schema<IUserDocument>(
   }
 );
 
-// Index for faster lookups
-UserSchema.index({ email: 1 });
+// Compound index for verification token lookup
+UserSchema.index({ emailVerificationToken: 1, emailVerificationExpires: 1 });
 
 const User =
   mongoose.models.User || mongoose.model<IUserDocument>("User", UserSchema);

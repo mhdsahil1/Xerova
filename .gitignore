@@ -1,5 +1,8 @@
-# dependencies
+# ==============================================================================
+# Dependencies & Package Managers
+# ==============================================================================
 /node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -8,54 +11,144 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# Next.js
+# ==============================================================================
+# Next.js & Build Outputs
+# ==============================================================================
 /.next/
 /out/
-
-# production
 /build
+/dist
+.vercel
+.turbo/
 
-# misc
-.DS_Store
+# ==============================================================================
+# TypeScript & Compilers
+# ==============================================================================
+*.tsbuildinfo
+next-env.d.ts
+
+# ==============================================================================
+# Environment Variables & Secrets
+# ==============================================================================
+.env*
+!.env.example
+*.env
+*.env.local
+
+# Sensitive Keys, Certificates & Credentials
 *.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+credentials.json
+token.json
+client_secret*.json
 
-# debug
+# ==============================================================================
+# Logs & Diagnostic Dumps
+# ==============================================================================
+*.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
-# environment files
-.env*
-!.env.example
+# ==============================================================================
+# Testing, Coverage & Scratch Scripts
+# ==============================================================================
+/coverage
+*.lcov
+.nyc_output
 
-# Vercel
-.vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# local tools / generated files
-.freebuff/
+# Local ad-hoc test, verification, and database scripts
+test*.mjs
+test-*.mjs
+test_*.mjs
+test*.js
+test-*.js
+test_*.js
+verify_*.mjs
+verify_*.js
 test-db.mjs
+test_email_verification.mjs
+test_groq_integration.mjs
 test_threat_intelligence_explainability.mjs
 verify_integrations.mjs
 
+# ==============================================================================
+# IDEs, Editors & Developer Tooling
+# ==============================================================================
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.sublime-project
+*.sublime-workspace
+.cursor/
+.windsurf/
+
+# ==============================================================================
+# AI Assistants, Agent Workspaces & Local Tools
+# ==============================================================================
 .agents/
 .claude/
 .gemini/
 .originkit/
+.freebuff/
 
-# internal URL-analysis documentation
+# ==============================================================================
+# Browser Guard Extension Artifacts
+# ==============================================================================
+extension/dist/
+extension/node_modules/
+extension/*.pem
+extension/*.crx
+extension/*.zip
+
+# ==============================================================================
+# Operating System Artifacts
+# ==============================================================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+Desktop.ini
+$RECYCLE.BIN/
+
+# ==============================================================================
+# Caches & Temporary Files
+# ==============================================================================
+.eslintcache
+*.cache
+.cache/
+*.tmp
+*.temp
+*~
+
+# ==============================================================================
+# Internal Documentation & Status Reports
+# ==============================================================================
 URL_ANALYSIS_IMPLEMENTATION.md
 URL_ANALYSIS_MODULE.md
 URL_ANALYSIS_QUICK_REFERENCE.md
-URL_ANALYSIS_STATUS.txt
+URL_ANALYSIS_STATUS.txt 
 
-# Browser Guard Extension
-extension/dist/
-extension/node_modules/
+src/app/api/test-email/route.ts

@@ -17,6 +17,7 @@ import {
   Shield,
   ArrowRight,
   Sparkles,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,9 +39,16 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Email verification prompt & resend states
+  const [showResend, setShowResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setShowResend(false);
+    setResendStatus(null);
     setIsLoading(true);
 
     try {
@@ -51,7 +59,20 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        const errStr = String(result.error);
+        if (
+          errStr.toLowerCase().includes("verify") ||
+          errStr === "email_not_verified"
+        ) {
+          setError("Please verify your email before logging in.");
+          setShowResend(true);
+        } else if (errStr === "CredentialsSignin") {
+          setError("Invalid email or password");
+          setShowResend(false);
+        } else {
+          setError(errStr);
+          setShowResend(false);
+        }
       } else {
         router.push(callbackUrl);
         router.refresh();
@@ -60,6 +81,28 @@ export default function LoginPage() {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendFromLogin = async () => {
+    if (!formData.email || isResending) return;
+    setIsResending(true);
+    setResendStatus(null);
+    try {
+      const res = await fetch("/api/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await res.json();
+      setResendStatus(
+        data.message ||
+          "If the account exists and requires verification, a verification email has been sent."
+      );
+    } catch {
+      setResendStatus("Unable to resend email. Please try again later.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -75,7 +118,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#0a0b0e] select-none">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#0a0b0e]">
       {/* Background Interactive Vortex Particle Simulation */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <BlackHole
@@ -163,10 +206,35 @@ export default function LoginPage() {
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-start gap-2 text-xs text-rose-300 backdrop-blur-md"
+              className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 backdrop-blur-md space-y-2"
             >
-              <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
-              <span className="leading-relaxed">{error}</span>
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{error}</span>
+              </div>
+
+              {showResend && formData.email && (
+                <div className="pt-2 border-t border-rose-500/20 flex flex-col gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleResendFromLogin}
+                    disabled={isResending}
+                    className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium underline inline-flex items-center gap-1.5 cursor-pointer transition-colors w-fit"
+                  >
+                    {isResending ? (
+                      <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3 text-cyan-400" />
+                    )}
+                    <span>Resend verification email to {formData.email}</span>
+                  </button>
+                  {resendStatus && (
+                    <p className="text-[11px] text-cyan-300/90 font-mono">
+                      {resendStatus}
+                    </p>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
