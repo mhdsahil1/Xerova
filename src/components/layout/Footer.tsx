@@ -16,10 +16,10 @@ export function Footer() {
               <Shield className="w-4 h-4 text-primary" />
               <span className="font-semibold tracking-wider text-xs uppercase text-white">XEROVA Intel</span>
             </div>
-            <p className="text-[11px] text-[#8a8f9d] leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Next-generation autonomous cybersecurity intelligence and threat hunting platform.
             </p>
-            <div className="flex items-center gap-2 text-[11px] text-emerald-400 font-mono">
+            <div className="flex items-center gap-2 text-xs text-emerald-400 font-mono">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
@@ -29,10 +29,10 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a8f9d] mb-2.5 flex items-center gap-1.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
               <Terminal className="w-3 h-3 text-primary" /> Platform
             </h4>
-            <ul className="space-y-1.5 text-[11px] text-[#8a8f9d]">
+            <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
                 <Link href="/dashboard" className="hover:text-white transition-colors duration-150">
                   SOC Overview
@@ -57,34 +57,34 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a8f9d] mb-2.5 flex items-center gap-1.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
               <Radio className="w-3 h-3 text-primary" /> Telemetry Feeds
             </h4>
-            <ul className="space-y-1.5 text-[11px] text-[#8a8f9d]">
+            <ul className="space-y-2 text-xs text-muted-foreground">
               <li className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-primary/60"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                 AlienVault OTX Integration
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-primary/60"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                 VirusTotal Multi-Scanner
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-primary/60"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                 URLScan Automated Sandbox
               </li>
               <li className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-primary/60"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                 CISA &amp; MITRE ATT&amp;CK Sync
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a8f9d] mb-2.5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
               System Info
             </h4>
-            <div className="p-2.5 rounded-xl border border-white/[0.06] bg-black/40 font-mono text-[10px] space-y-0.5 text-[#8a8f9d]">
+            <div className="p-2.5 rounded-xl border border-white/[0.06] bg-black/40 font-mono text-xs space-y-1 text-muted-foreground">
               <div>ENV: <span className="text-primary">PRODUCTION-SOC</span></div>
               <div>VERSION: <span className="text-white font-medium">v1.4.2-sec</span></div>
               <div>ENCRYPTION: <span className="text-emerald-400">AES-256-GCM</span></div>
@@ -94,21 +94,24 @@ export function Footer() {
         </div>
 
         {/* Cinematic ASCII Interactive Animated Footer with Morphing Text */}
-        <div className="relative h-[320px] md:h-[380px] w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black/50">
+        <div
+          className="relative h-[320px] md:h-[380px] w-full overflow-hidden rounded-xl border border-white/[0.08] bg-black/50 opacity-90"
+          aria-hidden="true"
+        >
           <AnimatedFooter
             morphWords={["XEROVA", "CYBER INTEL", "THREAT HUNT", "DEFENSE AI"]}
             morphSubtext="Next-Gen Cybersecurity Intelligence Platform"
             morphInterval={2600}
             leftImage="/animated-footer/hand-left.jpg"
             rightImage="/animated-footer/hand-right.jpg"
-            hoverColor="#00f0ff"
-            charColor="#06b6d4"
+            hoverColor="#06b6d4"
+            charColor="#0891b2"
             revealOnScroll={true}
           />
         </div>
 
         {/* Copyright Bar */}
-        <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#8a8f9d]">
+        <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} XEROVA Cybersecurity Platform. All rights reserved.</p>
           <div className="flex items-center gap-5">
             <Link href="/settings" className="hover:text-white transition-colors duration-150">

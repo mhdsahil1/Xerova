@@ -86,7 +86,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh]" role="status" aria-label="Loading dashboard">
         <Loader2 className="w-7 h-7 text-primary animate-spin" />
-        <p className="text-xs text-[#8a8f9d] mt-3 font-mono">Connecting threat telemetry streams...</p>
+        <p className="text-xs text-muted-foreground mt-3 font-mono">Connecting threat telemetry streams...</p>
       </div>
     );
   }
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
             Welcome, <span className="text-primary font-normal">Analyst!</span>
           </h1>
-          <p className="text-xs sm:text-sm text-[#8a8f9d] mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Automate threat investigations, correlate IOCs, and orchestrate real-time defense.
           </p>
         </div>
@@ -149,9 +149,9 @@ export default function DashboardPage() {
                 <span>Threat Lookup</span>
                 <Sparkles className="w-3 h-3 text-primary" />
               </div>
-              <p className="text-[10px] text-[#8a8f9d] font-mono">Scan IP, Domain, Hash</p>
+              <p className="text-xs text-muted-foreground font-mono">Scan IP, Domain, Hash</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#8a8f9d] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-white group-hover:translate-x-0.5 transition-all" />
           </Link>
 
           {/* Action 2: AI Copilot */}
@@ -164,9 +164,9 @@ export default function DashboardPage() {
                 <span>AI Security Copilot</span>
                 <Sparkles className="w-3 h-3 text-cyan-400" />
               </div>
-              <p className="text-[10px] text-[#8a8f9d] font-mono">Gemini Threat Analyst</p>
+              <p className="text-xs text-muted-foreground font-mono">Gemini Threat Analyst</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#8a8f9d] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-white group-hover:translate-x-0.5 transition-all" />
           </Link>
 
           {/* Action 3: Incident Reports */}
@@ -179,9 +179,9 @@ export default function DashboardPage() {
                 <span>Report AI</span>
                 <Sparkles className="w-3 h-3 text-amber-400" />
               </div>
-              <p className="text-[10px] text-[#8a8f9d] font-mono">Incident &amp; Audit Docs</p>
+              <p className="text-xs text-muted-foreground font-mono">Incident &amp; Audit Docs</p>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#8a8f9d] group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-white group-hover:translate-x-0.5 transition-all" />
           </Link>
         </div>
       </motion.div>
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                 <Shield className="w-4 h-4 text-primary" />
                 Threat Posture &amp; Score
               </span>
-              <span className="text-[11px] font-mono text-[#8a8f9d] px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/10">
+              <span className="text-xs font-mono text-muted-foreground px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10">
                 Realtime Feeds ⌵
               </span>
             </div>
@@ -207,18 +207,18 @@ export default function DashboardPage() {
             {/* Score Showcase */}
             <div className="pt-5 pb-3 flex items-center justify-between gap-4">
               <div>
-                <span className="text-[11px] uppercase tracking-wider text-[#8a8f9d] font-mono font-medium block">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground font-mono font-medium block">
                   Overall Threat Level
                 </span>
                 <div className="flex items-baseline gap-1.5 mt-1">
                   <span className={`text-4xl sm:text-5xl font-extrabold font-mono tracking-tight ${getRiskColor(threatScore)}`}>
                     {threatScore}
                   </span>
-                  <span className="text-xs text-[#8a8f9d] font-mono">/ 100</span>
+                  <span className="text-xs text-muted-foreground font-mono">/ 100</span>
                 </div>
                 <Badge
                   variant="outline"
-                  className={`mt-2 text-[10px] uppercase font-bold px-2.5 py-0.5 rounded-full border ${getRiskColor(threatScore)}`}
+                  className={`mt-2 text-xs uppercase font-bold px-2.5 py-0.5 rounded-full border ${getRiskColor(threatScore)}`}
                 >
                   {getRiskLabel(threatScore)}
                 </Badge>
@@ -233,16 +233,16 @@ export default function DashboardPage() {
 
           {/* Sub-Metric Bars */}
           <div className="pt-3 border-t border-white/[0.06] space-y-2">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-[#8a8f9d]">Inbound Attack Vector</span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Inbound Attack Vector</span>
               <span className="font-mono text-white font-semibold">Low (12%)</span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
               <div className="h-full bg-primary rounded-full" style={{ width: "12%" }} />
             </div>
 
-            <div className="flex items-center justify-between text-[11px] pt-1">
-              <span className="text-[#8a8f9d]">Known Malicious IOC Matches</span>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-muted-foreground">Known Malicious IOC Matches</span>
               <span className="font-mono text-status-warning font-semibold">Active (38%)</span>
             </div>
             <div className="w-full h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
@@ -257,15 +257,21 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] gap-2">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold text-white">Recent Investigations</span>
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-[#8a8f9d] font-mono px-2 py-0.5 rounded bg-white/[0.04] border border-white/10">
-                  <SlidersHorizontal className="w-3 h-3" /> Filter
-                </span>
+                <button
+                  type="button"
+                  aria-label="Filter investigations"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs text-white/90 font-medium px-2.5 py-1 rounded-md bg-white/[0.08] hover:bg-white/[0.12] border border-white/15 transition-colors focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <SlidersHorizontal className="w-3 h-3 text-primary" />
+                  <span>Filter</span>
+                </button>
               </div>
               <Link
                 href="/threats"
-                className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                className="text-xs text-primary font-medium flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
               >
-                See all <ChevronRight className="w-3.5 h-3.5" />
+                <span>See all</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
@@ -282,10 +288,10 @@ export default function DashboardPage() {
         className="grid grid-cols-1 lg:grid-cols-12 gap-4"
       >
         {/* Panel 3: Highlight / Action Card (Matching "Optimize Workflow" reference card - 5 cols) */}
-        <Card className="lg:col-span-5 bg-gradient-to-br from-[#121a1f] via-[#10141b] to-[#0c0e14] border-cyan-500/20 p-5 flex flex-col justify-between relative overflow-hidden group shadow-lg">
+        <Card className="lg:col-span-5 bg-gradient-to-br from-[#121a1f] via-[#10141b] to-[#0c0e14] border-cyan-500/20 p-5 flex flex-col justify-start gap-4 relative overflow-hidden group shadow-lg">
           <div className="relative z-10">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-mono font-semibold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <span className="text-xs font-mono font-semibold text-cyan-400 flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-cyan-400" /> Active Autonomous Defense
               </span>
               <div className="flex items-center gap-1">
@@ -304,15 +310,15 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <h3 className="text-base sm:text-lg font-bold text-white mt-3 leading-snug">
+            <h2 className="text-base sm:text-lg font-bold text-white mt-3 leading-snug">
               Automate IOC correlation &amp; containment in &lt;60s
-            </h3>
-            <p className="text-xs text-[#8a8f9d] mt-1.5 leading-relaxed max-w-sm">
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-sm">
               Deploy automated hunting rules across VirusTotal, AlienVault OTX, and Shodan telemetry feeds to stop malicious pivots.
             </p>
           </div>
 
-          <div className="pt-6 relative z-10">
+          <div className="pt-2 relative z-10">
             <Link
               href="/threats"
               className="inline-flex items-center justify-center px-4 py-2 rounded-full bg-white text-black font-semibold text-xs hover:bg-cyan-400 transition-all shadow-md active:scale-95"
@@ -331,11 +337,11 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-white">Threat Intelligence Trends</span>
-                <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                   +10% today
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-[#8a8f9d]">Last 7 Days ⌵</span>
+              <span className="text-xs font-mono text-muted-foreground">Last 7 Days ⌵</span>
             </div>
 
             <div className="pt-3">
@@ -357,7 +363,7 @@ export default function DashboardPage() {
               <Activity className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-white">Live Threat Pulses</span>
             </div>
-            <Badge variant="outline" className="text-[10px] font-mono">
+            <Badge variant="outline" className="text-xs font-mono">
               AlienVault OTX
             </Badge>
           </div>
@@ -371,7 +377,7 @@ export default function DashboardPage() {
               <AlertTriangle className="w-4 h-4 text-status-warning" />
               <span className="text-sm font-semibold text-white">Latest Vulnerabilities</span>
             </div>
-            <Badge variant="outline" className="text-[10px] font-mono">
+            <Badge variant="outline" className="text-xs font-mono">
               NVD Feed
             </Badge>
           </div>

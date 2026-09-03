@@ -2,12 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Send, ShieldAlert, Wifi, Globe, Hash, Bot, User, Sparkles } from "lucide-react";
+import { MessageSquare, Send, ShieldAlert, Wifi, Globe, Hash, Bot, User, Sparkles, Copy, Check } from "lucide-react";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -68,23 +67,29 @@ export default function AssistantPage() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm **XEROVA AI**, your cybersecurity analyst assistant powered by Gemini. I can help you:\n\n- 🔍 **Analyze IOCs** — paste IPs, domains, hashes, or CVEs\n- 🛡️ **Explain threats** — understand attack patterns and TTPs\n- 📋 **Write playbooks** — incident response and remediation\n- 📊 **Summarize reports** — break down security advisories\n\nHow can I assist you today?",
+      content: "Hello! I'm **XEROVA AI**, your cybersecurity analyst assistant. I can help you:\n\n- 🔍 **Analyze IOCs** — paste IPs, domains, hashes, or CVEs\n- 🛡️ **Explain threats** — understand attack patterns and TTPs\n- 📋 **Write playbooks** — incident response and remediation\n- 📊 **Summarize reports** — break down security advisories\n\nHow can I assist you today?",
     }
   ]);
   const router = useRouter();
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (scrollRef.current) {
-      const scrollContainer = scrollRef.current.querySelector("[data-radix-scroll-area-viewport]");
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+  const handleCopy = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy text:", err);
     }
+  };
+
+  // Auto-scroll to bottom whenever messages or typing status updates
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, isTyping]);
 
   const handleSend = async () => {
@@ -166,15 +171,15 @@ export default function AssistantPage() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-5 h-[calc(100dvh-7.5rem)] flex flex-col"
+      className="flex-1 min-h-0 flex flex-col space-y-3"
     >
-      <div>
+      <div className="shrink-0">
         <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2.5">
           <MessageSquare className="w-5 h-5 text-primary" />
           AI Security Assistant
           <Badge variant="secondary" className="text-[10px] ml-2 gap-1 font-mono">
             <Sparkles className="w-3 h-3 text-primary" />
-            Gemini
+            Groq AI
           </Badge>
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
@@ -182,8 +187,8 @@ export default function AssistantPage() {
         </p>
       </div>
 
-      <Card className="flex-1 flex flex-col bg-card border-border overflow-hidden">
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <Card className="flex-1 min-h-0 flex flex-col bg-card border-border overflow-hidden shadow-sm">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5">
           <div className="space-y-5" role="log" aria-label="Conversation messages">
             {messages.map((msg) => (
               <div
@@ -205,9 +210,9 @@ export default function AssistantPage() {
                     <User className="w-3.5 h-3.5" />
                   )}
                 </div>
-                <div className={`space-y-2 min-w-0 ${msg.role === "user" ? "text-right" : ""}`}>
+                <div className={`space-y-1.5 min-w-0 ${msg.role === "user" ? "text-right" : ""}`}>
                   <div
-                    className={`p-3.5 rounded-lg text-xs md:text-sm leading-relaxed ${
+                    className={`p-3.5 rounded-lg text-xs md:text-sm leading-relaxed select-text cursor-text ${
                       msg.role === "user"
                         ? "bg-primary/10 border border-primary/20 text-foreground whitespace-pre-wrap inline-block text-left"
                         : "bg-background/80 border border-border prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs"
@@ -222,26 +227,44 @@ export default function AssistantPage() {
                     )}
                   </div>
                   
-                  {/* Extracted IOCs as clickable badges */}
-                  {msg.iocs && msg.iocs.length > 0 && (
-                    <div className={`flex flex-wrap gap-1.5 mt-1.5 ${msg.role === "user" ? "justify-end" : ""}`}>
-                      {msg.iocs.map((ioc, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outline"
-                          size="sm"
-                          className="h-6 text-[11px] font-mono bg-card hover:bg-accent hover:border-primary/50 transition-colors duration-150 group"
-                          onClick={() => runAnalysis(ioc)}
-                        >
-                          {ioc.type === "ip" && <Wifi className="w-2.5 h-2.5 mr-1 text-status-info" />}
-                          {ioc.type === "domain" && <Globe className="w-2.5 h-2.5 mr-1 text-status-success" />}
-                          {ioc.type === "hash" && <Hash className="w-2.5 h-2.5 mr-1 text-severity-high" />}
-                          {ioc.type === "cve" && <ShieldAlert className="w-2.5 h-2.5 mr-1 text-severity-critical" />}
-                          {ioc.value.length > 35 ? ioc.value.slice(0, 32) + "..." : ioc.value}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
+                  {/* Message action bar: 1-click Copy button and clickable IOC badges */}
+                  <div className={`flex flex-wrap items-center gap-1.5 pt-0.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopy(msg.id, msg.content)}
+                      className="h-6 px-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors gap-1"
+                      title="Copy message text"
+                    >
+                      {copiedId === msg.id ? (
+                        <>
+                          <Check className="w-3 h-3 text-status-success" />
+                          <span className="text-[10px] text-status-success font-medium">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span className="text-[10px]">Copy</span>
+                        </>
+                      )}
+                    </Button>
+
+                    {msg.iocs && msg.iocs.map((ioc, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[11px] font-mono bg-card hover:bg-accent hover:border-primary/50 transition-colors duration-150 group"
+                        onClick={() => runAnalysis(ioc)}
+                      >
+                        {ioc.type === "ip" && <Wifi className="w-2.5 h-2.5 mr-1 text-status-info" />}
+                        {ioc.type === "domain" && <Globe className="w-2.5 h-2.5 mr-1 text-status-success" />}
+                        {ioc.type === "hash" && <Hash className="w-2.5 h-2.5 mr-1 text-severity-high" />}
+                        {ioc.type === "cve" && <ShieldAlert className="w-2.5 h-2.5 mr-1 text-severity-critical" />}
+                        {ioc.value.length > 35 ? ioc.value.slice(0, 32) + "..." : ioc.value}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -267,10 +290,13 @@ export default function AssistantPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        </ScrollArea>
 
-        <CardFooter className="p-3 border-t border-border bg-card/60">
+            {/* Scroll anchor to guarantee clean visibility of last line of text */}
+            <div ref={messagesEndRef} className="h-4 w-full shrink-0" />
+          </div>
+        </div>
+
+        <CardFooter className="shrink-0 p-3 border-t border-border bg-card/90 backdrop-blur-sm z-10">
           <form
             onSubmit={(e) => {
               e.preventDefault();

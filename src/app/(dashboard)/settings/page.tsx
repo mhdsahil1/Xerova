@@ -100,7 +100,8 @@ export default function SettingsPage() {
                   { name: "urlscan.io", key: "URLSCAN_IO_API_KEY", desc: "Automated URL sandbox, DOM analysis, and page screenshots" },
                   { name: "CheckPhish.ai", key: "CHECKPHISH_API_KEY", desc: "Deep learning computer vision and brand impersonation scan" },
                   { name: "Cloudmersive", key: "CLOUDMERSIVE_API_KEY", desc: "Anti-malware website virus scan and IP threat detection" },
-                  { name: "Google Gemini AI", key: "GEMINI_API_KEY", desc: "Cybersecurity analyst assistant and natural language reasoning" },
+                  { name: "Groq AI (Llama 3.3 70B)", key: "GROQ_API_KEY", desc: "Default ultra-fast cybersecurity analyst reasoning & IOC intelligence" },
+                  { name: "Google Gemini AI", key: "GEMINI_API_KEY", desc: "Fallback cybersecurity analyst assistant and natural language reasoning" },
                 ].map((integ) => (
                   <div key={integ.name} className="p-3 rounded-md bg-background/50 border border-border space-y-1">
                     <div className="flex items-center justify-between">

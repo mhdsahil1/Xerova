@@ -125,11 +125,10 @@ export function MorphText({
       {subtext && (
         <p
           className={cn(
-            "morph-subtext mt-8 uppercase tracking-[0.2em] text-[#888]",
+            "morph-subtext mt-8 tracking-wider text-muted-foreground text-sm font-medium",
             subtextClassName
           )}
           style={{
-            fontSize: "1.2rem",
             opacity: 0,
             animation: "morph-fade-up 1s ease-out 1s forwards",
             fontFamily,

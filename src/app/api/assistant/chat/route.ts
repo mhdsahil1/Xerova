@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { geminiChat } from "@/lib/gemini";
+import { generateAssistantReply } from "@/lib/ai-assistant";
 import { connectDB } from "@/lib/db";
 import Conversation from "@/models/Conversation";
 
@@ -79,8 +79,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Call Gemini
-    const response = await geminiChat(validMessages, contextStr);
+    // Call AI Assistant (Groq default -> Gemini fallback)
+    const { text: response, provider } = await generateAssistantReply(
+      validMessages,
+      contextStr
+    );
 
     // Store conversation in DB (fire-and-forget)
     const userId = session.user.id;
@@ -145,6 +148,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       response,
+      provider,
       conversationId: conversationId || undefined,
     });
   } catch (error) {
