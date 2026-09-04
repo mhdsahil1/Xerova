@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BlackHole from "@/components/originkit/ui/blackhole";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -109,7 +110,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#0a0b0e]">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-canvas-bg text-foreground">
+      {/* Top Bar Controls */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Background Interactive Vortex Simulation */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <BlackHole
@@ -136,8 +142,9 @@ export default function RegisterPage() {
       </div>
 
       {/* Cyber Gradient & Radial Vignette Overlays */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,rgba(2,6,23,0.35)_45%,rgba(0,0,0,0.85)_100%)] pointer-events-none z-[1]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,rgba(2,6,23,0.35)_45%,rgba(0,0,0,0.85)_100%)] dark:block hidden pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 dark:block hidden pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.06)_0%,rgba(240,244,248,0.4)_50%,rgba(226,232,240,0.8)_100%)] dark:hidden block pointer-events-none z-[1]" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 14 }}
@@ -146,13 +153,13 @@ export default function RegisterPage() {
         className="relative z-10 w-full max-w-[440px] mx-4 my-6"
       >
         {/* Authentic macOS-style Frosted Glass Card */}
-        <div className="relative rounded-[28px] bg-slate-950/40 backdrop-blur-2xl backdrop-saturate-150 border border-white/[0.12] p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] overflow-hidden">
+        <div className="relative rounded-[28px] bg-card/85 dark:bg-slate-950/40 backdrop-blur-2xl backdrop-saturate-150 border border-border dark:border-white/[0.12] p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.3)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] overflow-hidden text-card-foreground">
           {/* Subtle top rim light reflection */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent pointer-events-none" />
 
           {/* Header */}
           <div className="flex flex-col items-center mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-black/40 text-cyan-300 border border-cyan-500/25 mb-4 shadow-inner">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-muted/80 dark:bg-black/40 text-primary border border-primary/25 mb-4 shadow-inner">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400"></span>
@@ -171,7 +178,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            <p className="text-xs text-[#8a8f9d] font-mono tracking-wide text-center">
+            <p className="text-xs text-muted-foreground font-mono tracking-wide text-center">
               {registeredEmail
                 ? "Identity verification required to access console"
                 : "Create your analyst credentials to deploy defense workflows"}
@@ -189,15 +196,15 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-base font-semibold text-white">
+                <h3 className="text-base font-semibold text-foreground">
                   Account created. Check your email to verify your XEROVA account.
                 </h3>
-                <p className="text-xs text-[#8a8f9d] leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   We sent a secure verification link to{" "}
-                  <strong className="text-white font-mono">{registeredEmail}</strong>.
-                  Please check your <span className="text-cyan-300 font-medium">inbox</span> and <span className="text-cyan-300 font-medium">spam folder</span>.
+                  <strong className="text-foreground font-mono">{registeredEmail}</strong>.
+                  Please check your <span className="text-primary font-medium">inbox</span> and <span className="text-primary font-medium">spam folder</span>.
                 </p>
-                <div className="p-2.5 rounded-lg bg-white/[0.04] border border-white/10 text-[11px] text-[#cbd5e1] font-mono">
+                <div className="p-2.5 rounded-lg bg-muted/60 border border-border text-[11px] text-muted-foreground font-mono">
                   ⏱️ Link expires in 30 minutes
                 </div>
               </div>
@@ -227,7 +234,7 @@ export default function RegisterPage() {
                   variant="ghost"
                   onClick={handleResend}
                   disabled={isResending}
-                  className="w-full h-9 text-xs text-[#8a8f9d] hover:text-white hover:bg-white/[0.05] rounded-xl flex items-center justify-center gap-1.5"
+                  className="w-full h-9 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl flex items-center justify-center gap-1.5"
                 >
                   {isResending ? (
                     <>
@@ -267,7 +274,7 @@ export default function RegisterPage() {
                     Full Name
                   </Label>
                   <div className="relative group">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                     <Input
                       id="name"
                       type="text"
@@ -276,7 +283,7 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
-                      className="pl-10 h-10 bg-white/[0.05] backdrop-blur-md border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl focus-visible:border-cyan-400 focus-visible:bg-white/[0.08] text-xs transition-all"
+                      className="pl-10 h-10 bg-background/80 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl focus-visible:border-cyan-500 focus-visible:bg-background text-xs transition-all"
                       disabled={isLoading}
                       required
                     />
@@ -291,7 +298,7 @@ export default function RegisterPage() {
                     Work Email
                   </Label>
                   <div className="relative group">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                     <Input
                       id="email"
                       type="email"
@@ -301,7 +308,7 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      className="pl-10 h-10 bg-white/[0.05] backdrop-blur-md border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl focus-visible:border-cyan-400 focus-visible:bg-white/[0.08] text-xs transition-all"
+                      className="pl-10 h-10 bg-background/80 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl focus-visible:border-cyan-500 focus-visible:bg-background text-xs transition-all"
                       disabled={isLoading}
                       required
                     />
@@ -316,7 +323,7 @@ export default function RegisterPage() {
                     Password
                   </Label>
                   <div className="relative group">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
@@ -326,14 +333,14 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
-                      className="pl-10 pr-10 h-10 bg-white/[0.05] backdrop-blur-md border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl focus-visible:border-cyan-400 focus-visible:bg-white/[0.08] text-xs font-mono transition-all"
+                      className="pl-10 pr-10 h-10 bg-background/80 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl focus-visible:border-cyan-500 focus-visible:bg-background text-xs font-mono transition-all"
                       disabled={isLoading}
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8a8f9d] hover:text-white transition-colors p-0.5 cursor-pointer"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5 cursor-pointer"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
@@ -353,7 +360,7 @@ export default function RegisterPage() {
                     Confirm Password
                   </Label>
                   <div className="relative group">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                     <Input
                       id="confirmPassword"
                       type={showPassword ? "text" : "password"}
@@ -366,7 +373,7 @@ export default function RegisterPage() {
                           confirmPassword: e.target.value,
                         })
                       }
-                      className="pl-10 pr-10 h-10 bg-white/[0.05] backdrop-blur-md border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl focus-visible:border-cyan-400 focus-visible:bg-white/[0.08] text-xs font-mono transition-all"
+                      className="pl-10 pr-10 h-10 bg-background/80 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl focus-visible:border-cyan-500 focus-visible:bg-background text-xs font-mono transition-all"
                       disabled={isLoading}
                       required
                     />
@@ -375,7 +382,7 @@ export default function RegisterPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-10 mt-3 bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_24px_rgba(6,182,212,0.4)] active:scale-[0.98]"
+                  className="w-full h-10 mt-3 bg-cyan-500 hover:bg-cyan-400 dark:bg-cyan-400 dark:hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_24px_rgba(6,182,212,0.35)] active:scale-[0.98]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -393,11 +400,11 @@ export default function RegisterPage() {
               </form>
 
               {/* Footer */}
-              <div className="mt-5 text-center text-xs text-[#8a8f9d]">
+              <div className="mt-5 text-center text-xs text-muted-foreground">
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="text-cyan-400 hover:text-cyan-300 font-semibold hover:underline transition-colors"
+                  className="text-cyan-500 dark:text-cyan-400 hover:underline font-semibold transition-colors"
                 >
                   Sign In
                 </Link>
@@ -406,7 +413,7 @@ export default function RegisterPage() {
           )}
 
           {/* Security Disclaimer */}
-          <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-center gap-1.5 text-[10px] text-[#8a8f9d] font-mono">
+          <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <Shield className="w-3 h-3 text-cyan-400 shrink-0" />
             <span>End-to-End Encrypted Session</span>
           </div>

@@ -28,7 +28,7 @@ export function ThreatScoreGauge({ score }: ThreatScoreGaugeProps) {
       <svg width={radius * 2} height={radius * 2} className="-rotate-90" aria-hidden="true">
         {/* Track circle */}
         <circle
-          stroke="rgba(255,255,255,0.08)"
+          className="stroke-border"
           fill="transparent"
           strokeWidth={strokeWidth}
           r={normalizedRadius}

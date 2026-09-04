@@ -89,7 +89,7 @@ function PulseSpotlightCard({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
-      className="group relative p-4 rounded-2xl bg-[#14161f] border border-white/[0.08] hover:border-white/20 transition-[border-color] duration-300 flex flex-col justify-between overflow-hidden shadow-lg"
+      className="group relative p-4 rounded-2xl bg-card/90 border border-border hover:border-border/80 transition-[border-color] duration-300 flex flex-col justify-between overflow-hidden shadow-lg text-card-foreground"
     >
       {/* Static accent tint */}
       <div
@@ -113,7 +113,7 @@ function PulseSpotlightCard({
       {/* Shimmer Sweep Animation */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
+        className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-foreground/[0.06] to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
       />
 
       {/* Card Content */}
@@ -134,18 +134,18 @@ function PulseSpotlightCard({
                 </Badge>
               )}
               {pulse.indicatorCount > 0 && (
-                <span className="text-[10px] font-mono text-[#8a8f9d] px-1.5 py-0.2 rounded bg-white/[0.04]">
+                <span className="text-[10px] font-mono text-muted-foreground px-1.5 py-0.5 rounded bg-muted/60">
                   {pulse.indicatorCount} IOCs
                 </span>
               )}
             </div>
-            <h4 className="text-xs sm:text-sm font-semibold text-white group-hover:text-primary transition-colors line-clamp-1" title={pulse.name}>
+            <h4 className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1" title={pulse.name}>
               {pulse.name}
             </h4>
           </div>
           <Link
             href={`/threats?query=${encodeURIComponent(pulse.name)}`}
-            className="text-[#8a8f9d] hover:text-white transition-colors shrink-0 mt-0.5"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
             title="Investigate in Threats"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -153,7 +153,7 @@ function PulseSpotlightCard({
         </div>
 
         {pulse.description && (
-          <p className="text-xs text-[#8a8f9d] line-clamp-2 mb-3 leading-relaxed">
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
             {pulse.description}
           </p>
         )}
@@ -164,7 +164,7 @@ function PulseSpotlightCard({
             {pulse.tags.slice(0, 3).map((tag, idx) => (
               <span
                 key={idx}
-                className="inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-[#8a8f9d]"
+                className="inline-flex items-center text-[10px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground"
               >
                 <Tag className="w-2.5 h-2.5 mr-1 opacity-60" />
                 {tag}
@@ -174,13 +174,13 @@ function PulseSpotlightCard({
         )}
       </div>
 
-      <div className="relative z-10 flex items-center justify-between pt-2.5 border-t border-white/[0.06] text-[10px] text-[#8a8f9d]">
+      <div className="relative z-10 flex items-center justify-between pt-2.5 border-t border-border text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1 truncate max-w-[140px]">
-          <User className="w-3 h-3 text-[#8a8f9d] shrink-0" />
+          <User className="w-3 h-3 text-muted-foreground shrink-0" />
           {pulse.author}
         </span>
         <span className="flex items-center gap-1 font-mono">
-          <Calendar className="w-3 h-3 text-[#8a8f9d] shrink-0" />
+          <Calendar className="w-3 h-3 text-muted-foreground shrink-0" />
           {pulse.created}
         </span>
       </div>
@@ -202,7 +202,7 @@ export function LiveThreatPulses({ data }: LiveThreatPulsesProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="py-8 text-center text-xs text-[#8a8f9d] font-mono bg-white/[0.02] rounded-xl border border-white/[0.06]">
+      <div className="py-8 text-center text-xs text-muted-foreground font-mono bg-muted/20 rounded-xl border border-border">
         No active global threat pulses retrieved from AlienVault OTX.
       </div>
     );

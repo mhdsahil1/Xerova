@@ -26,7 +26,7 @@ const typeIcons: Record<string, React.ElementType> = {
 export function RecentInvestigations({ data }: RecentInvestigationsProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="py-8 text-center text-xs text-[#8a8f9d] font-mono bg-white/[0.02] rounded-xl border border-white/[0.06]">
+      <div className="py-8 text-center text-xs text-muted-foreground font-mono bg-muted/20 rounded-xl border border-border">
         No recent investigation queries logged yet.
       </div>
     );
@@ -42,31 +42,31 @@ export function RecentInvestigations({ data }: RecentInvestigationsProps) {
           <col className="w-32 text-right" />
         </colgroup>
         <thead>
-          <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-muted-foreground font-medium">
+          <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground font-medium">
             <th className="pb-3 px-2 font-normal">Target / Indicator</th>
             <th className="pb-3 px-2 font-normal">Severity</th>
             <th className="pb-3 px-2 font-normal hidden sm:table-cell">Timestamp</th>
             <th className="pb-3 px-2 text-right font-normal">Action</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.04]">
+        <tbody className="divide-y divide-border">
           {data.slice(0, 5).map((inv) => {
             const Icon = typeIcons[inv.type] || Search;
             return (
               <tr
                 key={inv.id}
-                className="group hover:bg-white/[0.06] focus-within:bg-white/[0.06] transition-colors duration-150"
+                className="group hover:bg-muted/50 focus-within:bg-muted/50 transition-colors duration-150"
               >
                 {/* Target & Type */}
                 <td className="py-3 px-2 min-w-0">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-md bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-primary shrink-0">
+                    <div className="w-7 h-7 rounded-md bg-muted/60 border border-border flex items-center justify-center text-primary shrink-0">
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
                       <Link
                         href={`/threats?query=${encodeURIComponent(inv.query)}&type=${inv.type}`}
-                        className="font-mono text-xs font-semibold text-white group-hover:text-primary transition-colors truncate block max-w-[240px] sm:max-w-[320px] lg:max-w-md"
+                        className="font-mono text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate block max-w-[240px] sm:max-w-[320px] lg:max-w-md"
                         title={inv.query}
                         aria-label={`Indicator: ${inv.query}`}
                       >
@@ -100,7 +100,7 @@ export function RecentInvestigations({ data }: RecentInvestigationsProps) {
                 <td className="py-3 px-2 text-right whitespace-nowrap">
                   <Link
                     href={`/threats?query=${encodeURIComponent(inv.query)}&type=${inv.type}`}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.06] hover:bg-primary hover:text-black text-white text-xs font-medium transition-all shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/80 hover:bg-primary hover:text-primary-foreground text-foreground text-xs font-medium transition-all shadow-sm"
                     title={`Investigate ${inv.query}`}
                     aria-label={`Investigate ${inv.query}`}
                   >

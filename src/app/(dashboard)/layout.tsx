@@ -17,10 +17,10 @@ export default function DashboardLayout({
 
   return (
     <SessionProvider>
-      {/* Outer Layer: Dark Graphite Page Canvas */}
-      <div className="min-h-screen w-full bg-[#0d0e12] text-foreground p-2 sm:p-3 md:p-4 lg:p-5 flex items-center justify-center antialiased">
+      {/* Outer Layer: Adaptive Application Canvas */}
+      <div className="min-h-screen w-full bg-canvas-bg text-foreground p-2 sm:p-3 md:p-4 lg:p-5 flex items-center justify-center antialiased">
         {/* Floating Application Shell Container */}
-        <div className="w-full max-w-[1680px] h-[calc(100vh-1rem)] md:h-[calc(100vh-2.5rem)] rounded-[22px] sm:rounded-[28px] md:rounded-[32px] bg-[#08090c] border border-white/[0.08] shadow-[0_30px_90px_-20px_rgba(0,0,0,0.85),0_0_1px_1px_rgba(255,255,255,0.05)] p-3 sm:p-4 md:p-4.5 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden relative">
+        <div className="app-shell w-full max-w-[1680px] h-[calc(100vh-1rem)] md:h-[calc(100vh-2.5rem)] rounded-[22px] sm:rounded-[28px] md:rounded-[32px] p-3 sm:p-4 md:p-4.5 flex flex-col md:flex-row gap-3 md:gap-4 overflow-hidden relative">
           {/* Left: Floating Navigation Tool Dock (Anchored at Top) */}
           <AppSidebar />
 

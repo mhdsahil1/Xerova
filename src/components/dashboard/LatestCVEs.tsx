@@ -98,7 +98,7 @@ function CVESpotlightCard({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
-      className="group relative p-4 rounded-2xl bg-[#14161f] border border-white/[0.08] hover:border-white/20 transition-[border-color] duration-300 flex flex-col justify-between overflow-hidden shadow-lg"
+      className="group relative p-4 rounded-2xl bg-card/90 border border-border hover:border-border/80 transition-[border-color] duration-300 flex flex-col justify-between overflow-hidden shadow-lg text-card-foreground"
     >
       {/* Static Accent Tint */}
       <div
@@ -122,7 +122,7 @@ function CVESpotlightCard({
       {/* Shimmer Sweep Animation */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
+        className="pointer-events-none absolute inset-y-0 left-0 w-[55%] -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-foreground/[0.06] to-transparent transition-transform duration-700 ease-out group-hover:translate-x-[280%]"
       />
 
       {/* Card Body */}
@@ -135,34 +135,34 @@ function CVESpotlightCard({
             >
               {cve.id}
             </Link>
-            <h4 className="text-xs sm:text-sm font-semibold text-white mt-0.5 line-clamp-1">
+            <h4 className="text-xs sm:text-sm font-semibold text-foreground mt-0.5 line-clamp-1">
               {cve.title}
             </h4>
           </div>
           <Link
             href={`/threats?query=${encodeURIComponent(cve.id)}&type=cve`}
-            className="text-[#8a8f9d] hover:text-white transition-colors shrink-0 mt-0.5"
+            className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
             title="Lookup CVE"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </div>
-        <p className="text-xs text-[#8a8f9d] line-clamp-2 mb-3 leading-relaxed">
+        <p className="text-xs text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
           {cve.description}
         </p>
       </div>
 
-      <div className="relative z-10 flex items-center gap-2 pt-2.5 border-t border-white/[0.06] text-[10px]">
+      <div className="relative z-10 flex items-center gap-2 pt-2.5 border-t border-border text-[10px]">
         <Badge
           className={`text-[9px] font-mono capitalize border ${getSeverityColor(cve.severity)}`}
           variant="outline"
         >
           {cve.severity}
         </Badge>
-        <span className="font-mono text-white font-semibold px-2 py-0.5 rounded bg-white/[0.04]">
+        <span className="font-mono text-foreground font-semibold px-2 py-0.5 rounded bg-muted/60">
           CVSS {cve.cvss}
         </span>
-        <span className="text-[#8a8f9d] font-mono ml-auto">
+        <span className="text-muted-foreground font-mono ml-auto">
           {cve.published}
         </span>
       </div>
@@ -184,7 +184,7 @@ export function LatestCVEs({ data }: LatestCVEsProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="py-8 text-center text-xs text-[#8a8f9d] font-mono bg-white/[0.02] rounded-xl border border-white/[0.06]">
+      <div className="py-8 text-center text-xs text-muted-foreground font-mono bg-muted/20 rounded-xl border border-border">
         No recent CVEs found from National Vulnerability Database.
       </div>
     );
