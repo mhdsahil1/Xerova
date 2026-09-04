@@ -113,7 +113,7 @@ export default function BrowserGuardPage() {
             <Globe className="w-4 h-4" />
             Chrome / Chromium
           </span>
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-white/[0.08] text-muted-foreground text-sm font-medium">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border text-muted-foreground text-sm font-medium">
             v1.0.0
           </span>
         </div>
@@ -215,7 +215,7 @@ export default function BrowserGuardPage() {
             {permissions.map((perm, i) => (
               <div
                 key={i}
-                className="flex items-start gap-3 p-3 rounded-xl bg-[#0d0e12] border border-white/[0.06]"
+                className="flex items-start gap-3 p-3 rounded-xl bg-muted/40 border border-border"
               >
                 <CheckCircle2 className="w-4 h-4 text-status-success shrink-0 mt-0.5" />
                 <div>
@@ -282,7 +282,7 @@ export default function BrowserGuardPage() {
             ].map((browser, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 p-3 rounded-xl bg-[#0d0e12] border border-white/[0.06]"
+                className="flex items-center gap-2 p-3 rounded-xl bg-muted/40 border border-border"
               >
                 <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />
                 <span className="text-sm font-medium">{browser.name}</span>

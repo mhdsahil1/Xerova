@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BlackHole from "@/components/originkit/ui/blackhole";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -118,7 +119,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#0a0b0e]">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-canvas-bg text-foreground">
+      {/* Top Bar Controls */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Background Interactive Vortex Particle Simulation */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <BlackHole
@@ -145,8 +151,9 @@ export default function LoginPage() {
       </div>
 
       {/* Cyber Gradient & Radial Vignette Overlays */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,rgba(2,6,23,0.35)_45%,rgba(0,0,0,0.85)_100%)] pointer-events-none z-[1]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,rgba(2,6,23,0.35)_45%,rgba(0,0,0,0.85)_100%)] dark:block hidden pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 dark:block hidden pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.06)_0%,rgba(240,244,248,0.4)_50%,rgba(226,232,240,0.8)_100%)] dark:hidden block pointer-events-none z-[1]" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 14 }}
@@ -155,14 +162,14 @@ export default function LoginPage() {
         className="relative z-10 w-full max-w-[430px] mx-4 my-6"
       >
         {/* Authentic macOS-style Frosted Glass Card */}
-        <div className="relative rounded-[28px] bg-slate-950/40 backdrop-blur-2xl backdrop-saturate-150 border border-white/[0.12] p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] overflow-hidden">
+        <div className="relative rounded-[28px] bg-card/85 dark:bg-slate-950/40 backdrop-blur-2xl backdrop-saturate-150 border border-border dark:border-white/[0.12] p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.3)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] overflow-hidden text-card-foreground">
           {/* Subtle top rim light reflection */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent pointer-events-none" />
 
           {/* Card Header & Brand Emblem */}
           <div className="flex flex-col items-center mb-6">
             {/* Security Status Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-black/40 text-cyan-300 border border-cyan-500/25 mb-4 shadow-inner">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-muted/80 dark:bg-black/40 text-primary border border-primary/25 mb-4 shadow-inner">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400"></span>
@@ -182,7 +189,7 @@ export default function LoginPage() {
               />
             </div>
 
-            <p className="text-xs text-[#8a8f9d] font-mono tracking-wide text-center">
+            <p className="text-xs text-muted-foreground font-mono tracking-wide text-center">
               Enter credentials to access the intelligence console
             </p>
           </div>
@@ -243,12 +250,12 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="email"
-                className="text-[11px] font-medium uppercase tracking-wider text-[#8a8f9d] block"
+                className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground block"
               >
                 Work Email
               </Label>
               <div className="relative group">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
@@ -258,7 +265,7 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="pl-10 h-10 bg-white/[0.05] backdrop-blur-md border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl focus-visible:border-cyan-400 focus-visible:bg-white/[0.08] text-xs transition-all"
+                  className="pl-10 h-10 bg-background/80 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl focus-visible:border-cyan-500 focus-visible:bg-background text-xs transition-all"
                   disabled={isLoading}
                   required
                 />
@@ -269,13 +276,13 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="password"
-                  className="text-[11px] font-medium uppercase tracking-wider text-[#8a8f9d] block"
+                  className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground block"
                 >
                   Password
                 </Label>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -285,14 +292,14 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="pl-10 pr-10 h-10 bg-white/[0.05] backdrop-blur-md border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl focus-visible:border-cyan-400 focus-visible:bg-white/[0.08] text-xs font-mono transition-all"
+                  className="pl-10 pr-10 h-10 bg-background/80 backdrop-blur-md border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl focus-visible:border-cyan-500 focus-visible:bg-background text-xs font-mono transition-all"
                   disabled={isLoading}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8a8f9d] hover:text-white transition-colors p-0.5 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-0.5 cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -306,7 +313,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-10 mt-2 bg-cyan-400 hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_24px_rgba(6,182,212,0.4)] active:scale-[0.98]"
+              className="w-full h-10 mt-2 bg-cyan-500 hover:bg-cyan-400 dark:bg-cyan-400 dark:hover:bg-cyan-300 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_24px_rgba(6,182,212,0.35)] active:scale-[0.98]"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -326,10 +333,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/[0.08]" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-mono">
-              <span className="bg-[#0e1017]/80 px-3 py-0.5 rounded-full text-[#8a8f9d] border border-white/[0.06] backdrop-blur-md">
+              <span className="bg-card/90 px-3 py-0.5 rounded-full text-muted-foreground border border-border backdrop-blur-md">
                 or continue with
               </span>
             </div>
@@ -339,7 +346,7 @@ export default function LoginPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-10 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-md text-white border-white/10 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]"
+            className="w-full h-10 bg-background/70 hover:bg-muted/80 backdrop-blur-md text-foreground border-border rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]"
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
           >
@@ -374,18 +381,18 @@ export default function LoginPage() {
           </Button>
 
           {/* Footer Navigation */}
-          <div className="mt-5 text-center text-xs text-[#8a8f9d]">
+          <div className="mt-5 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="text-cyan-400 hover:text-cyan-300 font-semibold hover:underline transition-colors"
+              className="text-cyan-500 dark:text-cyan-400 hover:underline font-semibold transition-colors"
             >
               Create Account
             </Link>
           </div>
 
           {/* Security Disclaimer */}
-          <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-center gap-1.5 text-[10px] text-[#8a8f9d] font-mono">
+          <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <Shield className="w-3 h-3 text-cyan-400 shrink-0" />
             <span>End-to-End Encrypted Session</span>
           </div>

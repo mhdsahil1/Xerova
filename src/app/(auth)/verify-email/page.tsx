@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import BlackHole from "@/components/originkit/ui/blackhole";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 type VerificationStatus =
   | "verifying"
@@ -107,13 +108,13 @@ function VerifyEmailContent() {
   };
 
   return (
-    <div className="relative rounded-[28px] bg-slate-950/40 backdrop-blur-2xl backdrop-saturate-150 border border-white/[0.12] p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] overflow-hidden">
+    <div className="relative rounded-[28px] bg-card/85 dark:bg-slate-950/40 backdrop-blur-2xl backdrop-saturate-150 border border-border dark:border-white/[0.12] p-7 sm:p-8 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.3)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.18)] overflow-hidden text-card-foreground">
       {/* Subtle top rim reflection */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent pointer-events-none" />
 
       {/* Header */}
       <div className="flex flex-col items-center mb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-black/40 text-cyan-300 border border-cyan-500/25 mb-4 shadow-inner">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-medium bg-muted/80 dark:bg-black/40 text-primary border border-primary/25 mb-4 shadow-inner">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-400"></span>
@@ -140,10 +141,10 @@ function VerifyEmailContent() {
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-medium text-white">
+            <h3 className="text-base font-medium text-foreground">
               Verifying Security Token...
             </h3>
-            <p className="text-xs text-[#8a8f9d] font-mono">
+            <p className="text-xs text-muted-foreground font-mono">
               Validating cryptographic credentials against server.
             </p>
           </div>
@@ -162,10 +163,10 @@ function VerifyEmailContent() {
           </div>
 
           <div className="space-y-1.5">
-            <h3 className="text-lg font-semibold text-white">
+            <h3 className="text-lg font-semibold text-foreground">
               Email verified successfully
             </h3>
-            <p className="text-xs text-[#8a8f9d] leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Your email ownership has been confirmed. Your analyst console account is now active and ready for use.
             </p>
           </div>
@@ -190,10 +191,10 @@ function VerifyEmailContent() {
             <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-semibold text-foreground">
               Invalid or expired verification link
             </h3>
-            <p className="text-xs text-[#8a8f9d] leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               This verification link has expired or has already been used. Please request a new verification email below.
             </p>
           </div>
@@ -213,20 +214,20 @@ function VerifyEmailContent() {
                 </div>
               )}
               <div className="relative group">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8a8f9d] group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-cyan-500 dark:group-focus-within:text-cyan-400 transition-colors pointer-events-none" />
                 <Input
                   type="email"
                   placeholder="name@example.com"
                   value={resendEmail}
                   onChange={(e) => setResendEmail(e.target.value)}
-                  className="pl-9 h-9 bg-white/[0.05] border-white/10 text-white placeholder:text-[#8a8f9d]/50 rounded-xl text-xs"
+                  className="pl-9 h-9 bg-background/80 border border-border text-foreground placeholder:text-muted-foreground/60 rounded-xl text-xs"
                   required
                 />
               </div>
               <Button
                 type="submit"
                 disabled={isResending}
-                className="w-full h-9 bg-white/[0.08] hover:bg-white/[0.12] text-white border border-white/10 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
+                className="w-full h-9 bg-muted/60 hover:bg-muted/80 text-foreground border border-border rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
               >
                 {isResending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -243,7 +244,7 @@ function VerifyEmailContent() {
           <div className="text-center pt-1">
             <Link
               href="/login"
-              className="text-xs text-[#8a8f9d] hover:text-white transition-colors"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               &larr; Return to Sign In
             </Link>
@@ -258,15 +259,15 @@ function VerifyEmailContent() {
             <AlertCircle className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-semibold text-foreground">
               Missing Verification Token
             </h3>
-            <p className="text-xs text-[#8a8f9d] leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               No verification token was provided in the URL. Please click the link directly from your email.
             </p>
           </div>
           <Link href="/login" className="block pt-2">
-            <Button variant="outline" className="w-full h-9 text-xs border-white/10 text-white hover:bg-white/[0.08]">
+            <Button variant="outline" className="w-full h-9 text-xs border-border text-foreground hover:bg-muted/60">
               Return to Sign In
             </Button>
           </Link>
@@ -280,15 +281,15 @@ function VerifyEmailContent() {
             <AlertCircle className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-semibold text-foreground">
               Verification Failed
             </h3>
-            <p className="text-xs text-[#8a8f9d] leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {errorMessage || "An unexpected error occurred while communicating with the verification service."}
             </p>
           </div>
           <Link href="/login" className="block pt-2">
-            <Button variant="outline" className="w-full h-9 text-xs border-white/10 text-white hover:bg-white/[0.08]">
+            <Button variant="outline" className="w-full h-9 text-xs border-border text-foreground hover:bg-muted/60">
               Return to Sign In
             </Button>
           </Link>
@@ -300,7 +301,12 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#0a0b0e]">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-canvas-bg text-foreground">
+      {/* Top Bar Controls */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Background Interactive Vortex Simulation */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <BlackHole
@@ -327,8 +333,9 @@ export default function VerifyEmailPage() {
       </div>
 
       {/* Cyber Gradient Overlays */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,rgba(2,6,23,0.35)_45%,rgba(0,0,0,0.85)_100%)] pointer-events-none z-[1]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,rgba(2,6,23,0.35)_45%,rgba(0,0,0,0.85)_100%)] dark:block hidden pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 dark:block hidden pointer-events-none z-[1]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.06)_0%,rgba(240,244,248,0.4)_50%,rgba(226,232,240,0.8)_100%)] dark:hidden block pointer-events-none z-[1]" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 14 }}
@@ -338,8 +345,8 @@ export default function VerifyEmailPage() {
       >
         <Suspense
           fallback={
-            <div className="rounded-[28px] bg-slate-950/40 backdrop-blur-2xl border border-white/[0.12] p-8 text-center text-white">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-400" />
+            <div className="rounded-[28px] bg-card/85 dark:bg-slate-950/40 backdrop-blur-2xl border border-border dark:border-white/[0.12] p-8 text-center text-foreground">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-cyan-500 dark:text-cyan-400" />
             </div>
           }
         >

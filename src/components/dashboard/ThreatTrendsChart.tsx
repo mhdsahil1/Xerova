@@ -38,30 +38,37 @@ export function ThreatTrendsChart({ data }: ThreatTrendsChartProps) {
           </defs>
           <CartesianGrid
             strokeDasharray="2 2"
-            stroke="rgba(255,255,255,0.05)"
+            stroke={chartTheme.gridColor}
             vertical={false}
           />
           <XAxis
             dataKey="date"
-            stroke="#717888"
+            stroke={chartTheme.axisColor}
             fontSize={11}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            stroke="#717888"
+            stroke={chartTheme.axisColor}
             fontSize={11}
             tickLine={false}
             axisLine={false}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#181b24",
-              border: "1px solid rgba(255,255,255,0.12)",
+              backgroundColor: chartTheme.tooltipBg,
+              border: `1px solid ${chartTheme.tooltipBorder}`,
               borderRadius: "10px",
               fontSize: "11px",
-              color: "#ffffff",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+              color: chartTheme.tooltipText,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            }}
+            itemStyle={{
+              color: chartTheme.tooltipText,
+            }}
+            labelStyle={{
+              color: chartTheme.tooltipText,
+              fontWeight: 600,
             }}
           />
           <Area

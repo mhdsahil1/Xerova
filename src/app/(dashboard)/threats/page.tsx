@@ -246,16 +246,16 @@ function ThreatsPageInner() {
 
       {/* Main Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-[#12141a] border border-white/[0.08] p-1 rounded-xl">
-          <TabsTrigger value="lookup" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black font-semibold">
+        <TabsList className="grid w-full grid-cols-3 bg-muted/60 border border-border p-1 rounded-xl">
+          <TabsTrigger value="lookup" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-active:bg-card data-active:text-foreground data-[state=active]:shadow-sm data-active:shadow-sm font-semibold transition-all">
             <Search className="w-4 h-4" />
             Threat Lookup
           </TabsTrigger>
-          <TabsTrigger value="extractor" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black font-semibold">
+          <TabsTrigger value="extractor" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-active:bg-card data-active:text-foreground data-[state=active]:shadow-sm data-active:shadow-sm font-semibold transition-all">
             <FileSearch className="w-4 h-4" />
             IOC Extractor
           </TabsTrigger>
-          <TabsTrigger value="history" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black font-semibold">
+          <TabsTrigger value="history" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-active:bg-card data-active:text-foreground data-[state=active]:shadow-sm data-active:shadow-sm font-semibold transition-all">
             <History className="w-4 h-4" />
             Investigation History
           </TabsTrigger>

@@ -70,13 +70,13 @@ export function AppSidebar() {
   return (
     <aside
       aria-label="Navigation Sidebar"
-      className="shrink-0 flex flex-row md:flex-col items-center justify-between py-3 px-3 md:py-4 md:px-2.5 rounded-2xl bg-[#12141a] border border-white/[0.08] shadow-xl md:w-16 lg:w-18 md:sticky md:top-0 md:self-start z-30"
+      className="shrink-0 flex flex-row md:flex-col items-center justify-between py-3 px-3 md:py-4 md:px-2.5 rounded-2xl bg-sidebar text-sidebar-foreground border border-sidebar-border shadow-xl md:w-16 lg:w-18 md:sticky md:top-0 md:self-start z-30 transition-colors duration-200"
     >
       {/* Top Group: Brand Emblem + Connected Telemetry Pill + Top-Positioned Navigation */}
       <div className="flex md:flex-col items-center gap-2.5 md:gap-3 w-full">
         {/* Brand Emblem */}
         <Tooltip>
-          <TooltipTrigger render={<Link href="/dashboard" className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-transform active:scale-95 flex items-center justify-center" aria-label="XEROVA Dashboard" />}>
+          <TooltipTrigger render={<Link href="/dashboard" className="p-2 rounded-xl bg-sidebar-accent hover:bg-sidebar-accent/80 border border-sidebar-border transition-transform active:scale-95 flex items-center justify-center" aria-label="XEROVA Dashboard" />}>
             <div className="relative flex items-center justify-center w-6 h-6">
               <Image
                 src="/xerova-icon.svg"
@@ -88,7 +88,7 @@ export function AppSidebar() {
               />
             </div>
           </TooltipTrigger>
-          <TooltipContent side="right" className="bg-[#181a24] text-white border-white/10 text-xs font-mono">
+          <TooltipContent side="right" className="bg-popover text-popover-foreground border-border text-xs font-mono shadow-md">
             XEROVA Console
           </TooltipContent>
         </Tooltip>
@@ -98,13 +98,13 @@ export function AppSidebar() {
           <TooltipTrigger render={<div className="hidden md:flex flex-col items-center justify-center w-7 h-7 rounded-full bg-primary/10 border border-primary/20 text-primary cursor-pointer hover:bg-primary/20 transition-colors" />}>
             <span className="text-[10px] font-mono font-bold leading-none">9+</span>
           </TooltipTrigger>
-          <TooltipContent side="right" className="bg-[#181a24] text-white border-white/10 text-xs">
+          <TooltipContent side="right" className="bg-popover text-popover-foreground border-border text-xs shadow-md">
             9 Threat Engines Operational
           </TooltipContent>
         </Tooltip>
 
         {/* Divider */}
-        <div className="hidden md:block w-8 h-px bg-white/[0.08] my-1" />
+        <div className="hidden md:block w-8 h-px bg-sidebar-border my-1" />
 
         {/* Primary Navigation Icons — Positioned at TOP */}
         <nav className="flex md:flex-col items-center gap-2">
@@ -122,8 +122,8 @@ export function AppSidebar() {
                       aria-label={item.title}
                       className={`w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-150 group relative ${
                         isActive
-                          ? "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] font-semibold scale-100"
-                          : "text-[#8a8f9d] hover:text-white hover:bg-white/[0.08]"
+                          ? "bg-foreground text-background shadow-md font-semibold scale-100"
+                          : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                       }`}
                     />
                   }
@@ -139,7 +139,7 @@ export function AppSidebar() {
                 </TooltipTrigger>
                 <TooltipContent
                   side="right"
-                  className="bg-[#181b22] text-white border-white/10 text-xs font-medium px-2.5 py-1"
+                  className="bg-popover text-popover-foreground border-border text-xs font-medium px-2.5 py-1 shadow-md"
                 >
                   {item.title}
                 </TooltipContent>
@@ -150,7 +150,7 @@ export function AppSidebar() {
       </div>
 
       {/* Bottom Group: Profile & Sign Out Controls */}
-      <div className="flex md:flex-col items-center gap-2 md:mt-6 pt-0 md:pt-3 md:border-t md:border-white/[0.06] w-full justify-center">
+      <div className="flex md:flex-col items-center gap-2 md:mt-6 pt-0 md:pt-3 md:border-t md:border-sidebar-border w-full justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -160,7 +160,7 @@ export function AppSidebar() {
               />
             }
           >
-            <Avatar className="h-8 w-8 rounded-full border border-white/10">
+            <Avatar className="h-8 w-8 rounded-full border border-sidebar-border">
               <AvatarImage
                 src={session?.user?.image || ""}
                 alt={session?.user?.name || "Analyst"}
@@ -173,26 +173,26 @@ export function AppSidebar() {
           <DropdownMenuContent
             side="right"
             align="end"
-            className="w-52 bg-[#14161f] border-white/10 text-white rounded-xl shadow-2xl p-1.5"
+            className="w-52 bg-popover border-border text-popover-foreground rounded-xl shadow-2xl p-1.5"
           >
-            <div className="px-2.5 py-2 border-b border-white/[0.06]">
-              <p className="text-xs font-semibold text-white truncate">
+            <div className="px-2.5 py-2 border-b border-border">
+              <p className="text-xs font-semibold text-foreground truncate">
                 {session?.user?.name || "SOC Analyst"}
               </p>
-              <p className="text-[10px] text-[#8a8f9d] truncate font-mono">
+              <p className="text-[10px] text-muted-foreground truncate font-mono">
                 {session?.user?.email || "analyst@xerova.io"}
               </p>
             </div>
             <DropdownMenuItem
-              render={<Link href="/settings" className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-slate-200 hover:text-white rounded-lg hover:bg-white/[0.08] transition-colors" />}
+              render={<Link href="/settings" className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground hover:bg-accent rounded-lg transition-colors" />}
             >
               <Settings className="w-3.5 h-3.5" />
               Settings &amp; Engines
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/[0.06] my-1" />
+            <DropdownMenuSeparator className="bg-border my-1" />
             <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-400 hover:text-rose-300 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-500 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out
@@ -205,14 +205,14 @@ export function AppSidebar() {
             render={
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="hidden md:flex w-8 h-8 rounded-xl items-center justify-center text-[#8a8f9d] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                className="hidden md:flex w-8 h-8 rounded-xl items-center justify-center text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
                 aria-label="Sign out"
               />
             }
           >
             <LogOut className="w-4 h-4" />
           </TooltipTrigger>
-          <TooltipContent side="right" className="bg-[#181b22] text-white border-white/10 text-xs">
+          <TooltipContent side="right" className="bg-popover text-popover-foreground border-border text-xs shadow-md">
             Sign Out
           </TooltipContent>
         </Tooltip>

@@ -19,8 +19,8 @@ export default function CyberGrid() {
     
     // Determine colors based on theme
     const isLight = resolvedTheme === "light";
-    // Light mode: deep purple-blue, Dark mode: cyber cyan
-    const colorRGB = isLight ? "90, 50, 200" : "100, 210, 230";
+    // Light mode: restrained brand teal, Dark mode: cyber cyan
+    const colorRGB = isLight ? "14, 116, 144" : "100, 210, 230";
 
     const resize = () => {
       canvas.width = window.innerWidth;
