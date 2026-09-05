@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import ThreatSearch from "@/models/ThreatSearch";
 
+import { escapeRegex } from "@/lib/sanitize";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -27,7 +29,8 @@ export async function GET(request: Request) {
     const filter: any = { userId: session.user.id };
 
     if (search.trim()) {
-      filter.query = { $regex: search.trim(), $options: "i" };
+      const safeSearch = escapeRegex(search.trim().slice(0, 100));
+      filter.query = { $regex: safeSearch, $options: "i" };
     }
 
     if (type !== "all" && ["ip", "domain", "hash", "url", "cve"].includes(type)) {

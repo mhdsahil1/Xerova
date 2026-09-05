@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { verifyEmailAddress } from "./email-validator";
+import { checkRateLimit } from "./rate-limit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -26,6 +27,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const emailStr = String(credentials.email).trim().toLowerCase();
+        const passwordStr = String(credentials.password);
+
+        // Brute-force protection: max 5 login attempts per 5 minutes per target account
+        const loginRL = checkRateLimit(`login:${emailStr}`, 5, 5 * 60_000);
+        if (!loginRL.allowed) {
+          throw new Error("Too many login attempts. Please wait 5 minutes before trying again.");
+        }
+
         const verification = await verifyEmailAddress(emailStr);
         if (!verification.isValid && verification.isDisposable) {
           throw new Error("Disposable or temporary email accounts are not permitted.");
@@ -34,7 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         await connectDB();
 
         const user = await User.findOne({
-          email: credentials.email,
+          email: emailStr,
         }).select("+password");
 
         if (!user || !user.password) {
@@ -42,7 +51,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
+          passwordStr,
           user.password
         );
 
@@ -65,6 +74,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         await connectDB();

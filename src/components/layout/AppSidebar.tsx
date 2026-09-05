@@ -6,6 +6,7 @@ import Image from "next/image";
 import {
   LayoutDashboard,
   Search,
+  ShieldAlert,
   MessageSquare,
   FileText,
   Settings,
@@ -37,6 +38,11 @@ const navItems = [
     title: "Threat Intelligence",
     href: "/threats",
     icon: Search,
+  },
+  {
+    title: "Vulnerabilities",
+    href: "/vulnerabilities",
+    icon: ShieldAlert,
   },
   {
     title: "AI Assistant",

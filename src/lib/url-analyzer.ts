@@ -175,6 +175,16 @@ export interface URLAnalysisResult {
       threatLevel?: string;
       isTor?: boolean;
     } | null;
+    pulsedive?: {
+      iid: number;
+      indicator: string;
+      type: string;
+      risk: string;
+      riskScore: number;
+      threats: Array<{ tid: number; name: string; category?: string; risk?: string }>;
+      feeds?: Array<{ fid: number; name: string; category?: string }>;
+      stampUpdated?: string;
+    } | null;
     abuseScore: number | null;
     isKnownMalicious: boolean;
     suspiciousReports: number;

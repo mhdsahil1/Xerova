@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Report, { IReportDocument } from "@/models/Report";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,23 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limit: max 20 exports per minute
+    const rl = checkRateLimit(`report-export:${session.user.id}`, 20, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          error: "Export rate limit exceeded. Please wait before exporting more reports.",
+          retryAfterMs: rl.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
+
     const { id } = await params;
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid report ID format" }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") || "json";
 

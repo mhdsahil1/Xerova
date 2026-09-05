@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import ThreatSearch from "@/models/ThreatSearch";
@@ -16,6 +17,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid investigation ID format" }, { status: 400 });
+    }
+
     await connectDB();
 
     const result = await ThreatSearch.deleteOne({

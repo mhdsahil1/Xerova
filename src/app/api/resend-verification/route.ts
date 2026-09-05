@@ -2,11 +2,24 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { sendVerificationEmail } from "@/lib/gmail";
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+    const ipLimit = checkRateLimit(`resend-ip:${clientIp}`, 5, 10 * 60_000);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many verification requests from this network. Please wait a few minutes.",
+          retryAfterMs: ipLimit.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const rawEmail = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
@@ -20,13 +33,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Basic in-memory abuse protection (3 requests per 5 minutes per email)
+    // Abuse protection per email (3 requests per 5 minutes per email)
     const rl = checkRateLimit(`resend:${rawEmail}`, 3, 5 * 60_000);
     if (!rl.allowed) {
       return NextResponse.json(
         {
           success: false,
-          error: "Too many verification requests. Please wait a few minutes before trying again.",
+          error: "Too many verification requests for this account. Please wait a few minutes before trying again.",
           retryAfterMs: rl.retryAfterMs,
         },
         { status: 429 }

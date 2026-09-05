@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Report from "@/models/Report";
@@ -18,6 +19,10 @@ export async function GET(
     }
 
     const { id } = await params;
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid report ID format" }, { status: 400 });
+    }
+
     await connectDB();
 
     const report = await Report.findOne({
@@ -51,7 +56,11 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid report ID format" }, { status: 400 });
+    }
+
+    const body = await request.json().catch(() => ({}));
 
     const validated = reportSchema.partial().safeParse(body);
     if (!validated.success) {
@@ -95,6 +104,10 @@ export async function DELETE(
     }
 
     const { id } = await params;
+    if (!id || !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid report ID format" }, { status: 400 });
+    }
+
     await connectDB();
 
     const result = await Report.deleteOne({

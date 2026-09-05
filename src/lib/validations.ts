@@ -4,10 +4,12 @@ export const loginSchema = z.object({
   email: z
     .string()
     .min(1, "Email is required")
+    .max(255, "Email is too long")
     .email("Please enter a valid email"),
   password: z
     .string()
     .min(1, "Password is required")
+    .max(128, "Password cannot exceed 128 characters")
     .min(8, "Password must be at least 8 characters"),
 });
 
@@ -21,16 +23,18 @@ export const registerSchema = z
     email: z
       .string()
       .min(1, "Email is required")
+      .max(255, "Email is too long")
       .email("Please enter a valid email"),
     password: z
       .string()
       .min(1, "Password is required")
       .min(8, "Password must be at least 8 characters")
+      .max(128, "Password cannot exceed 128 characters")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
         "Password must contain at least one uppercase letter, one lowercase letter, and one number"
       ),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
+    confirmPassword: z.string().min(1, "Please confirm your password").max(128),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -51,37 +55,40 @@ export const reportSchema = z.object({
     .min(1, "Report title is required")
     .max(300, "Title is too long"),
   type: z.enum(["investigation", "threat_analysis", "incident"]),
-  summary: z.string().optional().default(""),
+  summary: z.string().max(10000, "Summary is too long").optional().default(""),
   findings: z
     .array(
       z.object({
-        title: z.string().min(1),
-        description: z.string().min(1),
+        title: z.string().min(1).max(300),
+        description: z.string().min(1).max(5000),
         severity: z.enum(["critical", "high", "medium", "low", "info"]),
-        evidence: z.string().optional().default(""),
+        evidence: z.string().max(10000).optional().default(""),
       })
     )
+    .max(100, "Too many findings in a single report")
     .optional()
     .default([]),
   iocs: z
     .array(
       z.object({
         type: z.enum(["ip", "domain", "hash", "url", "email", "cve"]),
-        value: z.string().min(1),
-        context: z.string().optional().default(""),
+        value: z.string().min(1).max(2048),
+        context: z.string().max(1000).optional().default(""),
       })
     )
+    .max(200, "Too many IOCs in a single report")
     .optional()
     .default([]),
   threatEvidence: z
     .array(
       z.object({
-        source: z.string().min(1),
-        description: z.string().min(1),
+        source: z.string().min(1).max(200),
+        description: z.string().min(1).max(5000),
         severity: z.enum(["critical", "high", "medium", "low", "info"]),
-        date: z.string().optional().default(""),
+        date: z.string().max(100).optional().default(""),
       })
     )
+    .max(100, "Too much threat evidence in a single report")
     .optional()
     .default([]),
   riskScore: z.number().min(0).max(100).optional().default(0),

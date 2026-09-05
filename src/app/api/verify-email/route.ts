@@ -2,9 +2,23 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+    const rl = checkRateLimit(`verify-ip:${clientIp}`, 20, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Too many verification attempts. Please wait a moment before trying again.",
+          retryAfterMs: rl.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get("token");
 

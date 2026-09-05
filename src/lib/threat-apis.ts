@@ -14,7 +14,10 @@ import type {
   URLScanData,
   CheckPhishData,
   CloudmersiveData,
+  PulsediveData,
 } from "../types";
+import { pulsediveLookup, pulsediveThreatLookup, pulsediveExplore } from "./pulsedive";
+export { pulsediveLookup, pulsediveThreatLookup, pulsediveExplore };
 
 // ---- In-Memory Cache ----
 interface CacheEntry {
@@ -874,98 +877,20 @@ export async function vxvaultGetLiveFeed(limit = 10): Promise<Array<{ url: strin
 
 // ============================================================
 // NVD (National Vulnerability Database)
+// Powered by authenticated NVD API 2.0 client
 // ============================================================
-const NVD_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0";
+import { getNVD_CVE, searchNVD_CVEs } from "./nvd";
 
 export async function nvdLookupCVE(cveId: string) {
-  const cacheKey = `nvd:${cveId}`;
-  const cached = getCached<Record<string, unknown>>(cacheKey);
-  if (cached) return cached;
-
   try {
-    const res = await safeFetch(`${NVD_BASE}?cveId=${cveId}`, {}, 15_000);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const vuln = json?.vulnerabilities?.[0]?.cve;
-    if (!vuln) return null;
-
-    // Extract CVSS score — try 3.1, then 3.0, then 2.0
-    const metrics =
-      vuln.metrics?.cvssMetricV31?.[0] ??
-      vuln.metrics?.cvssMetricV30?.[0] ??
-      null;
-    const cvss2 = vuln.metrics?.cvssMetricV2?.[0];
-
-    const cvssScore = metrics?.cvssData?.baseScore ?? cvss2?.cvssData?.baseScore ?? 0;
-    const cvssVector =
-      metrics?.cvssData?.vectorString ?? cvss2?.cvssData?.vectorString ?? "";
-    const exploitabilityScore = metrics?.exploitabilityScore ?? 0;
-
-    const description =
-      vuln.descriptions?.find((d: Record<string, string>) => d.lang === "en")?.value ?? "";
-
-    const affectedProducts: { vendor: string; product: string; versions: string[] }[] =
-      [];
-    const configs = vuln.configurations ?? [];
-    for (const config of configs) {
-      for (const node of config.nodes ?? []) {
-        for (const match of node.cpeMatch ?? []) {
-          const parts = (match.criteria ?? "").split(":");
-          if (parts.length >= 5) {
-            const vendor = parts[3] ?? "";
-            const product = parts[4] ?? "";
-            const version = parts[5] ?? "*";
-            const existing = affectedProducts.find(
-              (p) => p.vendor === vendor && p.product === product
-            );
-            if (existing) {
-              if (!existing.versions.includes(version)) existing.versions.push(version);
-            } else {
-              affectedProducts.push({ vendor, product, versions: [version] });
-            }
-          }
-        }
-      }
-    }
-
-    const references = (vuln.references ?? []).map(
-      (ref: Record<string, unknown>) => ({
-        url: ref.url ?? "",
-        source: ref.source ?? "",
-        tags: ref.tags ?? [],
-      })
-    );
-
-    const cwes: string[] = [];
-    for (const weakness of vuln.weaknesses ?? []) {
-      for (const desc of weakness.description ?? []) {
-        if (desc.lang === "en" && desc.value) cwes.push(desc.value);
-      }
-    }
-
-    const result = {
-      id: vuln.id ?? cveId,
-      description,
-      cvssScore,
-      cvssVector,
-      severity: scoreToSeverity(cvssScore * 10),
-      publishedDate: vuln.published
-        ? new Date(vuln.published).toISOString().slice(0, 10)
-        : "",
-      modifiedDate: vuln.lastModified
-        ? new Date(vuln.lastModified).toISOString().slice(0, 10)
-        : "",
-      affectedProducts,
-      references,
-      cwe: cwes,
-      exploitAvailable: exploitabilityScore > 3,
-      patchAvailable: references.some(
-        (r: { tags: string[] }) =>
-          r.tags.includes("Patch") || r.tags.includes("Mitigation")
-      ),
+    const data = await getNVD_CVE(cveId, true); // Fetches details + change history
+    if (!data) return null;
+    return {
+      ...data,
+      publishedDate: data.published ? data.published.slice(0, 10) : "",
+      modifiedDate: data.lastModified ? data.lastModified.slice(0, 10) : "",
+      cwe: data.weaknesses,
     };
-    setCache(cacheKey, result);
-    return result;
   } catch (e) {
     console.error("[NVD] CVE lookup failed:", (e as Error).message);
     return null;
@@ -973,49 +898,21 @@ export async function nvdLookupCVE(cveId: string) {
 }
 
 export async function nvdLatestCVEs(limit = 8) {
-  const cacheKey = "nvd:latest";
-  const cached = getCached<unknown[]>(cacheKey);
-  if (cached) return cached;
-
   try {
-    // Fetch recent critical/high CVEs
-    const res = await safeFetch(
-      `${NVD_BASE}?cvssV3Severity=CRITICAL&resultsPerPage=${limit}`,
-      {},
-      15_000
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    const vulns = json?.vulnerabilities ?? [];
+    // Fetch recent high/critical CVEs from authenticated NVD 2.0 feed
+    const res = await searchNVD_CVEs({
+      daysBack: 60,
+      resultsPerPage: limit,
+    });
 
-    const results = vulns.map(
-      (v: { cve: Record<string, unknown> }) => {
-        const cve = v.cve as Record<string, unknown>;
-        const metrics =
-          (cve.metrics as Record<string, unknown[]>)?.cvssMetricV31?.[0] ??
-          (cve.metrics as Record<string, unknown[]>)?.cvssMetricV30?.[0];
-        const cvss =
-          (metrics as Record<string, Record<string, number>>)?.cvssData?.baseScore ?? 0;
-        const desc =
-          (cve.descriptions as { lang: string; value: string }[])?.find(
-            (d) => d.lang === "en"
-          )?.value ?? "";
-
-        return {
-          id: cve.id ?? "",
-          title: desc.slice(0, 80) + (desc.length > 80 ? "..." : ""),
-          severity: scoreToSeverity(cvss * 10),
-          cvss,
-          published: cve.published
-            ? new Date(cve.published as string).toISOString().slice(0, 10)
-            : "",
-          description: desc,
-        };
-      }
-    );
-
-    setCache(cacheKey, results, CVE_CACHE_TTL);
-    return results;
+    return res.vulnerabilities.map((cve) => ({
+      id: cve.id,
+      title: cve.title,
+      severity: cve.severity,
+      cvss: cve.cvssScore,
+      published: cve.published ? cve.published.slice(0, 10) : "",
+      description: cve.description,
+    }));
   } catch (e) {
     console.error("[NVD] Latest CVEs fetch failed:", (e as Error).message);
     return [];
@@ -1563,7 +1460,7 @@ export async function cloudmersiveScanIP(ip: string): Promise<CloudmersiveData |
 // Merged IP Lookup (all engines in parallel)
 // ============================================================
 export async function mergedIPLookup(ip: string) {
-  const [vt, abuse, shodan, cip, abusix, ip2loc, hostedDomains, ipstack, cmIP] = await Promise.all([
+  const [vt, abuse, shodan, cip, abusix, ip2loc, hostedDomains, ipstack, cmIP, pulsedive] = await Promise.all([
     vtLookupIP(ip),
     abuseIPDBLookup(ip),
     shodanLookupIP(ip),
@@ -1573,6 +1470,7 @@ export async function mergedIPLookup(ip: string) {
     ip2WhoisHostedDomains(ip),
     ipstackLookupIP(ip),
     cloudmersiveScanIP(ip),
+    pulsediveLookup(ip),
   ]);
 
   const sources: string[] = [];
@@ -1585,6 +1483,7 @@ export async function mergedIPLookup(ip: string) {
   if (hostedDomains && hostedDomains.totalDomains > 0) sources.push("IP2WHOIS");
   if (ipstack) sources.push("IPStack");
   if (cmIP) sources.push("Cloudmersive");
+  if (pulsedive) sources.push("Pulsedive");
 
   // Merge: prefer AbuseIPDB/IP2Location/IPStack for geo, Shodan for ports, VT for reputation
   const abuseScore = abuse?.abuseConfidenceScore ?? 0;
@@ -1615,6 +1514,9 @@ export async function mergedIPLookup(ip: string) {
   // Cloudmersive IP threat check
   const cmThreatScore = cmIP?.isThreat ? 75 : 0;
 
+  // Pulsedive threat score
+  const pdScore = pulsedive?.riskScore || 0;
+
   // Composite risk score — takes the maximum across all sources
   const riskScore = Math.min(
     100,
@@ -1626,7 +1528,8 @@ export async function mergedIPLookup(ip: string) {
       abusixScore,
       ip2locProxyScore,
       ipstackThreatScore,
-      cmThreatScore
+      cmThreatScore,
+      pdScore
     )
   );
 
@@ -1670,7 +1573,7 @@ export async function mergedIPLookup(ip: string) {
         ...((abuse?.hostnames as string[]) ?? []),
       ]),
     ],
-    threats: buildThreats(vt, abuse, shodan, cip, abusix, ip2loc, ipstack, cmIP),
+    threats: buildThreats(vt, abuse, shodan, cip, abusix, ip2loc, ipstack, cmIP, pulsedive),
     whois: parseWhoisString((vt?.whois as string) || ""),
     vtAnalysisStats: vt?.lastAnalysisStats ?? null,
     criminalIP: cip ? {
@@ -1731,6 +1634,7 @@ export async function mergedIPLookup(ip: string) {
       threatType: cmIP.threatType,
       foundViruses: cmIP.foundViruses,
     } : null,
+    pulsedive: pulsedive || null,
     sources,
     riskScore,
     severity: scoreToSeverity(riskScore),
@@ -1745,7 +1649,8 @@ function buildThreats(
   abusix?: Record<string, unknown> | null,
   ip2loc?: IP2LocationData | Record<string, unknown> | null,
   ipstack?: IPStackData | null,
-  cmIP?: CloudmersiveData | null
+  cmIP?: CloudmersiveData | null,
+  pulsedive?: PulsediveData | null
 ) {
   const threats: { source: string; description: string; date: string; severity: string }[] = [];
 
@@ -1860,6 +1765,29 @@ function buildThreats(
     });
   }
 
+  // Pulsedive Threat Intelligence
+  if (pulsedive) {
+    if (pulsedive.riskScore >= 50 || pulsedive.risk === "critical" || pulsedive.risk === "high") {
+      threats.push({
+        source: "Pulsedive",
+        description: `Pulsedive Risk: ${pulsedive.risk.toUpperCase()} (${pulsedive.riskScore}/100)${
+          pulsedive.threats.length > 0
+            ? ` — Associated Threats: ${pulsedive.threats.map((t) => t.name).slice(0, 3).join(", ")}`
+            : ""
+        }`,
+        date: pulsedive.stampUpdated ? pulsedive.stampUpdated.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        severity: pulsedive.risk === "critical" ? "critical" : "high",
+      });
+    } else if (pulsedive.threats.length > 0) {
+      threats.push({
+        source: "Pulsedive",
+        description: `Associated Threats: ${pulsedive.threats.map((t) => t.name).slice(0, 3).join(", ")}`,
+        date: pulsedive.stampUpdated ? pulsedive.stampUpdated.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        severity: "medium",
+      });
+    }
+  }
+
   // Add latest abuse reports as threats
   const reports = (abuse?.reports as { reportedAt: string; comment: string; categories: number[] }[]) ?? [];
   for (const report of reports.slice(0, 2)) {
@@ -1911,7 +1839,7 @@ function parseWhoisString(whois: string): Record<string, string> {
 // Merged Domain Lookup
 // ============================================================
 export async function mergedDomainLookup(domain: string) {
-  const [vt, shodanDns, cipDomain, alphaDomain, urlqueryDomain, ip2whois, urlscanDomain, phishstatsDomain, gsbDomain] = await Promise.all([
+  const [vt, shodanDns, cipDomain, alphaDomain, urlqueryDomain, ip2whois, urlscanDomain, phishstatsDomain, gsbDomain, pulsedive] = await Promise.all([
     vtLookupDomain(domain),
     shodanResolveDomain(domain),
     criminalIPScanDomain(domain),
@@ -1921,6 +1849,7 @@ export async function mergedDomainLookup(domain: string) {
     urlscanLookup(domain),
     phishstatsLookupDomain(domain),
     googleSafeBrowsingLookup(domain),
+    pulsediveLookup(domain),
   ]);
 
   // If Shodan resolved an IP, also look it up
@@ -1940,6 +1869,7 @@ export async function mergedDomainLookup(domain: string) {
   if (urlscanDomain) sources.push("urlscan.io");
   if (phishstatsDomain) sources.push("PhishStats");
   if (gsbDomain) sources.push("Google Safe Browsing");
+  if (pulsedive) sources.push("Pulsedive");
 
   const vtMalicious = (vt?.lastAnalysisStats as Record<string, number>)?.malicious ?? 0;
   const vtTotal =
@@ -1964,6 +1894,9 @@ export async function mergedDomainLookup(domain: string) {
   // Google Safe Browsing risk
   const gsbRisk = gsbDomain?.isThreat ? 85 : 0;
 
+  // Pulsedive risk
+  const pdRisk = pulsedive?.riskScore || 0;
+
   // Newly Registered Domain (NRD) risk
   let nrdRisk = 0;
   if (typeof ip2whois?.domainAge === "number") {
@@ -1974,7 +1907,7 @@ export async function mergedDomainLookup(domain: string) {
     }
   }
 
-  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, alphaRisk, nrdRisk, urlscanRisk, phishstatsRisk, gsbRisk));
+  const riskScore = Math.min(100, Math.max(vtRisk, cipDomainRisk, alphaRisk, nrdRisk, urlscanRisk, phishstatsRisk, gsbRisk, pdRisk));
 
   // Parse DNS records from VT
   const dnsRecords = ((vt?.lastDnsRecords as Record<string, unknown>[]) ?? []).map(
@@ -2091,6 +2024,28 @@ export async function mergedDomainLookup(domain: string) {
     });
   }
 
+  if (pulsedive) {
+    if (pulsedive.riskScore >= 50 || pulsedive.risk === "critical" || pulsedive.risk === "high") {
+      domainThreats.push({
+        source: "Pulsedive",
+        description: `Pulsedive Risk: ${pulsedive.risk.toUpperCase()} (${pulsedive.riskScore}/100)${
+          pulsedive.threats.length > 0
+            ? ` — Associated Threats: ${pulsedive.threats.map((t) => t.name).slice(0, 3).join(", ")}`
+            : ""
+        }`,
+        date: pulsedive.stampUpdated ? pulsedive.stampUpdated.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        severity: pulsedive.risk === "critical" ? "critical" : "high",
+      });
+    } else if (pulsedive.threats.length > 0) {
+      domainThreats.push({
+        source: "Pulsedive",
+        description: `Associated Threats: ${pulsedive.threats.map((t) => t.name).slice(0, 3).join(", ")}`,
+        date: pulsedive.stampUpdated ? pulsedive.stampUpdated.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        severity: "medium",
+      });
+    }
+  }
+
   return {
     domain,
     registrar: (ip2whois?.registrar as Record<string, string>)?.name || vt?.registrar || whoisData["Registrar"] || "Unknown",
@@ -2179,6 +2134,7 @@ export async function mergedDomainLookup(domain: string) {
       threatTypes: gsbDomain.threatTypes,
       platformTypes: gsbDomain.platformTypes,
     } : null,
+    pulsedive: pulsedive || null,
     threats: domainThreats,
     sources,
     riskScore,
@@ -2188,21 +2144,25 @@ export async function mergedDomainLookup(domain: string) {
 
 
 // ============================================================
-// Merged Hash Lookup (VirusTotal)
+// Merged Hash Lookup (VirusTotal & Pulsedive)
 // ============================================================
 export async function mergedHashLookup(hash: string) {
-  const vtData = await vtLookupHash(hash);
+  const [vtData, pdData] = await Promise.all([
+    vtLookupHash(hash),
+    pulsediveLookup(hash),
+  ]);
 
   const sources: string[] = [];
   if (vtData) sources.push("VirusTotal");
+  if (pdData) sources.push("Pulsedive");
 
-  if (!vtData) {
+  if (!vtData && !pdData) {
     return {
       hash,
       sources: [],
       riskScore: 0,
       severity: "info",
-      error: "Hash not found in VirusTotal database.",
+      error: "Hash not found in threat intelligence databases.",
     };
   }
 
@@ -2216,13 +2176,17 @@ export async function mergedHashLookup(hash: string) {
     detectionRate = `${malicious}/${total}`;
   }
 
-  const riskScore = vtScore;
+  const pdScore = pdData?.riskScore || 0;
+  const riskScore = Math.min(100, Math.max(vtScore, pdScore));
   const allTags = [...((vtData?.tags as string[]) || [])];
+  if (pdData?.threats?.length) {
+    allTags.push(...pdData.threats.map((t) => t.name));
+  }
 
   return {
     hash,
-    meaningfulName: vtData?.meaningfulName || "File Hash Analysis",
-    fileType: vtData?.fileType || "",
+    meaningfulName: vtData?.meaningfulName || (pdData ? `Pulsedive Artifact: ${pdData.indicator}` : "File Hash Analysis"),
+    fileType: vtData?.fileType || pdData?.type || "",
     fileSize: vtData?.fileSize || 0,
     md5: vtData?.md5 || "",
     sha1: vtData?.sha1 || "",
@@ -2231,6 +2195,7 @@ export async function mergedHashLookup(hash: string) {
     lastAnalysisStats: vtData?.lastAnalysisStats || null,
     tags: [...new Set(allTags)].slice(0, 15),
     otx: null,
+    pulsedive: pdData || null,
     sources,
     riskScore,
     severity: scoreToSeverity(riskScore),

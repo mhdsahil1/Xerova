@@ -377,9 +377,18 @@ export default function DashboardPage() {
               <AlertTriangle className="w-4 h-4 text-status-warning" />
               <span className="text-sm font-semibold text-foreground">Latest Vulnerabilities</span>
             </div>
-            <Badge variant="outline" className="text-xs font-mono">
-              NVD Feed
-            </Badge>
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/vulnerabilities"
+                className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+              >
+                <span>View All</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+              <Badge variant="outline" className="text-xs font-mono">
+                NVD Feed
+              </Badge>
+            </div>
           </div>
           <LatestCVEs data={cvesData || []} />
         </Card>

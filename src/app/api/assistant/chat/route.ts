@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { generateAssistantReply } from "@/lib/ai-assistant";
 import { connectDB } from "@/lib/db";
 import Conversation from "@/models/Conversation";
+import mongoose from "mongoose";
 
 export async function POST(request: Request) {
   try {
@@ -85,76 +86,84 @@ export async function POST(request: Request) {
       contextStr
     );
 
-    // Store conversation in DB (fire-and-forget)
+    // Store conversation in DB
     const userId = session.user.id;
     const lastUserMessage = validMessages[validMessages.length - 1];
+    let resolvedConversationId: string | undefined = undefined;
 
-    connectDB()
-      .then(async () => {
-        if (conversationId) {
-          // Append to existing conversation
-          await Conversation.findOneAndUpdate(
-            { _id: conversationId, userId },
-            {
-              $push: {
-                messages: {
-                  $each: [
-                    {
-                      id: `msg-${Date.now()}`,
-                      role: lastUserMessage.role,
-                      content: lastUserMessage.content,
-                      timestamp: new Date(),
-                    },
-                    {
-                      id: `msg-${Date.now() + 1}`,
-                      role: "assistant",
-                      content: response,
-                      timestamp: new Date(),
-                    },
-                  ],
-                },
+    try {
+      await connectDB();
+
+      const isValidConvId = conversationId && typeof conversationId === "string" && mongoose.isValidObjectId(conversationId);
+
+      if (isValidConvId) {
+        // Append to existing conversation
+        const updated = await Conversation.findOneAndUpdate(
+          { _id: conversationId, userId },
+          {
+            $push: {
+              messages: {
+                $each: [
+                  {
+                    id: `msg-${Date.now()}`,
+                    role: lastUserMessage.role,
+                    content: lastUserMessage.content,
+                    timestamp: new Date(),
+                  },
+                  {
+                    id: `msg-${Date.now() + 1}`,
+                    role: "assistant",
+                    content: response,
+                    timestamp: new Date(),
+                  },
+                ],
               },
-              $set: { updatedAt: new Date() },
-            }
-          );
-        } else {
-          // Create new conversation
-          const title =
-            lastUserMessage.content.slice(0, 60) +
-            (lastUserMessage.content.length > 60 ? "..." : "");
-          const conv = await Conversation.create({
-            userId,
-            title,
-            messages: [
-              {
-                id: `msg-${Date.now()}`,
-                role: lastUserMessage.role,
-                content: lastUserMessage.content,
-                timestamp: new Date(),
-              },
-              {
-                id: `msg-${Date.now() + 1}`,
-                role: "assistant",
-                content: response,
-                timestamp: new Date(),
-              },
-            ],
-          });
-          // Return the conversation ID so the client can continue the conversation
-          return conv._id;
+            },
+            $set: { updatedAt: new Date() },
+          },
+          { new: true }
+        );
+        if (updated) {
+          resolvedConversationId = updated._id.toString();
         }
-      })
-      .catch((e) => console.error("Failed to store conversation:", e));
+      }
+
+      if (!resolvedConversationId) {
+        // Create new conversation
+        const title =
+          lastUserMessage.content.slice(0, 60) +
+          (lastUserMessage.content.length > 60 ? "..." : "");
+        const conv = await Conversation.create({
+          userId,
+          title,
+          messages: [
+            {
+              id: `msg-${Date.now()}`,
+              role: lastUserMessage.role,
+              content: lastUserMessage.content,
+              timestamp: new Date(),
+            },
+            {
+              id: `msg-${Date.now() + 1}`,
+              role: "assistant",
+              content: response,
+              timestamp: new Date(),
+            },
+          ],
+        });
+        resolvedConversationId = conv._id.toString();
+      }
+    } catch (dbError) {
+      console.error("[Assistant Chat] Failed to persist conversation history:", dbError instanceof Error ? dbError.message : "Unknown error");
+    }
 
     return NextResponse.json({
       response,
       provider,
-      conversationId: conversationId || undefined,
+      conversationId: resolvedConversationId || undefined,
     });
   } catch (error) {
-    const msg =
-      error instanceof Error ? error.message : "An unexpected error occurred";
-    console.error("[Assistant Chat Error]:", msg);
+    console.error("[Assistant Chat Error]:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
       { error: "Failed to process chat message" },
       { status: 500 }

@@ -46,6 +46,7 @@ import {
   ipstackLookupIP,
   getIPStackKey,
 } from "./threat-apis";
+import { pulsediveLookup, getPulsediveKey } from "./pulsedive";
 
 import {
   parseURL,
@@ -327,6 +328,18 @@ export async function analyzeURL(urlString: string): Promise<URLAnalysisResult> 
     });
   }
 
+  if (pResults["Pulsedive"]?.status === "threat") {
+    allFindings.push({
+      category: "Threat Intelligence",
+      severity: threatIntelData.pulsedive?.risk === "critical" ? "CRITICAL" : "HIGH",
+      description: `Pulsedive: Indicator flagged as ${threatIntelData.pulsedive?.risk?.toUpperCase()} risk (${threatIntelData.pulsedive?.riskScore}/100)${
+        threatIntelData.pulsedive?.threats?.length
+          ? ` associated with ${threatIntelData.pulsedive.threats.map((t) => t.name).join(", ")}`
+          : ""
+      }.`,
+    });
+  }
+
   // Sort findings by severity
   const severityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   allFindings.sort(
@@ -383,6 +396,7 @@ interface ThreatIntelData {
   cloudmersive: URLAnalysisResult["threatIntelligence"]["cloudmersive"];
   googleSafeBrowsing?: URLAnalysisResult["threatIntelligence"]["googleSafeBrowsing"];
   ipstack?: URLAnalysisResult["threatIntelligence"]["ipstack"];
+  pulsedive?: URLAnalysisResult["threatIntelligence"]["pulsedive"];
   ip2whois?: { domainAge: number | null; registrar: string; createDate: string } | null;
   ip2location?: { countryName: string; cityName: string; isProxy: boolean } | null;
   abuseScore: number | null;
@@ -413,6 +427,7 @@ async function fetchThreatIntelligence(
     cloudmersive: null,
     googleSafeBrowsing: null,
     ipstack: null,
+    pulsedive: null,
     ip2whois: null,
     ip2location: null,
     abuseScore: null,
@@ -1518,6 +1533,63 @@ async function fetchThreatIntelligence(
         })()
       );
     }
+  }
+
+  // ============================================================
+  // 16. Pulsedive
+  // Relevance: URL, Domain, IP
+  // ============================================================
+  if (!getPulsediveKey()) {
+    markUnavailable("Pulsedive", "PULSEDIVE_API_KEY is not configured");
+  } else {
+    queries.push(
+      (async () => {
+        try {
+          const pdTarget = targetType === "ip" && parsed.ipAddress ? parsed.ipAddress : targetType === "domain" && parsed.domain ? parsed.domain : urlString;
+          const pdData = await withTimeout(pulsediveLookup(pdTarget));
+          if (pdData) {
+            data.pulsedive = pdData;
+            const isThreat = pdData.riskScore >= 50 || pdData.risk === "critical" || pdData.risk === "high";
+            const threatNames = pdData.threats.map((t) => t.name).join(", ");
+            const evidence = isThreat
+              ? [`Pulsedive risk level: ${pdData.risk.toUpperCase()} (${pdData.riskScore}/100)${threatNames ? ` — Associated Threats: ${threatNames}` : ""}`]
+              : pdData.threats.length > 0
+                ? [`Associated threats found: ${threatNames}`]
+                : ["Indicator clean / not flagged in Pulsedive database"];
+
+            providerResults["Pulsedive"] = {
+              provider: "Pulsedive",
+              status: isThreat ? "threat" : "clean",
+              evidence,
+              scoreContribution: isThreat ? Math.min(70, pdData.riskScore) : pdData.riskScore > 0 ? 20 : 0,
+              relevance: "exact",
+              details: {
+                iid: pdData.iid,
+                indicator: pdData.indicator,
+                risk: pdData.risk,
+                riskScore: pdData.riskScore,
+                threats: pdData.threats,
+                feeds: pdData.feeds,
+              },
+            };
+
+            if (isThreat) {
+              data.isKnownMalicious = true;
+              data.suspiciousReports += 10;
+            }
+          } else {
+            providerResults["Pulsedive"] = {
+              provider: "Pulsedive",
+              status: "clean",
+              evidence: ["Indicator clean / not flagged in Pulsedive"],
+              scoreContribution: 0,
+            };
+          }
+        } catch (err) {
+          recordFailure("Pulsedive", err);
+        }
+      })()
+    );
   }
 
   // Domain Metadata Lookups (IP2WHOIS)

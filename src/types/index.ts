@@ -196,6 +196,38 @@ export interface GoogleSafeBrowsingData {
   }>;
 }
 
+export interface PulsediveThreat {
+  tid: number;
+  name: string;
+  category?: string;
+  risk?: string;
+  stamp_linked?: string;
+}
+
+export interface PulsediveFeed {
+  fid: number;
+  name: string;
+  category?: string;
+  organization?: string;
+}
+
+export interface PulsediveData {
+  iid: number;
+  indicator: string;
+  type: string;
+  risk: "none" | "low" | "medium" | "high" | "critical" | "unknown";
+  riskScore: number;
+  riskRecommended?: string;
+  retired?: boolean;
+  threats: PulsediveThreat[];
+  feeds?: PulsediveFeed[];
+  stampAdded?: string;
+  stampUpdated?: string;
+  stampSeen?: string;
+  properties?: Record<string, unknown>;
+  error?: string;
+}
+
 export type TargetClassification = "url" | "domain" | "ip";
 
 export interface AnalysisCoverage {
@@ -256,6 +288,7 @@ export interface IPResult {
   ipstack?: IPStackData | null;
   hostedDomains?: HostedDomainsData | null;
   cloudmersive?: CloudmersiveData | null;
+  pulsedive?: PulsediveData | null;
   sources?: string[];
   riskScore?: number;
   severity?: SeverityLevel;
@@ -278,6 +311,7 @@ export interface DomainResult {
   urlscan?: URLScanData | null;
   phishstats?: PhishStatsData | null;
   googleSafeBrowsing?: GoogleSafeBrowsingData | null;
+  pulsedive?: PulsediveData | null;
   sources?: string[];
   riskScore?: number;
   severity?: SeverityLevel;
@@ -310,6 +344,7 @@ export interface HashResult {
   firstSeen?: string;
   lastSeen?: string;
   tags: string[];
+  pulsedive?: PulsediveData | null;
 }
 
 export interface Detection {

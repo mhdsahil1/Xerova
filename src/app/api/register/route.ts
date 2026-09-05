@@ -6,10 +6,25 @@ import User from "@/models/User";
 import { registerSchema } from "@/lib/validations";
 import { verifyEmailAddress } from "@/lib/email-validator";
 import { sendVerificationEmail } from "@/lib/gmail";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const clientIp = getClientIp(request);
+
+    // Rate limit per IP: 5 registration requests per 10 minutes
+    const ipLimit = checkRateLimit(`reg-ip:${clientIp}`, 5, 10 * 60_000);
+    if (!ipLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Too many registration requests from this network. Please try again later.",
+          retryAfterMs: ipLimit.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
 
     // Validate input
     const validatedData = registerSchema.safeParse(body);
@@ -21,9 +36,22 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password } = validatedData.data;
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Rate limit per email target: 3 per 10 minutes
+    const emailLimit = checkRateLimit(`reg-email:${cleanEmail}`, 3, 10 * 60_000);
+    if (!emailLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Too many attempts for this email address. Please try again later.",
+          retryAfterMs: emailLimit.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
 
     // Verify email address against spam/fake/disposable databases
-    const emailVerification = await verifyEmailAddress(email);
+    const emailVerification = await verifyEmailAddress(cleanEmail);
     if (!emailVerification.isValid) {
       return NextResponse.json(
         { error: emailVerification.reason || "Invalid or disposable email address." },
@@ -34,7 +62,7 @@ export async function POST(request: Request) {
     await connectDB();
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return NextResponse.json(
         { error: "An account with this email already exists" },

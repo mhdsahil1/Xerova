@@ -84,9 +84,12 @@ export async function geminiChat(
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000); // 30s timeout
 
-    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    const res = await fetch(GEMINI_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": GEMINI_API_KEY,
+      },
       body: JSON.stringify({
         contents,
         generationConfig: {

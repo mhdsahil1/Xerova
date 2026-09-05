@@ -31,10 +31,19 @@ export async function sendEmail({
   subject: string;
   html: string;
 }) {
+  // Strip CRLF characters to prevent email header injection
+  const safeTo = to.replace(/[\r\n]+/g, "").trim();
+  const safeSubject = subject.replace(/[\r\n]+/g, "").trim();
+  const safeFromUser = (process.env.GMAIL_USER || "").replace(/[\r\n]+/g, "").trim();
+
+  if (!safeTo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeTo)) {
+    throw new Error("Invalid recipient email address");
+  }
+
   const message = [
-    `From: XEROVA <${process.env.GMAIL_USER}>`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
+    `From: XEROVA <${safeFromUser}>`,
+    `To: ${safeTo}`,
+    `Subject: ${safeSubject}`,
     "MIME-Version: 1.0",
     "Content-Type: text/html; charset=UTF-8",
     "",
@@ -65,6 +74,11 @@ export async function sendVerificationEmail({
   name: string;
   verificationUrl: string;
 }) {
+  // Validate verification URL protocol
+  if (!/^https?:\/\//i.test(verificationUrl)) {
+    throw new Error("Invalid verification URL protocol");
+  }
+
   const safeName = (name || "Analyst")
     .replace(/[&<>'"]/g, 
       (tag) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)

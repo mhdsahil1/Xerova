@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Report from "@/models/Report";
 import { reportSchema } from "@/lib/validations";
+import { escapeRegex } from "@/lib/sanitize";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +27,12 @@ export async function GET(request: Request) {
     const filter: any = { userId: session.user.id };
 
     if (search.trim()) {
+      const safeSearch = escapeRegex(search.trim().slice(0, 100));
       filter.$or = [
-        { title: { $regex: search.trim(), $options: "i" } },
-        { summary: { $regex: search.trim(), $options: "i" } },
-        { "iocs.value": { $regex: search.trim(), $options: "i" } },
-        { "findings.title": { $regex: search.trim(), $options: "i" } },
+        { title: { $regex: safeSearch, $options: "i" } },
+        { summary: { $regex: safeSearch, $options: "i" } },
+        { "iocs.value": { $regex: safeSearch, $options: "i" } },
+        { "findings.title": { $regex: safeSearch, $options: "i" } },
       ];
     }
 
@@ -64,7 +67,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    // Rate limit: max 30 report creations per minute
+    const rl = checkRateLimit(`report-create:${session.user.id}`, 30, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded. Please wait before creating more reports.",
+          retryAfterMs: rl.retryAfterMs,
+        },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json().catch(() => ({}));
     const validated = reportSchema.safeParse(body);
     if (!validated.success) {
       return NextResponse.json(

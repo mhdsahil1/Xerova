@@ -29,6 +29,8 @@ import {
   Compass,
   Layers,
   ShieldCheck,
+  QrCode,
+  Radio,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,6 +43,8 @@ import { CreateReportDialog } from "@/components/reports/CreateReportDialog";
 import type { ExtractedIOC } from "@/lib/ioc-extractor";
 import { KineticTextLoader } from "@/components/ui/kinetic-text-loader";
 import { URLAnalysisComponent } from "@/components/url-analysis/URLAnalysisComponent";
+import { QRThreatScanner } from "@/components/threats/QRThreatScanner";
+import { CVEChangeHistoryTimeline } from "@/components/vulnerabilities/CVEChangeHistoryTimeline";
 
 // --- API Error Handling ---
 function ApiErrorAlert({ error }: { error: string }) {
@@ -101,8 +105,12 @@ function ThreatsPageInner() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedInvForReport, setSelectedInvForReport] = useState<any>(null);
 
-  // Auto-lookup from URL params (e.g., navigating from Reports page)
+  // Auto-lookup from URL params (e.g., navigating from Reports page or direct tab link)
   useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
     const urlQuery = searchParams.get("query");
     const urlType = searchParams.get("type");
     if (urlQuery) {
@@ -246,10 +254,14 @@ function ThreatsPageInner() {
 
       {/* Main Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/60 border border-border p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-muted/60 border border-border p-1 rounded-xl">
           <TabsTrigger value="lookup" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-active:bg-card data-active:text-foreground data-[state=active]:shadow-sm data-active:shadow-sm font-semibold transition-all">
             <Search className="w-4 h-4" />
             Threat Lookup
+          </TabsTrigger>
+          <TabsTrigger value="qr-scanner" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-active:bg-card data-active:text-foreground data-[state=active]:shadow-sm data-active:shadow-sm font-semibold transition-all">
+            <QrCode className="w-4 h-4" />
+            QR Threat Scanner
           </TabsTrigger>
           <TabsTrigger value="extractor" className="text-xs md:text-sm flex items-center gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-foreground data-active:bg-card data-active:text-foreground data-[state=active]:shadow-sm data-active:shadow-sm font-semibold transition-all">
             <FileSearch className="w-4 h-4" />
@@ -435,7 +447,19 @@ function ThreatsPageInner() {
           )}
         </TabsContent>
 
-        {/* TAB 2: IOC EXTRACTOR */}
+        {/* TAB 2: QR QUISHING SCANNER */}
+        <TabsContent value="qr-scanner" className="pt-4 space-y-6">
+          <QRThreatScanner
+            onInvestigateUrl={(targetUrl) => {
+              executeLookup(targetUrl, "url");
+            }}
+            onNavigateToURLAnalyzer={(targetUrl) => {
+              window.location.href = `/assistant/url-analysis?url=${encodeURIComponent(targetUrl)}`;
+            }}
+          />
+        </TabsContent>
+
+        {/* TAB 3: IOC EXTRACTOR */}
         <TabsContent value="extractor" className="pt-4 space-y-6">
           <IOCExtractionPanel
             onLookupIOC={handleOneClickIOCLookup}
@@ -655,6 +679,130 @@ function ThreatsPageInner() {
 // ==========================================
 // Sub-components
 // ==========================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function PulsediveThreatCard({ pulsedive }: { pulsedive: any }) {
+  if (!pulsedive) return null;
+
+  const isThreat =
+    pulsedive.risk === "critical" ||
+    pulsedive.risk === "high" ||
+    pulsedive.riskScore >= 50;
+
+  const riskBadgeColor =
+    pulsedive.risk === "critical"
+      ? "text-destructive border-destructive/40 bg-destructive/10"
+      : pulsedive.risk === "high"
+        ? "text-orange-500 border-orange-500/40 bg-orange-500/10"
+        : pulsedive.risk === "medium"
+          ? "text-yellow-500 border-yellow-500/40 bg-yellow-500/10"
+          : pulsedive.risk === "low"
+            ? "text-blue-400 border-blue-400/40 bg-blue-400/10"
+            : "text-status-success border-status-success/30 bg-status-success/10";
+
+  return (
+    <Card className="bg-card border-border md:col-span-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Radio className="w-4 h-4 text-cyan-400 animate-pulse" />
+            Pulsedive Threat Intelligence
+          </span>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`text-xs font-mono uppercase font-bold ${riskBadgeColor}`}>
+              Risk: {pulsedive.risk || "unknown"} ({pulsedive.riskScore}/100)
+            </Badge>
+            {pulsedive.iid > 0 && (
+              <a
+                href={`https://pulsedive.com/indicator/?iid=${pulsedive.iid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 transition-colors"
+                title="View on Pulsedive"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-muted/40 p-2.5 rounded-lg border border-border/50">
+            <p className="text-[11px] text-muted-foreground">Indicator Type</p>
+            <p className="text-xs font-mono font-semibold uppercase mt-0.5">{pulsedive.type || "N/A"}</p>
+          </div>
+          <div className="bg-muted/40 p-2.5 rounded-lg border border-border/50">
+            <p className="text-[11px] text-muted-foreground">Indicator ID</p>
+            <p className="text-xs font-mono font-semibold mt-0.5">#{pulsedive.iid || "N/A"}</p>
+          </div>
+          <div className="bg-muted/40 p-2.5 rounded-lg border border-border/50">
+            <p className="text-[11px] text-muted-foreground">Last Updated</p>
+            <p className="text-xs font-mono mt-0.5">{pulsedive.stampUpdated ? pulsedive.stampUpdated.slice(0, 10) : "Recent"}</p>
+          </div>
+          <div className="bg-muted/40 p-2.5 rounded-lg border border-border/50">
+            <p className="text-[11px] text-muted-foreground">Status</p>
+            <p className="text-xs font-mono mt-0.5">
+              {pulsedive.retired ? (
+                <span className="text-muted-foreground">Retired</span>
+              ) : isThreat ? (
+                <span className="text-destructive font-semibold">Active Threat</span>
+              ) : (
+                <span className="text-status-success font-semibold">Clean / Low Risk</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Associated Threats */}
+        {pulsedive.threats && pulsedive.threats.length > 0 && (
+          <div className="pt-2">
+            <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
+              Associated Threats &amp; Threat Actors ({pulsedive.threats.length})
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {pulsedive.threats.map((threat: any, idx: number) => (
+                <Badge
+                  key={idx}
+                  variant="outline"
+                  className={`text-xs font-mono flex items-center gap-1 border ${
+                    threat.risk === "critical" || threat.risk === "high"
+                      ? "text-destructive border-destructive/30 bg-destructive/10"
+                      : "text-primary border-primary/30 bg-primary/10"
+                  }`}
+                >
+                  <span className="font-semibold">{threat.name}</span>
+                  {threat.category && (
+                    <span className="text-[10px] opacity-75">({threat.category})</span>
+                  )}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Feeds */}
+        {pulsedive.feeds && pulsedive.feeds.length > 0 && (
+          <div className="pt-1">
+            <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              Feed Intelligence ({pulsedive.feeds.length})
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {pulsedive.feeds.map((feed: any, idx: number) => (
+                <Badge key={idx} variant="secondary" className="text-[11px] font-mono">
+                  {feed.name}
+                  {feed.organization ? ` (${feed.organization})` : ""}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function IPDomainResultView({
   data,
@@ -1219,6 +1367,11 @@ function IPDomainResultView({
           </Card>
         )}
 
+        {/* Pulsedive Threat Intelligence */}
+        {data.pulsedive && (
+          <PulsediveThreatCard pulsedive={data.pulsedive} />
+        )}
+
         {/* Threats */}
         <Card className="bg-card border-border md:col-span-2">
           <CardHeader>
@@ -1264,12 +1417,15 @@ function IPDomainResultView({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CVEResultView({ data }: { data: any }) {
+  const [activeTab, setActiveTab] = useState("metrics");
+
   return (
     <div className="space-y-4">
+      {/* Primary Card */}
       <Card className="bg-card border-border overflow-hidden">
         <div className="flex flex-col md:flex-row">
           <div className="flex-1 p-6">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
               <span className="text-xl font-mono font-bold text-primary">
                 {data.id}
               </span>
@@ -1292,22 +1448,182 @@ function CVEResultView({ data }: { data: any }) {
                   Patch Available
                 </Badge>
               )}
+              {data.vulnStatus && (
+                <Badge variant="secondary" className="text-[10px] font-mono uppercase bg-white/[0.04]">
+                  {data.vulnStatus}
+                </Badge>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
               {data.description}
             </p>
           </div>
-          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-muted/50 border-t md:border-t-0 md:border-l border-border">
+          <div className="w-full md:w-48 p-6 flex flex-col items-center justify-center bg-muted/50 border-t md:border-t-0 md:border-l border-border shrink-0">
             <span
-              className={`text-5xl font-bold ${getRiskColor(data.cvssScore * 10)}`}
+              className={`text-5xl font-bold font-mono ${getRiskColor(data.cvssScore * 10)}`}
             >
-              {data.cvssScore}
+              {data.cvssScore ? data.cvssScore.toFixed(1) : "0.0"}
             </span>
             <span className="text-xs text-muted-foreground mt-1 font-mono">
-              CVSS
+              CVSS Base
             </span>
           </div>
         </div>
+      </Card>
+
+      {/* Secondary Detailed Inspection Tabs */}
+      <Card className="bg-card border-border p-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-muted/40 p-1 border border-border/40 rounded-xl mb-4">
+            <TabsTrigger value="metrics" className="text-xs font-mono font-semibold">
+              CVSS Metrics
+            </TabsTrigger>
+            <TabsTrigger value="cpes" className="text-xs font-mono font-semibold">
+              Affected CPEs ({data.affectedProducts?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="cwes" className="text-xs font-mono font-semibold">
+              Weaknesses & References
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-xs font-mono font-semibold flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-cyan-400" />
+              NVD Change History ({data.history?.length || 0})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB 1: METRICS */}
+          <TabsContent value="metrics" className="space-y-4 pt-1">
+            {data.metrics ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-border/40">
+                  <span className="text-xs font-mono text-muted-foreground">CVSS v{data.metrics.version} Vector</span>
+                  <span className="text-xs font-mono text-cyan-400 font-semibold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                    {data.metrics.vectorString}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Attack Vector (AV)</span>
+                    <span className="font-semibold text-white">{data.metrics.attackVector || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Complexity (AC)</span>
+                    <span className="font-semibold text-white">{data.metrics.attackComplexity || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Privileges (PR)</span>
+                    <span className="font-semibold text-white">{data.metrics.privilegesRequired || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Interaction (UI)</span>
+                    <span className="font-semibold text-white">{data.metrics.userInteraction || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Confidentiality (C)</span>
+                    <span className="font-semibold text-white">{data.metrics.confidentialityImpact || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Integrity (I)</span>
+                    <span className="font-semibold text-white">{data.metrics.integrityImpact || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Availability (A)</span>
+                    <span className="font-semibold text-white">{data.metrics.availabilityImpact || "N/A"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-black/20 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">Scope (S)</span>
+                    <span className="font-semibold text-white">{data.metrics.scope || "Unchanged"}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 text-xs font-mono text-muted-foreground">
+                CVSS Vector: {data.cvssVector || "No metric breakdown recorded in NVD."}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* TAB 2: CPES */}
+          <TabsContent value="cpes" className="pt-1">
+            {data.affectedProducts && data.affectedProducts.length > 0 ? (
+              <div className="divide-y divide-border/40 border border-border/40 rounded-xl p-3 bg-black/20 text-xs font-mono">
+                {data.affectedProducts.map((prod: any, idx: number) => (
+                  <div key={idx} className="py-2 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="text-primary font-bold">{prod.vendor}</span>
+                      <span className="text-muted-foreground mx-1">/</span>
+                      <span className="text-white">{prod.product}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {(prod.versions || []).map((ver: string, vIdx: number) => (
+                        <span key={vIdx} className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground">
+                          {ver}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground font-mono p-2">No CPE platform criteria cataloged.</p>
+            )}
+          </TabsContent>
+
+          {/* TAB 3: CWES & REFERENCES */}
+          <TabsContent value="cwes" className="space-y-3 pt-1">
+            <div className="p-3 rounded-xl bg-black/20 border border-border/40 space-y-2">
+              <span className="text-xs font-mono font-semibold text-white">Weaknesses (CWE)</span>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {(data.cwe || data.weaknesses || []).map((cwe: string, idx: number) => (
+                  <a
+                    key={idx}
+                    href={`https://cwe.mitre.org/data/definitions/${cwe.replace("CWE-", "")}.html`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-mono flex items-center gap-1 hover:underline"
+                  >
+                    <span>{cwe}</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-black/20 border border-border/40 space-y-2">
+              <span className="text-xs font-mono font-semibold text-white">Advisories & References</span>
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {(data.references || []).map((ref: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between gap-2 text-xs font-mono p-1.5 rounded hover:bg-white/[0.02]">
+                    <a
+                      href={ref.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-400 hover:underline truncate max-w-md flex items-center gap-1"
+                    >
+                      <span className="truncate">{ref.url}</span>
+                      <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                    </a>
+                    <div className="flex gap-1 shrink-0">
+                      {(ref.tags || []).map((tag: string, tIdx: number) => (
+                        <span key={tIdx} className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* TAB 4: CHANGE HISTORY TIMELINE */}
+          <TabsContent value="history" className="pt-1">
+            <CVEChangeHistoryTimeline
+              cveId={data.id}
+              history={data.history || []}
+            />
+          </TabsContent>
+        </Tabs>
       </Card>
     </div>
   );
@@ -1366,6 +1682,7 @@ function HashResultView({ data }: { data: any }) {
           )}
         </div>
       </Card>
+      {data.pulsedive && <PulsediveThreatCard pulsedive={data.pulsedive} />}
     </div>
   );
 }

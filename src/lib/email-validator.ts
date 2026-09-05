@@ -92,7 +92,7 @@ export async function verifyEmailAddress(
       const timeoutId = setTimeout(() => controller.abort(), 6000);
 
       const res = await fetch(
-        `http://apilayer.net/api/check?access_key=${encodeURIComponent(
+        `https://apilayer.net/api/check?access_key=${encodeURIComponent(
           apiKey
         )}&email=${encodeURIComponent(cleanEmail)}&smtp=1&format=1`,
         { signal: controller.signal }

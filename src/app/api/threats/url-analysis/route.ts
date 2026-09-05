@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { validateAndSanitizeURL } from "@/lib/sanitize";
 import { analyzeURL } from "@/lib/url-analysis-service";
 
 export async function POST(request: Request) {
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Parse input
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { url } = body;
 
     if (!url || typeof url !== "string") {
@@ -39,18 +40,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate URL format
-    try {
-      new URL(url);
-    } catch {
+    // Validate URL against SSRF, dangerous schemes, blocked ports & private IPs
+    const validation = validateAndSanitizeURL(url);
+    if (!validation.safe || !validation.url) {
       return NextResponse.json(
-        { error: "Invalid URL format" },
+        { error: validation.error || "Invalid or prohibited URL format" },
         { status: 400 }
       );
     }
 
-    // Perform analysis
-    const analysis = await analyzeURL(url);
+    // Perform analysis with validated safe URL
+    const analysis = await analyzeURL(validation.url);
 
     // Store analysis in database (optional)
     try {
