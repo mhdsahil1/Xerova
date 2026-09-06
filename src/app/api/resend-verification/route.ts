@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { sendVerificationEmail } from "@/lib/gmail";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function POST(request: Request) {
   try {
@@ -63,9 +64,7 @@ export async function POST(request: Request) {
       user.emailVerificationExpires = tokenExpires;
       await user.save();
 
-      const rawAppUrl =
-        process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-      const appUrl = rawAppUrl.replace(/\/+$/, "");
+      const appUrl = getSiteUrl();
       const verificationUrl = `${appUrl}/verify-email?token=${encodeURIComponent(rawToken)}`;
 
       try {

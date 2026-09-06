@@ -7,6 +7,7 @@ import { registerSchema } from "@/lib/validations";
 import { verifyEmailAddress } from "@/lib/email-validator";
 import { sendVerificationEmail } from "@/lib/gmail";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getSiteUrl } from "@/lib/site-url";
 
 export async function POST(request: Request) {
   try {
@@ -90,8 +91,7 @@ export async function POST(request: Request) {
     });
 
     // Construct verification URL (strip trailing slashes, encode token)
-    const rawAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const appUrl = rawAppUrl.replace(/\/+$/, "");
+    const appUrl = getSiteUrl();
     const verificationUrl = `${appUrl}/verify-email?token=${encodeURIComponent(rawToken)}`;
 
     // Dispatch verification email via Gmail API with sanitized error handling

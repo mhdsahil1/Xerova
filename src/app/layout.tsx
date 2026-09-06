@@ -4,6 +4,7 @@ import { Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const inter = Inter({
@@ -17,11 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.APP_URL ||
-    "https://xerova-lab.vercel.app"
-  ),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "XEROVA | AI-Powered Cybersecurity & Threat Intelligence",
     template: "%s | XEROVA",
