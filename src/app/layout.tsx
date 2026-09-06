@@ -17,16 +17,75 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "XEROVA — Cybersecurity Intelligence Platform",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    "https://xerova.io"
+  ),
+  title: {
+    default: "XEROVA | AI-Powered Cybersecurity & Threat Intelligence",
+    template: "%s | XEROVA",
+  },
   description:
-    "AI-powered cybersecurity intelligence platform for threat investigation, analysis, and response. Unify your security workflow.",
+    "XEROVA is an AI-powered cybersecurity and threat intelligence platform for analyzing IPs, URLs, domains, hashes, CVEs, and other indicators of compromise.",
+  applicationName: "XEROVA",
   keywords: [
+    "XEROVA",
     "cybersecurity",
     "threat intelligence",
-    "SOC",
-    "AI",
-    "security analysis",
+    "IOC analyzer",
+    "SOC platform",
+    "IP reputation",
+    "URL scanner",
+    "domain analysis",
+    "CVE lookup",
+    "file hash analysis",
+    "browser security",
+    "anti-quishing",
+    "AI threat detection",
   ],
+  authors: [{ name: "XEROVA Team" }],
+  creator: "XEROVA",
+  publisher: "XEROVA",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "XEROVA",
+    title: "XEROVA | AI-Powered Cybersecurity & Threat Intelligence",
+    description:
+      "XEROVA is an AI-powered cybersecurity and threat intelligence platform for analyzing IPs, URLs, domains, hashes, CVEs, and other indicators of compromise.",
+    images: [
+      {
+        url: "/xerova-icon.svg",
+        width: 1200,
+        height: 630,
+        alt: "XEROVA | AI-Powered Cybersecurity & Threat Intelligence",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "XEROVA | AI-Powered Cybersecurity & Threat Intelligence",
+    description:
+      "XEROVA is an AI-powered cybersecurity and threat intelligence platform for analyzing IPs, URLs, domains, hashes, CVEs, and other indicators of compromise.",
+    images: ["/xerova-icon.svg"],
+    creator: "@xerova",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
