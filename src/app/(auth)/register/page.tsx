@@ -23,9 +23,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import BlackHole from "@/components/originkit/ui/blackhole";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { useRecaptcha } from "@/hooks/use-recaptcha";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { executeRecaptcha } = useRecaptcha("register");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -60,6 +62,9 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
+      // Execute reCAPTCHA v3 in background
+      const recaptchaToken = await executeRecaptcha();
+
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,6 +73,7 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
+          recaptchaToken: recaptchaToken || undefined,
         }),
       });
 
@@ -412,8 +418,31 @@ export default function RegisterPage() {
             </>
           )}
 
+          {/* reCAPTCHA Attribution */}
+          <div className="mt-3 text-center text-[10px] text-muted-foreground/60 leading-relaxed">
+            Protected by reCAPTCHA (
+            <a
+              href="https://policies.google.com/privacy"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-muted-foreground"
+            >
+              Privacy
+            </a>
+            {" · "}
+            <a
+              href="https://policies.google.com/terms"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-muted-foreground"
+            >
+              Terms
+            </a>
+            )
+          </div>
+
           {/* Security Disclaimer */}
-          <div className="mt-5 pt-3.5 border-t border-border flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+          <div className="mt-4 pt-3 border-t border-border flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground font-mono">
             <Shield className="w-3 h-3 text-cyan-400 shrink-0" />
             <span>End-to-End Encrypted Session</span>
           </div>

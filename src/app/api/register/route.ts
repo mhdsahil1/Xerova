@@ -8,6 +8,7 @@ import { verifyEmailAddress } from "@/lib/email-validator";
 import { sendVerificationEmail } from "@/lib/gmail";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getSiteUrl } from "@/lib/site-url";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 export async function POST(request: Request) {
   try {
@@ -32,6 +33,20 @@ export async function POST(request: Request) {
     if (!validatedData.success) {
       return NextResponse.json(
         { error: validatedData.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    // Verify Google reCAPTCHA v3 token
+    const recaptchaResult = await verifyRecaptcha(
+      validatedData.data.recaptchaToken,
+      "register",
+      0.5,
+      clientIp
+    );
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { error: recaptchaResult.error || "Security verification failed. Please try again." },
         { status: 400 }
       );
     }
