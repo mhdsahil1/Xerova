@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     shortcut: "/favicon.svg",
     apple: "/xerova-icon.svg",
   },
+  verification: {
+    google: "9FYatIUg8obVskXo95Z-fCQL9T4pULNZlltIlpIjN_8",
+  },
 };
 
 export default function RootLayout({
