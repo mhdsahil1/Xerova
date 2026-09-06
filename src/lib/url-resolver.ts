@@ -60,7 +60,7 @@ export interface ResolutionResult {
 
 const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
 const DEFAULT_TIMEOUT_MS = 5000;
-const USER_AGENT = "Mozilla/5.0 (compatible; XEROVA-AntiQuishing/1.0; +https://xerova.io)";
+const USER_AGENT = "Mozilla/5.0 (compatible; XEROVA-AntiQuishing/1.0; +https://xerova-lab.vercel.app)";
 
 /**
  * Validates whether a hostname resolves to any private/loopback/internal IP (DNS rebinding check).

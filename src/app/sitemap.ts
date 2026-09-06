@@ -4,7 +4,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.APP_URL ||
-    "https://xerova.io";
+    "https://xerova-lab.vercel.app";
 
   const currentDate = new Date();
 
