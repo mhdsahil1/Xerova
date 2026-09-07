@@ -4,7 +4,7 @@
   <img src="./public/xerova-icon.svg" alt="XEROVA Brand Emblem" width="100" height="100" />
 </a>
 
-# 🛡️ XEROVA `v2.0`
+#  XEROVA `v2.0`
 
 ### Next-Gen Autonomous Threat Intelligence & Cybersecurity Investigation Platform
 
