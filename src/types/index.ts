@@ -482,3 +482,19 @@ export interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: string | number;
 }
+
+// --- Cyber Threat Intelligence News ---
+export interface CyberNewsArticle {
+  id: string;
+  title: string;
+  link: string;
+  description: string;
+  pubDate: string;
+  sourceName: string;
+  sourceIcon?: string | null;
+  imageUrl?: string | null;
+  category: string[];
+  country?: string[];
+  keywords?: string[];
+}
+

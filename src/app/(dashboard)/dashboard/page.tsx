@@ -30,6 +30,8 @@ import { ThreatTrendsChart } from "@/components/dashboard/ThreatTrendsChart";
 import { RecentInvestigations } from "@/components/dashboard/RecentInvestigations";
 import { LatestCVEs } from "@/components/dashboard/LatestCVEs";
 import { LiveThreatPulses, type PulseItem } from "@/components/dashboard/LiveThreatPulses";
+import { LiveCyberNews } from "@/components/dashboard/LiveCyberNews";
+import type { CyberNewsArticle } from "@/types";
 import { getRiskColor, getRiskLabel } from "@/lib/utils";
 
 const fadeInUp = {
@@ -48,15 +50,18 @@ export default function DashboardPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cvesData, setCvesData] = useState<any[] | null>(null);
   const [pulsesData, setPulsesData] = useState<PulseItem[] | null>(null);
+  const [newsData, setNewsData] = useState<CyberNewsArticle[] | null>(null);
+  const [isRefreshingNews, setIsRefreshingNews] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [statsRes, cvesRes, pulsesRes] = await Promise.all([
+        const [statsRes, cvesRes, pulsesRes, newsRes] = await Promise.all([
           fetch("/api/dashboard/stats"),
           fetch("/api/dashboard/cves"),
           fetch("/api/dashboard/pulses"),
+          fetch("/api/dashboard/news"),
         ]);
 
         if (statsRes.ok) {
@@ -72,6 +77,11 @@ export default function DashboardPage() {
           const pulsesJson = await pulsesRes.json();
           setPulsesData(pulsesJson.pulses || []);
         }
+
+        if (newsRes.ok) {
+          const newsJson = await newsRes.json();
+          setNewsData(newsJson.news || []);
+        }
       } catch (e) {
         console.error("Failed to load dashboard data", e);
         setError("Failed to load dashboard data. Please try again.");
@@ -81,6 +91,21 @@ export default function DashboardPage() {
     }
     loadData();
   }, []);
+
+  const handleRefreshNews = async () => {
+    setIsRefreshingNews(true);
+    try {
+      const res = await fetch("/api/dashboard/news?refresh=true");
+      if (res.ok) {
+        const data = await res.json();
+        setNewsData(data.news || []);
+      }
+    } catch (e) {
+      console.error("Failed to refresh news", e);
+    } finally {
+      setIsRefreshingNews(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -393,6 +418,34 @@ export default function DashboardPage() {
           <LatestCVEs data={cvesData || []} />
         </Card>
       </motion.div>
+
+      {/* Quaternary Row: Global Cyber Threat & Security News (NewsData.io) */}
+      <motion.div variants={fadeInUp}>
+        <Card className="bg-card border-border p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span className="text-sm font-semibold text-foreground">
+                Global Cyber Threat &amp; Security News
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs font-mono">
+                NewsData.io Feed
+              </Badge>
+            </div>
+          </div>
+          <LiveCyberNews
+            data={newsData || []}
+            onRefresh={handleRefreshNews}
+            isRefreshing={isRefreshingNews}
+          />
+        </Card>
+      </motion.div>
     </motion.div>
   );
 }
+
