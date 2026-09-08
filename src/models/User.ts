@@ -7,6 +7,7 @@ export interface IUserDocument extends Document {
   image?: string;
   provider: "credentials" | "google";
   emailVerified: boolean;
+  registrationCompleted?: boolean;
   emailVerificationToken?: string | null;
   emailVerificationExpires?: Date | null;
   role: "analyst" | "admin";
@@ -56,6 +57,9 @@ const UserSchema = new Schema<IUserDocument>(
     emailVerified: {
       type: Boolean,
       default: false,
+    },
+    registrationCompleted: {
+      type: Boolean,
     },
     emailVerificationToken: {
       type: String,

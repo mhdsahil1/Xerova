@@ -62,7 +62,7 @@ export default function SettingsPage() {
                 <label className="text-xs font-medium text-muted-foreground">Security Role</label>
                 <div className="flex items-center gap-2 p-2.5 rounded-md bg-background/50 border border-border">
                   <Shield className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-medium capitalize">{(session?.user as Record<string, unknown>)?.role as string || "SOC Analyst"}</span>
+                  <span className="text-xs font-medium capitalize">{session?.user?.role || "SOC Analyst"}</span>
                 </div>
               </div>
             </CardContent>

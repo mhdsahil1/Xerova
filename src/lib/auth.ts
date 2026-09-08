@@ -64,6 +64,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Please verify your email before logging in.");
         }
 
+        // Reject incomplete accounts if attempting credential login without completion
+        if (user.registrationCompleted === false) {
+          throw new Error("Please complete your account registration first.");
+        }
+
         return {
           id: user._id.toString(),
           name: user.name,
@@ -79,15 +84,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (account?.provider === "google") {
         await connectDB();
 
-        const existingUser = await User.findOne({ email: user.email });
+        const cleanEmail = user.email?.toLowerCase().trim();
+        const existingUser = await User.findOne({ email: cleanEmail });
 
         if (!existingUser) {
           await User.create({
-            name: user.name,
-            email: user.email,
-            image: user.image,
+            name: user.name || "Analyst",
+            email: cleanEmail,
+            image: user.image || "",
             provider: "google",
             emailVerified: true,
+            registrationCompleted: false, // New Google accounts must complete registration
           });
         } else if (!existingUser.emailVerified) {
           existingUser.emailVerified = true;
@@ -96,14 +103,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         try {
           await connectDB();
-          const dbUser = await User.findOne({ email: user.email });
+          const cleanEmail = user.email?.toLowerCase().trim();
+          const dbUser = await User.findOne({ email: cleanEmail });
           if (dbUser) {
             token.id = dbUser._id.toString();
             token.role = dbUser.role;
+            token.registrationCompleted = dbUser.registrationCompleted !== false;
+            token.name = dbUser.name;
           } else {
             // Fallback for just-created or missing users
             token.id = user.id;
@@ -112,13 +122,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           console.error("JWT callback DB error:", error);
           token.id = user.id;
         }
+      } else if (trigger === "update" || token.registrationCompleted === false) {
+        try {
+          await connectDB();
+          const dbUser = await User.findById(token.id);
+          if (dbUser) {
+            token.registrationCompleted = dbUser.registrationCompleted !== false;
+            token.name = dbUser.name;
+            token.role = dbUser.role;
+          }
+        } catch (error) {
+          console.error("JWT update DB error:", error);
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        (session.user as unknown as Record<string, unknown>).role = token.role;
+        session.user.role = token.role as string;
+        session.user.registrationCompleted = token.registrationCompleted as boolean | undefined;
+        if (token.name) {
+          session.user.name = token.name as string;
+        }
       }
       return session;
     },

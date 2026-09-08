@@ -32,29 +32,54 @@ export const authConfig = {
     authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
       const { pathname } = request.nextUrl;
+      const isRegistrationComplete =
+        (auth?.user as unknown as { registrationCompleted?: boolean })
+          ?.registrationCompleted !== false;
 
+      const isCompletePage = pathname === "/register/complete";
       const isAuthRoute =
         pathname === "/login" ||
         pathname === "/register" ||
         pathname.startsWith("/login/") ||
-        pathname.startsWith("/register/");
+        (pathname.startsWith("/register/") && !isCompletePage);
 
-      // If user is already authenticated and visits /login or /register,
-      // redirect them straight to their target or dashboard
-      if (isAuthRoute) {
-        if (isLoggedIn) {
-          const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/dashboard";
-          const safeTarget =
-            callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
-              ? callbackUrl
-              : "/dashboard";
-          return Response.redirect(new URL(safeTarget, request.nextUrl));
+      // Case 1: Unauthenticated visitors
+      if (!isLoggedIn) {
+        // Direct attempt to view completion page without signing in
+        if (isCompletePage) {
+          return Response.redirect(new URL("/register", request.nextUrl));
         }
-        return true;
+        // Public auth routes (login, register)
+        if (isAuthRoute) {
+          return true;
+        }
+        // Protected application routes require login
+        return false;
       }
 
-      // For protected routes, require valid session
-      return isLoggedIn;
+      // Case 2: Authenticated but incomplete registration (e.g. newly provisioned Google account)
+      if (!isRegistrationComplete) {
+        // Allow access to the completion page
+        if (isCompletePage) {
+          return true;
+        }
+        // For any other page (dashboard, login, threats, etc.), redirect to registration completion
+        return Response.redirect(new URL("/register/complete", request.nextUrl));
+      }
+
+      // Case 3: Authenticated and fully registered
+      // Redirect away from auth pages and completion page to dashboard
+      if (isAuthRoute || isCompletePage) {
+        const callbackUrl = request.nextUrl.searchParams.get("callbackUrl") || "/dashboard";
+        const safeTarget =
+          callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
+            ? callbackUrl
+            : "/dashboard";
+        return Response.redirect(new URL(safeTarget, request.nextUrl));
+      }
+
+      // Allow all protected application routes
+      return true;
     },
   },
 } satisfies NextAuthConfig;

@@ -189,8 +189,11 @@ export default function LoginPage() {
               />
             </div>
 
-            <p className="text-xs text-muted-foreground font-mono tracking-wide text-center">
-              Enter credentials to access the intelligence console
+            <h2 className="text-base font-bold text-foreground text-center tracking-tight">
+              Welcome back
+            </h2>
+            <p className="text-xs text-muted-foreground font-mono tracking-wide text-center mt-1">
+              Sign in with Google or enter your analyst credentials
             </p>
           </div>
 

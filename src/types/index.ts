@@ -10,6 +10,8 @@ export interface IUser {
   password?: string;
   image?: string;
   provider: "credentials" | "google";
+  emailVerified?: boolean;
+  registrationCompleted?: boolean;
   role: "analyst" | "admin";
   apiKeys?: {
     virusTotal?: string;

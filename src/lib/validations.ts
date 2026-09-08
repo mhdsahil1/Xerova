@@ -122,9 +122,34 @@ export const profileSchema = z.object({
   image: z.string().url().optional().or(z.literal("")),
 });
 
+export const completeRegistrationSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Name is required")
+      .min(2, "Name must be at least 2 characters")
+      .max(100, "Name cannot exceed 100 characters"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password cannot exceed 128 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      ),
+    confirmPassword: z.string().min(1, "Please confirm your password").max(128),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type CompleteRegistrationInput = z.infer<typeof completeRegistrationSchema>;
 export type ThreatSearchInput = z.infer<typeof threatSearchSchema>;
 export type ReportInput = z.infer<typeof reportSchema>;
 export type SettingsInput = z.infer<typeof settingsSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
+
