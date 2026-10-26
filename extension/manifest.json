@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "XEROVA Browser Guard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Detect suspicious and malicious websites while you browse. Powered by XEROVA multi-source threat intelligence.",
   "permissions": [
     "activeTab",

@@ -133,40 +133,19 @@ function VulnerabilitiesPageContent() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0c0d12] p-6 shadow-xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
-                Vulnerability Intelligence Center
-              </h1>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl font-mono">
-              Live National Vulnerability Database (NVD) CVE stream, CVSS v3.1 score breakdowns, and Change History event timelines.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <Badge
-              variant="outline"
-              className="bg-emerald-500/10 text-emerald-400 border-emerald-500/25 text-xs font-mono py-1 px-2.5 flex items-center gap-1.5"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              NVD 2.0 Authenticated Feed
-            </Badge>
-          </div>
-        </div>
-
-        {/* Ambient Gradient */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+      {/* Page Header */}
+      <div>
+        <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2.5">
+          <ShieldAlert className="w-5 h-5 text-primary" />
+          Vulnerabilities
+        </h1>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Live National Vulnerability Database (NVD) CVE stream and metrics.
+        </p>
       </div>
 
       {/* Search & Filter Controls */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0c0d12] p-4.5 space-y-4 shadow-lg">
+      <div className="rounded-2xl border border-border bg-card p-4.5 space-y-4 shadow-xs">
         <form onSubmit={handleSearchSubmit} className="flex gap-2.5">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

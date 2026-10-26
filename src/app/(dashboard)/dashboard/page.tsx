@@ -13,11 +13,7 @@ import {
   Globe,
   Loader2,
   ArrowRight,
-  Plus,
   ChevronRight,
-  Sparkles,
-  SlidersHorizontal,
-  ChevronLeft,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -139,10 +135,10 @@ export default function DashboardPage() {
       variants={stagger}
       className="space-y-5"
     >
-      {/* Top Welcome Bar & Horizontal Modular Action Cards */}
+      {/* Top Welcome Header */}
       <motion.div
         variants={fadeInUp}
-        className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pt-1"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1"
       >
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
@@ -151,63 +147,6 @@ export default function DashboardPage() {
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Automate threat investigations, correlate IOCs, and orchestrate real-time defense.
           </p>
-        </div>
-
-        {/* Reference Horizontal Quick-Action Pill Cards */}
-        <div className="flex items-center gap-2.5 overflow-x-auto pb-1 max-w-full">
-          {/* Quick Create Report Pill */}
-          <Link
-            href="/reports"
-            className="w-10 h-10 rounded-xl bg-foreground text-background hover:opacity-90 transition-all flex items-center justify-center shrink-0 shadow-md active:scale-95"
-            title="Create New Report"
-          >
-            <Plus className="w-5 h-5 stroke-[2.5]" />
-          </Link>
-
-          {/* Action 1: Threat Lookup */}
-          <Link
-            href="/threats"
-            className="px-3.5 py-2 rounded-xl bg-card hover:bg-accent border border-border flex items-center gap-3 shrink-0 group transition-all"
-          >
-            <div className="text-left">
-              <div className="flex items-center gap-1 text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-                <span>Threat Lookup</span>
-                <Sparkles className="w-3 h-3 text-primary" />
-              </div>
-              <p className="text-xs text-muted-foreground font-mono">Scan IP, Domain, Hash</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-          </Link>
-
-          {/* Action 2: AI Copilot */}
-          <Link
-            href="/assistant"
-            className="px-3.5 py-2 rounded-xl bg-card hover:bg-accent border border-border flex items-center gap-3 shrink-0 group transition-all"
-          >
-            <div className="text-left">
-              <div className="flex items-center gap-1 text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-                <span>AI Security Copilot</span>
-                <Sparkles className="w-3 h-3 text-primary" />
-              </div>
-              <p className="text-xs text-muted-foreground font-mono">Gemini Threat Analyst</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-          </Link>
-
-          {/* Action 3: Incident Reports */}
-          <Link
-            href="/reports"
-            className="hidden sm:flex px-3.5 py-2 rounded-xl bg-card hover:bg-accent border border-border items-center gap-3 shrink-0 group transition-all"
-          >
-            <div className="text-left">
-              <div className="flex items-center gap-1 text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
-                <span>Report AI</span>
-                <Sparkles className="w-3 h-3 text-amber-500 dark:text-amber-400" />
-              </div>
-              <p className="text-xs text-muted-foreground font-mono">Incident &amp; Audit Docs</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-          </Link>
         </div>
       </motion.div>
 
@@ -224,8 +163,8 @@ export default function DashboardPage() {
                 <Shield className="w-4 h-4 text-primary" />
                 Threat Posture &amp; Score
               </span>
-              <span className="text-xs font-mono text-muted-foreground px-2.5 py-0.5 rounded-full bg-muted border border-border">
-                Realtime Feeds ⌵
+              <span className="text-xs font-mono text-muted-foreground">
+                Realtime
               </span>
             </div>
 
@@ -280,17 +219,7 @@ export default function DashboardPage() {
         <Card className="lg:col-span-7 bg-card border-border p-5 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-border gap-2">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-foreground">Recent Investigations</span>
-                <button
-                  type="button"
-                  aria-label="Filter investigations"
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs text-foreground font-medium px-2.5 py-1 rounded-md bg-muted hover:bg-accent border border-border transition-colors focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <SlidersHorizontal className="w-3 h-3 text-primary" />
-                  <span>Filter</span>
-                </button>
-              </div>
+              <span className="text-sm font-semibold text-foreground">Recent Investigations</span>
               <Link
                 href="/threats"
                 className="text-xs text-primary font-medium flex items-center gap-1 px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
@@ -319,20 +248,6 @@ export default function DashboardPage() {
               <span className="text-xs font-mono font-semibold text-primary flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-primary" /> Active Autonomous Defense
               </span>
-              <div className="flex items-center gap-1">
-                <button
-                  aria-label="Previous card slide"
-                  className="w-6 h-6 rounded-full bg-muted/80 hover:bg-accent flex items-center justify-center text-foreground transition-colors"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  aria-label="Next card slide"
-                  className="w-6 h-6 rounded-full bg-muted/80 hover:bg-accent flex items-center justify-center text-foreground transition-colors"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
 
             <h2 className="text-base sm:text-lg font-bold text-foreground mt-3 leading-snug">
@@ -366,7 +281,7 @@ export default function DashboardPage() {
                   +10% today
                 </span>
               </div>
-              <span className="text-xs font-mono text-muted-foreground">Last 7 Days ⌵</span>
+              <span className="text-xs font-mono text-muted-foreground">Last 7 Days</span>
             </div>
 
             <div className="pt-3">

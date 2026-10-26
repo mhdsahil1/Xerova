@@ -99,18 +99,7 @@ export function AppSidebar() {
           </TooltipContent>
         </Tooltip>
 
-        {/* Connected Threat Feeds Badge */}
-        <Tooltip>
-          <TooltipTrigger render={<div className="hidden md:flex flex-col items-center justify-center w-7 h-7 rounded-full bg-primary/10 border border-primary/20 text-primary cursor-pointer hover:bg-primary/20 transition-colors" />}>
-            <span className="text-[10px] font-mono font-bold leading-none">9+</span>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-popover text-popover-foreground border-border text-xs shadow-md">
-            9 Threat Engines Operational
-          </TooltipContent>
-        </Tooltip>
 
-        {/* Divider */}
-        <div className="hidden md:block w-8 h-px bg-sidebar-border my-1" />
 
         {/* Primary Navigation Icons — Positioned at TOP */}
         <nav className="flex md:flex-col items-center gap-2">
@@ -193,7 +182,7 @@ export function AppSidebar() {
               render={<Link href="/settings" className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-foreground hover:bg-accent rounded-lg transition-colors" />}
             >
               <Settings className="w-3.5 h-3.5" />
-              Settings &amp; Engines
+              Settings &amp; Preferences
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border my-1" />
             <DropdownMenuItem
@@ -206,22 +195,6 @@ export function AppSidebar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="hidden md:flex w-8 h-8 rounded-xl items-center justify-center text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-                aria-label="Sign out"
-              />
-            }
-          >
-            <LogOut className="w-4 h-4" />
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-popover text-popover-foreground border-border text-xs shadow-md">
-            Sign Out
-          </TooltipContent>
-        </Tooltip>
       </div>
     </aside>
   );

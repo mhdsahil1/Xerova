@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Shield, Key, Moon, Sun, Monitor } from "lucide-react";
+import { Settings, User, Shield, Moon, Sun, Monitor } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,15 +32,18 @@ export default function SettingsPage() {
           Settings
         </h1>
         <p className="text-muted-foreground text-sm mt-0.5">
-          Manage your account profile, intelligence engine integrations, and preferences.
+          Manage your account profile and workstation preferences.
         </p>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="bg-card border border-border">
-          <TabsTrigger value="profile" className="text-xs md:text-sm"><User className="w-3.5 h-3.5 mr-1.5" /> Profile</TabsTrigger>
-          <TabsTrigger value="api" className="text-xs md:text-sm"><Key className="w-3.5 h-3.5 mr-1.5" /> API Engines</TabsTrigger>
-          <TabsTrigger value="preferences" className="text-xs md:text-sm"><Settings className="w-3.5 h-3.5 mr-1.5" /> Preferences</TabsTrigger>
+          <TabsTrigger value="profile" className="text-xs md:text-sm">
+            <User className="w-3.5 h-3.5 mr-1.5" /> Profile
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="text-xs md:text-sm">
+            <Settings className="w-3.5 h-3.5 mr-1.5" /> Preferences
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile" className="mt-4">
@@ -64,63 +67,6 @@ export default function SettingsPage() {
                   <Shield className="w-4 h-4 text-primary" />
                   <span className="text-xs font-medium capitalize">{session?.user?.role || "SOC Analyst"}</span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="api" className="mt-4">
-          <Card className="bg-card border-border max-w-3xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Key className="w-4 h-4 text-primary" />
-                Global Threat Intelligence &amp; AI Integrations
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Intelligence provider connectors are configured globally at the environment tier.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3.5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                {[
-                  { name: "VirusTotal", key: "VIRUSTOTAL_API_KEY", desc: "Multi-engine malware, domain, URL & hash reputation" },
-                  { name: "AbuseIPDB", key: "ABUSEIPDB_API_KEY", desc: "IP abuse confidence scoring and community reports" },
-                  { name: "Shodan", key: "SHODAN_API_KEY", desc: "Port telemetry, banner analysis, and CVE detection" },
-                  { name: "Criminal IP", key: "CRIMINAL_IP_API_KEY", desc: "Inbound/outbound risk, VPN/Tor/Proxy detection" },
-                  { name: "Abusix", key: "ABUSIX_API_KEY", desc: "Threat intelligence blocklists and exploit monitoring" },
-                  { name: "Google Safe Browsing", key: "GOOGLE_SAFE_BROWSING_API_KEY", desc: "Real-time Google threat matches for malware, phishing, and unwanted software" },
-                  { name: "alphaMountain.ai / ThreatYeti", key: "ALPHA_MOUNTAIN_API", desc: "AI-driven URI reputation & category classification" },
-                  { name: "URLQuery", key: "URL_QUERY_API_KEY", desc: "Web sandbox report search and malware scanning" },
-                  { name: "Yandex Safe Browsing", key: "YANDEX_API_KEY", desc: "Real-time threat matches for malware and social engineering" },
-                  { name: "IP2Location", key: "IP2LOCATION_API_KEY", desc: "High-precision IP geolocation, ASN, and proxy detection" },
-                  { name: "IP2WHOIS", key: "IP2WHOIS_API_KEY", desc: "Domain registration WHOIS, domain age, and reverse IP hosting" },
-                  { name: "IPStack", key: "IPSTACK_API_KEY", desc: "IP geolocation, connection telemetry, and security threat modules" },
-                  { name: "Mailboxlayer", key: "MAILBOXLAYER_API_KEY", desc: "Email syntax, disposable inbox filtering, and MX validation" },
-                  { name: "PhishStats", key: "PHISHSTATS_API_KEY", desc: "Real-time phishing threat feed and brand targeting index" },
-                  { name: "urlscan.io", key: "URLSCAN_IO_API_KEY", desc: "Automated URL sandbox, DOM analysis, and page screenshots" },
-                  { name: "CheckPhish.ai", key: "CHECKPHISH_API_KEY", desc: "Deep learning computer vision and brand impersonation scan" },
-                  { name: "Cloudmersive", key: "CLOUDMERSIVE_API_KEY", desc: "Anti-malware website virus scan and IP threat detection" },
-                  { name: "Groq AI (Llama 3.3 70B)", key: "GROQ_API_KEY", desc: "Default ultra-fast cybersecurity analyst reasoning & IOC intelligence" },
-                  { name: "Google Gemini AI", key: "GEMINI_API_KEY", desc: "Fallback cybersecurity analyst assistant and natural language reasoning" },
-                ].map((integ) => (
-                  <div key={integ.name} className="p-3 rounded-md bg-background/50 border border-border space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-foreground">{integ.name}</span>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-status-success/15 border border-status-success/30 text-status-success">
-                        <span className="w-1.5 h-1.5 rounded-full bg-status-success" />
-                        Active
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground line-clamp-1">{integ.desc}</p>
-                    <div className="pt-1">
-                      <Input value="••••••••••••••••••••••••••••••••" disabled type="password" className="h-7 text-[11px] bg-background/30 border-border font-mono" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-status-info/10 border border-status-info/20 text-status-info p-3.5 rounded-md text-xs leading-relaxed">
-                ℹ️ XEROVA is currently running in managed deployment mode. All 18 threat intelligence, sandbox, security verification, and AI engines are active and queryable.
               </div>
             </CardContent>
           </Card>
@@ -170,3 +116,4 @@ export default function SettingsPage() {
     </motion.div>
   );
 }
+

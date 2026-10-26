@@ -6,7 +6,57 @@
 // and dead-shortlink detection.
 
 import dns from "dns/promises";
+import nodeDns from "node:dns";
+import { Agent, fetch as undiciFetch } from "undici";
 import { validateAndSanitizeURL, isPrivateIP } from "./sanitize";
+
+/**
+ * Custom Undici Agent that intercepts DNS resolution at socket connection time.
+ * Guarantees that the IP used by the socket is validated against private/reserved ranges
+ * and eliminates the Time-of-Check to Time-of-Use (TOCTOU) DNS rebinding window.
+ */
+export const safeSSRFDispatcher = new Agent({
+  connect: {
+    lookup: (hostname, options, callback) => {
+      // Immediate static rejection if hostname is a private IP literal or internal name
+      if (isPrivateIP(hostname)) {
+        return callback(
+          new Error(`SSRF blocked: Hostname (${hostname}) is a private or restricted address.`),
+          "",
+          4
+        );
+      }
+
+      nodeDns.lookup(hostname, { all: true }, (err, addresses) => {
+        if (err) {
+          return callback(err, "", 4);
+        }
+
+        const records = Array.isArray(addresses) ? addresses : [addresses];
+        if (!records || records.length === 0) {
+          return callback(new Error(`DNS resolution returned no records for ${hostname}`), "", 4);
+        }
+
+        // Check EVERY resolved address (A and AAAA records)
+        for (const rec of records) {
+          if (isPrivateIP(rec.address)) {
+            return callback(
+              new Error(
+                `SSRF blocked: Hostname (${hostname}) resolved to private/reserved IP (${rec.address}).`
+              ),
+              "",
+              rec.family || 4
+            );
+          }
+        }
+
+        // Pin the first verified safe record directly to the socket connector
+        const chosen = records[0];
+        callback(null, chosen.address, chosen.family || 4);
+      });
+    },
+  },
+});
 
 export const KNOWN_SHORTENER_DOMAINS = new Set([
   "bit.ly",
@@ -159,20 +209,31 @@ export async function resolveRedirects(
 
       // Try HEAD request first for speed
       try {
-        res = await fetch(currentUrl, {
+        res = (await undiciFetch(currentUrl, {
           method: "HEAD",
           redirect: "manual",
           signal: AbortSignal.timeout(timeoutMs),
           headers,
-        });
-      } catch {
+          dispatcher: safeSSRFDispatcher,
+        })) as unknown as Response;
+      } catch (headErr) {
+        const headErrMsg = (headErr as Error)?.message || "";
+        if (
+          headErrMsg.includes("SSRF blocked") ||
+          headErrMsg.includes("private") ||
+          headErrMsg.includes("restricted address")
+        ) {
+          throw headErr;
+        }
+
         // Fallback to GET if HEAD is rejected or times out
-        res = await fetch(currentUrl, {
+        res = (await undiciFetch(currentUrl, {
           method: "GET",
           redirect: "manual",
           signal: AbortSignal.timeout(timeoutMs),
           headers,
-        });
+          dispatcher: safeSSRFDispatcher,
+        })) as unknown as Response;
       }
 
       lastStatusCode = res.status;
@@ -249,6 +310,24 @@ export async function resolveRedirects(
       break;
     } catch (fetchErr) {
       const errMessage = (fetchErr as Error)?.message || "Network request failed";
+      const isSSRF =
+        errMessage.includes("SSRF blocked") ||
+        errMessage.includes("private") ||
+        errMessage.includes("restricted address") ||
+        errMessage.includes("reserved IP");
+
+      if (isSSRF) {
+        return {
+          resolved: false,
+          finalUrl: currentUrl,
+          redirectionChain: chain,
+          hopCount: hop,
+          isKnownShortener: initialIsShortener,
+          blockedSSRF: true,
+          error: `Outbound connection aborted: ${errMessage}`,
+        };
+      }
+
       // Known shortener failure
       if (initialIsShortener) {
         return {

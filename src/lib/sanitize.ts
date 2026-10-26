@@ -159,9 +159,14 @@ function isPrivateIPv6(ip: string): boolean {
   // Unspecified & Loopback
   if (clean === "::" || clean === "::1" || /^0*(:0*)*:?1$/.test(clean)) return true;
 
-  // IPv4-mapped IPv6: ::ffff:127.0.0.1 or ::ffff:7f00:1
-  if (clean.startsWith("::ffff:") || clean.startsWith("0:0:0:0:0:ffff:")) {
-    const mappedPart = clean.replace(/^(::ffff:|0:0:0:0:0:ffff:)/i, "");
+  // IPv4-mapped IPv6: ::ffff:127.0.0.1 or ::ffff:7f00:1 or ::ffff:0:127.0.0.1 (SIIT RFC 2765 / RFC 6052)
+  if (
+    clean.startsWith("::ffff:") ||
+    clean.startsWith("0:0:0:0:0:ffff:") ||
+    clean.startsWith("::ffff:0:") ||
+    clean.startsWith("0:0:0:0:0:ffff:0:")
+  ) {
+    const mappedPart = clean.replace(/^(::ffff:(0:)?|0:0:0:0:0:ffff:(0:)?)/i, "");
     if (mappedPart.includes(".")) {
       const parsedNum = parseIPv4ToNumber(mappedPart);
       if (parsedNum !== null && isPrivateIPv4Number(parsedNum)) return true;

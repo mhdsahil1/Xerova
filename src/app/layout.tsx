@@ -4,6 +4,7 @@ import { Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
@@ -112,6 +113,7 @@ export default function RootLayout({
         >
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>

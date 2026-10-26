@@ -230,26 +230,14 @@ function ThreatsPageInner() {
       className="space-y-6"
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2.5">
-            <ShieldAlert className="w-5 h-5 text-primary" />
-            Threat Intelligence
-          </h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Investigate indicators across multiple intelligence sources.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setSelectedInvForReport(null);
-            setCreateReportOpen(true);
-          }}
-          className="bg-primary text-primary-foreground shrink-0 font-semibold"
-        >
-          <PlusCircle className="w-4 h-4 mr-2" />
-          New Report
-        </Button>
+      <div>
+        <h1 className="text-xl md:text-2xl font-semibold flex items-center gap-2.5">
+          <ShieldAlert className="w-5 h-5 text-primary" />
+          Threat Intelligence
+        </h1>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Investigate indicators across multiple intelligence sources.
+        </p>
       </div>
 
       {/* Main Navigation Tabs */}

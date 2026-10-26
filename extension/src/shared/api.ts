@@ -116,7 +116,7 @@ async function fetchFromEndpoint(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Extension-Client": "xerova-browser-guard/1.0.0",
+        "X-Extension-Client": `xerova-browser-guard/${chrome?.runtime?.getManifest?.()?.version || "1.0.1"}`,
       },
       body: JSON.stringify({ url: url.trim() }),
       signal: controller.signal,
