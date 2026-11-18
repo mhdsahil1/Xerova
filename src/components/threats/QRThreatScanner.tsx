@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import jsQR from "jsqr";
 import {
   QrCode,
@@ -32,7 +32,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { classifyPayload, parseWifiPayload, analyzePlainTextPayload } from "@/lib/qr-classifier";
+import { classifyPayload } from "@/lib/qr-classifier";
 import type { WifiConfigResult, TextAnalysisResult } from "@/lib/qr-classifier";
 import type { URLAnalysisResult } from "@/lib/url-analyzer";
 import type { ResolutionResult } from "@/lib/url-resolver";
@@ -86,7 +86,6 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
   // Scan & Result state
-  const [isScanning, setIsScanning] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [currentStep, setCurrentStep] = useState<string>("");
   const [scanResult, setScanResult] = useState<QRScanResponse | null>(null);
@@ -100,6 +99,7 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const scanFrameRef = useRef<() => void>(() => {});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Copy helper
@@ -138,7 +138,6 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
-    setIsScanning(false);
   }, []);
 
   // Submit decoded payload to backend threat analysis
@@ -198,13 +197,13 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      animationFrameRef.current = requestAnimationFrame(scanFrame);
+      animationFrameRef.current = requestAnimationFrame(() => scanFrameRef.current());
       return;
     }
 
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) {
-      animationFrameRef.current = requestAnimationFrame(scanFrame);
+      animationFrameRef.current = requestAnimationFrame(() => scanFrameRef.current());
       return;
     }
 
@@ -224,13 +223,15 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
       return;
     }
 
-    animationFrameRef.current = requestAnimationFrame(scanFrame);
+    animationFrameRef.current = requestAnimationFrame(() => scanFrameRef.current());
   }, [stopCamera, processDecodedPayload]);
+
+  useEffect(() => {
+    scanFrameRef.current = scanFrame;
+  }, [scanFrame]);
 
   // Start camera
   const startCamera = useCallback(async () => {
-    setCameraError(null);
-    setError(null);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Camera API is not supported by your browser or connection is insecure (requires HTTPS).");
@@ -255,8 +256,8 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
         setCameraActive(true);
-        setIsScanning(true);
-        animationFrameRef.current = requestAnimationFrame(scanFrame);
+        setCameraError(null);
+        animationFrameRef.current = requestAnimationFrame(() => scanFrameRef.current());
       }
 
       await getCameraDevices();
@@ -264,21 +265,21 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
       const msg = err instanceof Error ? err.message : "Failed to access camera.";
       setCameraError(msg);
       setCameraActive(false);
-      setIsScanning(false);
     }
-  }, [selectedDeviceId, facingMode, scanFrame, getCameraDevices]);
+  }, [selectedDeviceId, facingMode, getCameraDevices]);
 
   // Handle mode switches
   useEffect(() => {
     if (activeMode === "camera") {
-      startCamera();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void startCamera();
     } else {
       stopCamera();
     }
     return () => {
       stopCamera();
     };
-  }, [activeMode]);
+  }, [activeMode, startCamera, stopCamera]);
 
   // Switch cameras
   const toggleCameraFacing = () => {
@@ -292,7 +293,7 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
   };
 
   // Decode from file/image
-  const decodeFromImage = (file: File) => {
+  const decodeFromImage = useCallback((file: File) => {
     setError(null);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -307,7 +308,6 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
         ctx.drawImage(img, 0, 0);
 
         // Try BarcodeDetector if available
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (typeof window !== "undefined" && "BarcodeDetector" in window) {
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -337,7 +337,7 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
       img.src = e.target?.result as string;
     };
     reader.readAsDataURL(file);
-  };
+  }, [processDecodedPayload]);
 
   // File upload input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -377,7 +377,7 @@ export function QRThreatScanner({ onInvestigateUrl, onNavigateToURLAnalyzer }: Q
 
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [processDecodedPayload]);
+  }, [decodeFromImage]);
 
   // Quick-test sample presets
   const runPreset = (payloadText: string) => {

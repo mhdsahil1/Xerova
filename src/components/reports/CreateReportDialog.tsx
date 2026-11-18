@@ -22,8 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { extractIOCs, type ExtractedIOC } from "@/lib/ioc-extractor";
+import { extractIOCs } from "@/lib/ioc-extractor";
 
 interface CreateReportDialogProps {
   open: boolean;
@@ -282,9 +281,12 @@ export function CreateReportDialog({
             <select
               value={selectedInvId}
               onChange={(e) => handleSelectInvestigation(e.target.value)}
-              className="w-full h-10 px-3 text-sm rounded-md bg-background border border-border focus:border-primary font-mono"
+              disabled={loadingHistory}
+              className="w-full h-10 px-3 text-sm rounded-md bg-background border border-border focus:border-primary font-mono disabled:opacity-50"
             >
-              <option value="">-- Select past investigation to import --</option>
+              <option value="">
+                {loadingHistory ? "-- Loading past investigations... --" : "-- Select past investigation to import --"}
+              </option>
               {pastInvestigations.map((inv) => (
                 <option key={inv._id} value={inv._id}>
                   [{inv.type.toUpperCase()}] {inv.query} (Risk: {inv.riskScore}) - {new Date(inv.createdAt).toLocaleDateString()}
@@ -314,7 +316,7 @@ export function CreateReportDialog({
               </label>
               <select
                 value={type}
-                onChange={(e) => setType(e.target.value as any)}
+                onChange={(e) => setType(e.target.value as "investigation" | "threat_analysis" | "incident")}
                 className="w-full h-10 px-3 text-sm rounded-md bg-background border border-border focus:border-primary"
               >
                 <option value="investigation">Investigation</option>
@@ -332,7 +334,7 @@ export function CreateReportDialog({
               </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
+                onChange={(e) => setStatus(e.target.value as "draft" | "finalized")}
                 className="w-full h-10 px-3 text-sm rounded-md bg-background border border-border focus:border-primary"
               >
                 <option value="draft">Draft</option>
@@ -403,7 +405,7 @@ export function CreateReportDialog({
                   value={ioc.type}
                   onChange={(e) => {
                     const next = [...iocs];
-                    next[idx].type = e.target.value as any;
+                    next[idx].type = e.target.value as "ip" | "domain" | "hash" | "url" | "email" | "cve";
                     setIocs(next);
                   }}
                   className="h-9 px-2 text-xs rounded border border-border bg-background uppercase font-mono"
@@ -477,7 +479,7 @@ export function CreateReportDialog({
                     value={f.severity}
                     onChange={(e) => {
                       const next = [...findings];
-                      next[idx].severity = e.target.value as any;
+                      next[idx].severity = e.target.value as "critical" | "high" | "medium" | "low" | "info";
                       setFindings(next);
                     }}
                     className="h-9 px-2 text-xs rounded border border-border bg-background capitalize"

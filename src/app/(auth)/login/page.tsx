@@ -16,7 +16,6 @@ import {
   EyeOff,
   Shield,
   ArrowRight,
-  Sparkles,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

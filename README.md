@@ -1,7 +1,7 @@
 <div align="center">
 
 <a href="https://xerova-lab.vercel.app" target="_blank" rel="noopener noreferrer">
-  <img src="./public/xerova-icon.svg" alt="XEROVA Brand Emblem" width="100" height="100" />
+  <img src="./public/xerova-animated-logo.svg" alt="XEROVA Animated Brand Emblem" width="130" height="130" />
 </a>
 
 #  XEROVA `v2.0`

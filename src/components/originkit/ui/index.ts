@@ -10,3 +10,7 @@ export * from './vector-wordmark-03';
 
 export { default as VectorWordmarkRaster, default as VectorWordmark04 } from './vector-wordmark-04';
 export * from './vector-wordmark-04';
+
+export { default as BlobTextReveal } from "./blob-text-reveal";
+export { default as PistachioFloret } from "./pistachio-floret-custom-style";
+export { default as SwellGrid } from "./swell-grid";

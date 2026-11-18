@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&family=Pontano+Sans:wght@300..700&family=Share+Tech&family=Sora:wght@100..800&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -16,9 +17,11 @@
   --color-panel-highlight: var(--panel-highlight);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: 'Pontano Sans', 'Ubuntu', 'Noto Sans TC', var(--font-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: 'Sora', 'Share Tech', 'Ubuntu', 'Noto Sans TC', sans-serif;
+  --font-secondary: 'Pontano Sans', 'Ubuntu', 'Noto Sans TC', sans-serif;
+  --font-tech: 'Share Tech', monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -132,6 +135,9 @@
 
   --scrollbar-thumb: #cfd5e2;
   --scrollbar-thumb-hover: #b8c0d1;
+
+  --font-heading: 'Sora', 'Share Tech', 'Ubuntu', 'Noto Sans TC', sans-serif;
+  --font-secondary: 'Pontano Sans', 'Ubuntu', 'Noto Sans TC', sans-serif;
 }
 
 /* Dark mode — default primary XEROVA reference environment */
@@ -191,21 +197,34 @@
 
   --scrollbar-thumb: #232733;
   --scrollbar-thumb-hover: #323747;
+
+  --font-heading: 'Sora', 'Share Tech', 'Ubuntu', 'Noto Sans TC', sans-serif;
+  --font-secondary: 'Pontano Sans', 'Ubuntu', 'Noto Sans TC', sans-serif;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
+  }
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+  p, .font-secondary, .text-muted-foreground, .secondary-text {
+    font-family: var(--font-secondary);
   }
   body {
     background-color: var(--canvas-bg);
     color: var(--foreground);
-    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: var(--font-secondary);
     transition: background-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
                 color 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   html {
-    @apply font-sans scroll-smooth;
+    scroll-behavior: smooth;
+    font-family: var(--font-secondary);
   }
 }
 
